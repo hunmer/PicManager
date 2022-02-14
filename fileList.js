@@ -1,0 +1,36 @@
+
+var crypto = require('crypto');
+var fs = require('fs');
+var path = require('path');
+
+function walkSync(currentDirPath, callback) {
+    fs.readdirSync(currentDirPath).forEach(function (name) {
+        var filePath = path.join(currentDirPath, name);
+        var stat = fs.statSync(filePath);
+        if (stat.isFile()) {
+                callback(filePath, stat);
+        } else if (stat.isDirectory()) {
+            if(['node_modules', 'test', 'api', 'imgs', 'savePics', 'dist1'].indexOf(filePath) == -1){
+                walkSync(filePath, callback);
+            }
+        }
+    });
+}
+var res = {};
+walkSync('./', function (filePath, stat) {
+    if(['fileList.js', 'test.html', 'update.js', 'listFile.json', 'picManager.sublime-workspace', 'picManager.sublime-project'].indexOf(filePath) == -1){
+        const stream = fs.createReadStream(path.join(__dirname, filePath));
+        const hash = crypto.createHash('md5');
+        stream.on('data', chunk => {
+          hash.update(chunk, 'utf8');
+        });
+        stream.on('end', () => {
+          res[filePath] = hash.digest('hex');
+        });
+    }
+});
+
+
+process.on('exit', code => {
+  fs.writeFileSync('listFile.json', JSON.stringify(res), (err) => {});
+});

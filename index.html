@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-navbutton-color" content="#000000">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#000000">
+    <meta name="description" content="">
+    <meta name="author" content="Halfmoon">
+    <meta name="keywords" content="">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="">
+    <meta property="og:title" content="">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="full-screen" content="yes">
+    <meta name="browsermode" content="application">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="x5-page-mode" content="app">
+    <link rel="shortcut icon" href="favicon.ico">
+    <meta name="Author" contect="liaoyanjie2000@gmail.com">
+    <link rel="stylesheet" href="css/halfmoon.min.css">
+    <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/halfmoon-variables.min.css">
+    <link rel="stylesheet" type="text/css" href="css/mobiscroll.custom-3.0.0-beta6.min.css">
+    <link rel="stylesheet" href="css/viewer.min.css">
+    <link rel="stylesheet" href="css/animate.min.css">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/normalize.css">
+    <title>PicManager</title>
+</head>
+
+<body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars" >
+
+    <div style="-webkit-app-region: drag;pointer-events: none !important;position:fixed;top: 0;left:0;width: 100%;height: 15px;z-index: 99999;"></div>
+
+
+    <div class="menu" id="menu_main">
+       <i onclick="toggleMenu('#menu_main', false)" class="fa fa-arrow-left fa-2x hide" aria-hidden="true"></i>
+       <i data-action="showContent,gallery" class="fa fa-home fa-2x" aria-hidden="true"></i>
+       <i data-action="showContent,detail" class="fa fa-photo fa-2x" aria-hidden="true"></i>
+       <i data-action="showContent,site" class="fa fa-internet-explorer fa-2x" aria-hidden="true"></i>
+       <i onclick="toggleMenu('#menu_main', true)" class="fa fa-arrow-right fa-2x" aria-hidden="true"></i>
+    </div>
+
+
+    <div id="mobi_div" hidden></div>
+    <input id="input_img" class='inputstyle hide' type="file" accept="image/*" />
+    <input id="upload" class='inputstyle' type="file" accept=".json" onchange="uploadFile()" />
+    <audio id='soundTip' autoplay></audio>
+    <canvas id="canvas" style="display: none"></canvas>
+    <div class="modal modal-full" id="modal-custom" tabindex="-1" role="dialog" style="z-index: 41;" data-overlay-dismissal-disabled='...' data-esc-dismissal-disabled='...'>
+        <div class="modal-dialog" role="document">
+            <div class="modal-content w-auto">
+                <a class="close" role="button" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </a>
+                <h5 class="modal-title text-center p-10"></h5>
+                <div class="modal-html">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal modal-full" id="modal-custom-1" tabindex="-1" role="dialog" style="z-index: 41;">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content w-auto">
+                <a class="close" role="button" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </a>
+                <h5 class="modal-title text-center">Title</h5>
+                <div class="modal-html h-full">
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--  data-sidebar-hidden="hidden"  with-navbar-fixed-bottom  -->
+    <div id="page-wrapper" class="page-wrapper with-navbar with-sidebar with-transitions overflow-x-hide" data-sidebar-type="full-height">
+        <div class="sticky-alerts" style="z-index: 99999;">
+            <div id="FYsY6Z" class="alert dispose"><button class="close" data-dismiss="alert" type="button" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="alert-heading">Toast!</h4>This is a default alert with <a class="alert-link">a link</a> being toasted.
+            </div>
+        </div>
+        <nav class="navbar">
+            <div class="navbar-content">
+                <button id="toggle-sidebar-btn" class="btn btn-action" type="button" onclick="halfmoon.toggleSidebar()">
+                    <i class="fa fa-bars" aria-hidden="true"></i>
+                </button>
+            </div>
+            <a class="navbar-brand ml-10 ml-sm-20">
+            </a>
+            <div class="navbar-content w-full" id="navbar-content">
+                <div class="toolbar text-center hide" id="toolbar_gallery">
+                    <a data-action="mulit_select"  class="btn btn-square rounded-circle" role="button"><i class="fa fa-check-square-o" aria-hidden="true"></i></a>
+
+                    <a data-action="errorImages"  class="btn btn-square rounded-circle ml-10 hide" style="position: relative;" role="button">
+                         <i class="fa fa-close text-danger"></i>
+                        <span class="badge badge-pill badge-danger d-absolute" style="bottom: -3px;right: -7px;position: absolute;padding: 0px 2px;">0</span>
+                    </a>
+
+                    <div class="dropdown with-arrow ml-10">
+                      <a class="btn ml-10 btn-square rounded-circle" data-toggle="dropdown" type="button" id="..." aria-haspopup="true" aria-expanded="false">
+                       <i class="fa fa-sort " aria-hidden="true"></i>
+                      </a>
+                      <div class="dropdown-menu dropdown-menu-center w-300 text-center ml-10" aria-labelledby="...">
+                        <div class="custom-radio d-inline-block mr-10"> 
+                          <input data-checkbox="sort_random" type="radio" id="radio-random" name="radio-sort" >
+                          <label for="radio-random">乱序</label>
+                        </div>
+                        <div class="custom-radio d-inline-block mr-10"> 
+                          <input data-checkbox="sort_normal" type="radio" id="radio-sortNormal" name="radio-sort" checked>
+                          <label for="radio-sortNormal">正序</label>
+                        </div>
+                        <div class="custom-radio d-inline-block mr-10"> 
+                          <input data-checkbox="sort_reverse" type="radio" id="radio-sortReverse" name="radio-sort">
+                          <label for="radio-sortReverse">反序</label>
+                        </div>
+                      </div>
+                    </div>
+
+                </div>
+                <div class="toolbar text-right hide" id="toolbar_pic">
+                    <i class="fa fa-ellipsis-v" data-action="switchImageTools" aria-hidden="true"></i>
+                    <div id="toolbar_pic_items" style="display: none;">
+                        <i class="border-right mr-10 ml-0"></i>
+                        <i class="fa fa-arrows-h" data-action="flipX" aria-hidden="true"></i>
+                        <i class="fa fa-arrows-v" data-action="flipY" aria-hidden="true"></i>
+                        <i class="fa fa-undo" data-action="rotateLeft" aria-hidden="true"></i>
+                        <i class="fa fa-repeat" data-action="rotateRight" aria-hidden="true"></i>
+                        <i class="fa fa-circle-o-notch" data-action="resetViewer" aria-hidden="true"></i>
+                        <i class="border-right mr-10 ml-0"></i>
+                        <i class="fa fa-pencil-square-o" data-action="markImage" aria-hidden="true"></i>
+                        <div class="dropdown text-right">
+                            <i data-toggle="dropdown" class="fa fa-link" aria-hidden="true"></i>
+                            <div class="dropdown-menu dropdown-menu-right  w-300">
+                                <input id="detail_link" type="text" class="form-control" placeholder="url" onkeydown="">
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-content">
+                                    <button class="btn btn-block btn-primary" data-action="sell_delete,trick1" type="button">
+                                        <i class="fa fa-external-link" data-action="openLink" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                         <i class="border-right mr-10 ml-0"></i>
+                        <i class="fa fa-trash-o text-danger" aria-hidden="true"></i>
+                    </div>
+                </div>
+                <div class="mr-10" id="toolbar_right">
+                    <div id="badge_cd" class="mr-10">
+                        <span data-action="history_newNote" class="badge badge-primary badge-pill">00:00</span>
+                        <button class="btn btn-success ml-10 hide" data-action="history_save"><i class="fa fa-check" aria-hidden="true"></i></button>
+                    </div>
+                     <div class="dropdown dropleft hide" id="dropdown_more" >
+                        <button class="btn" data-toggle="dropdown" ><i class="fa fa-ellipsis-h" aria-hidden="true"></i></button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item"><span data-action="timer_start">计时</span><span data-action="history_view" class="badge badge-pill badge-primary ml-10 hide">0</span></a>
+                            <a class="dropdown-item" data-action="tagImage">标签</a>
+                            <a class="dropdown-item" data-action="markImage">备注</a>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-content">
+                                <button class="btn btn-block btn-danger" data-action="img_delete" type="button">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="traffic">
+                        <div style="background-color: #55efc4" data-action="minSize"></div>
+                        <div style="background-color: #ffeaa7" data-action="maxSize"></div>
+                        <div style="background-color: #ff7675" data-action="close"></div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- 
+     <div class="dropdown dropleft with-arrow">
+                             <img id='img_user' src="res/user.jpg" class="rounded-circle user-icon" alt="user" data-toggle="dropdown" type="button" aria-haspopup="true" aria-expanded="false">
+                        <div class="dropdown-menu" aria-labelledby="img_user">
+                            <a class="dropdown-item">再接続</a>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-content">
+                                <button class="btn btn-block" type="button">ログインアウト</button>
+                            </div>
+                        </div>
+                    </div>
+
+         -->
+        <div class="sidebar-overlay" onclick="halfmoon.toggleSidebar()"></div>
+        <div class="sidebar " style="overflow: hidden;">
+            <div class="sidebar-menu " >
+                <div class="sidebar-content">
+                    <input type="text" class="form-control" placeholder="Search">
+                </div>
+                <h5 class="sidebar-title">Database</h5>
+                <div class="sidebar-divider"></div>
+                <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value="{}">
+                    <span class="sidebar-icon">
+                        <i class="fa fa-inbox" aria-hidden="true"></i>
+                    </span>
+                    <span>全部</span>
+                </a>
+                <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"tag_cnt":"data.t && data.t.length == 0"}'>
+                    <span class="sidebar-icon">
+                        <i class="fa fa-file-photo-o" aria-hidden="true"></i>
+                    </span>
+                    <span>未分类</span>
+                </a>
+                <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"tag_array":"data.t && data.t.searchArray([`未完善`])"}'>
+                    <span class="sidebar-icon">
+                        <i class="fa fa-question" aria-hidden="true"></i>
+                    </span>
+                    <span>未完善</span>
+                </a>
+                <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"tag_array":"data.t && data.t.searchArray([`临摹`])"}'>
+                    <span class="sidebar-icon">
+                        <i class="fa fa-question" aria-hidden="true"></i>
+                    </span>
+                    <span>临摹</span>
+                </a>
+                <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"url":"data.i.startsWith(`http`)"}'>
+                    <span class="sidebar-icon">
+                        <i class="fa fa-question" aria-hidden="true"></i>
+                    </span>
+                    <span>网络图片</span>
+                </a>
+               <!--  <a class="sidebar-link sidebar-link-with-icon" data-action="tag_list">
+                    <details class="collapse-panel w-full" open>
+                      <summary class="ml-15">
+                            <i class="fa fa-hashtag" aria-hidden="true"></i>
+                        <span>标签</span>
+                      </summary>
+                      <div class="collapse-content mt-10">
+
+                      </div>
+                    </details>
+
+
+                </a> -->
+                <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"pratice":1}'>
+                    <span class="sidebar-icon">
+                        <i class="fa fa-history" aria-hidden="true"></i>
+                    </span>
+                    <span>最近</span>
+                </a>
+                <br>
+                <h5 class="sidebar-title">Folder
+                    <i class="fa fa-plus float-right mt-5" data-action="newFolder" aria-hidden="true"></i>
+                </h5>
+                <div class="sidebar-divider"></div>
+                <div id="folders" style="max-height: 300px;overflow-y: auto;overflow-x: : hide;"></div>
+                <div class="dropdown dropup" style="position: absolute;bottom: 30px;right: 20px;">
+                    <div id="serverStatus" class="bg-success w-20 h-20" style="position: absolute;bottom: 5px;right: -4px;height: 12px;width: 12px;border-radius: 50%;"></div>
+
+                    <img id='img_user' src="img/user.jpg" class="rounded-circle user-icon" data-toggle="dropdown" type="button" aria-haspopup="true" aria-expanded="false">
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="img_user">
+                        <a class="dropdown-item" data-action="localFolder_list">本地文件夹</a>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-content">
+                            <button class="btn btn-block btn-primary" type="button" data-action="downloadUnsavedImages">本地化图片</button>
+                            <button class="btn btn-block btn-secondary mt-10" type="button" data-action="downloadData">下载配置</button>
+                            <button class="btn btn-block btn-danger mt-10" type="button" data-action="resetData">清除緩存</button>
+                            <div class="custom-switch mt-10">
+                                <input type="checkbox" id="checkbox-nomedia" value="" data-checkbox="nomedia">
+                                <label for="checkbox-nomedia">隐藏图片</label>
+                            </div>
+                            <div class="custom-switch mt-10">
+                                <input type="checkbox" id="checkbox-debug" value="" data-checkbox="debug">
+                                <label for="checkbox-debug">调试</label>
+                            </div>
+                            <div class="custom-switch mt-10">
+                                <input type="checkbox" id="checkbox-darkMode" value="" data-checkbox="darkMode">
+                                <label for="checkbox-darkMode">夜间</label>
+                            </div>
+                            <div class="custom-switch mt-10">
+                                <input type="checkbox" id="checkbox-fullScreen" value="" data-checkbox="fullScreen">
+                                <label for="checkbox-fullScreen">全屏</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 侧栏 -->
+        <div id="div_detail" class="hide">
+            <div style="padding-left: 9px;padding-right: 12px;">
+                <div class="group">
+                    <img src="http://127.0.0.1/PicManager/res/2.jpg" style="max-height: 250px;width: 100%;">
+                    <div id="colors" class="mt-10" style="display: flex;"></div>
+                </div>
+                <div class="group row">
+                    <div class="col-8">
+                        <h6>Tags<span id="tag_count" class="badge badge-pill badge-primary ml-10">0</span></h6>
+                    </div>
+                    <div class="col text-right">
+                        <i class="fa fa-plus mr-10" data-action="tag_add" aria-hidden="true"></i>
+                        <div class="dropdown text-right mt-15">
+                            <i data-toggle="dropdown" class="fa fa-ellipsis-h" aria-hidden="true"></i>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" data-action="sell_add,trick1">編集</a>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-content">
+                                    <button class="btn btn-block btn-danger" data-action="sell_delete,trick1" type="button">削除</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-hide overflow-y-auto mt-10 mb-10 text-center" id="tags">
+                        <!-- <span class="badge badge-pill">Tag1</span> -->
+                    </div>
+                </div>
+                <div class="group">
+                    <textarea class="form-control" id="textarea_title" style="resize: none;" placeholder="标题"></textarea>
+                </div>
+                <div class="group">
+                    <textarea class="form-control" id="textarea_desc" style="resize: none;" placeholder="注释"></textarea>
+                </div>
+                <div class="group">
+                    <details class="collapse-panel" open>
+                        <summary class="collapse-header">
+                            <span class="hidden-collapse-open">点击打开详细信息</span>
+                            <span class="hidden-collapse-closed">点击关闭详细信息</span>
+                        </summary>
+                        <div class="collapse-content">
+                            <div class="w-full text-center">
+                                <i class="fa fa-star" aria-hidden="true"></i>
+                                <i class="fa fa-star" aria-hidden="true"></i>
+                                <i class="fa fa-star" aria-hidden="true"></i>
+                                <i class="fa fa-star" aria-hidden="true"></i>
+                                <i class="fa fa-star" aria-hidden="true"></i>
+                            </div>
+                            <div class="row mt-0" id="detail_picSize">
+                                <span class="col">尺寸</span>
+                                <span class="col text-right">
+                                    <!-- 1920x1080 --></span>
+                            </div>
+                            <div class="row mt-0" id="detail_fileSize">
+                                <span class="col">大小</span>
+                                <span class="col text-right">
+                                    <!-- 320KB --></span>
+                            </div>
+                            <div class="row mt-0" id="detail_createAt">
+                                <span class="col">创建于</span>
+                                <span class="col text-right">
+                                    <!-- 2022/1/21 10:30 --></span>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+        <div class="content-wrapper">
+            
+            <div id="subContent_gallery" class="subContent">
+                <div id="gallery" class="gallery">
+                    <div id="sidebar-right-hover"></div>
+                    <div id="gallery_list"></div>
+                </div>
+            </div>
+            <div id="subContent_detail" class="subContent">
+                <div id="imageEdit">
+                    <img src="">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/pinyin.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/setting.js"></script>
+    <script src="js/background-blur.min.js"></script>
+    <script src="js/mobiscrollHelper.js"></script>
+    <script src="js/imageRule.js"></script>
+    <script src="js/until.js"></script>
+    <script src="js/md5.js"></script>
+    <script src="js/mobiscroll.custom-3.0.0-beta6.min.js"></script>
+    <script src="js/viewer.min.js"></script>
+    <script src="js/fastclick.min.js"></script>
+    <script src="js/halfmoon.min.js"></script>
+    <script src="js/imagesloaded.pkgd.min.js"></script>
+    <script src="js/isotope.pkgd.js"></script>
+    <script src="js/lrz.bundle.js"></script>
+    <script src="js/lazyload.min.js"></script>
+    <script src="js/cd.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/autojs.js"></script>
+    <script src="js/page.js"></script>
+    <script src="js/imageLoader.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/mark.js"></script>
+    <script src="js/tag.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/rpg.js"></script>
+    <script src="js/site.js"></script>
+</body>
+
+</html>
