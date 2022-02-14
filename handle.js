@@ -1,8 +1,58 @@
 const path = require('path')
 const images = require('images')
-const http = require('http')
 const fs = require('fs')
 const crypto = require('crypto')
+const request = require('request');
+
+var i = 0;
+
+
+function downloadFile(opts) {
+    var received_bytes = 0;
+    var total_bytes = 0;
+    var progress = 0;
+    var opt = {
+        method: 'GET',
+        url: opts.url,
+        timeout: 15000,
+        // headers:{
+        //     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36 Edg/97.0.1072.76',
+        // }
+    }
+    if (['pinimg.com/'].some((url) => {
+            return opts.url.indexOf(url) != -1;
+        })) {
+        opt.proxy = 'http://127.0.0.1:1080';
+    }
+    var req = request(opt);
+    var fileBuff = [];
+    req.on('data', function(chunk) {
+        received_bytes += chunk.length;
+        fileBuff.push(Buffer.from(chunk));
+        var newProgress = parseInt(received_bytes / total_bytes * 100);
+        if (newProgress != progress) {
+            progress = newProgress;
+            opts.progress && opts.progress(progress);
+        }
+    });
+    req.on('end', function() {
+        var totalBuff = Buffer.concat(fileBuff);
+        if (opts.saveTo) {
+            files.createWithDirs(path.dirname(opts.saveTo));
+            fs.appendFile(opts.saveTo, totalBuff, (err) => opts.complete && opts.complete(err));
+        } else {
+            opts.complete && opts.complete(null, totalBuff.toString())
+        }
+    });
+    req.on('response', function(data) {
+        total_bytes = parseInt(data.headers['content-length']);
+    });
+    req.on('error', function(e) {
+        opts.complete && opts.complete(e);
+    });
+}
+
+
 
 const files = {
     exists: (path) => fs.existsSync(path),
@@ -11,11 +61,10 @@ const files = {
     createWithDirs: (dir) => mkdirsSync(dir),
     write: (file, content) => fs.writeFileSync(file, content),
     getExtension: (file) => path.extname(file).replace('.', ''),
-    // remove: (file) => {fs.rmSync(file)},
-    remove: (file) => console.log('删除文件 ' + file),
+    remove: (file) => {fs.rmSync(file)},
     move: (oldFile, newFile) => {
-        fs.copyFileSync(oldFile, newFile);
-        // fs.renameSync(oldFile, newFile);
+        // fs.copyFileSync(oldFile, newFile);
+        fs.renameSync(oldFile, newFile);
         return fs.existsSync(newFile);
     },
     join: (dir, file) => path.join(dir, file),
@@ -109,42 +158,42 @@ function getFileMd5(file) {
     return hash.digest('hex');
 }
 
+
 function checkUpdate(url, ws) {
     var updated = [];
-    http.get(url + 'listFile.json', (r) => {
-        if (r.statusCode != 200) {
-            sendMsg(ws, {type: 'js', data: `alert1('请求失败!')`})
-            r.resume();
-            return;
-        }
-        r.setEncoding('utf8');
-        let rawData = '';
-        r.on('data', (chunk) => { rawData += chunk; });
-        r.on('end', () => {
-            try {
-                console.log(rawData);
-                var json = JSON.parse(rawData);
+    downloadFile({
+        url: url + 'listFile.json',
+        complete: (err, content) => {
+            if (err) {
+                sendMsg(ws, { type: 'js', data: `alert1('请求失败!')` })
+            } else {
+                var json = JSON.parse(content);
                 for (var name in json) {
                     var md5 = json[name];
                     name = name.replace(/\\/g, "/");
-                    var saveTo = './test/'+name;
+                    var saveTo = './' + name;
                     if (files.exists(saveTo) && md5 == getFileMd5(saveTo)) continue;
                     updated.push(name);
                 }
-                sendMsg(ws, {type: 'js', data: `g_autojs.confirmUpdate('${url}', '${updated.join(',')}')`})
-            } catch (e) {
-                console.error(e.message);
+                if (updated.length) {
+                    sendMsg(ws, { type: 'js', data: `g_autojs.confirmUpdate('${url}', '${updated.join(',')}')` })
+                } else {
+                    // sendMsg(ws, {type: 'js', data: `alert1('暂无更新')`})
+                }
             }
-        });
-    });
+        }
+    })
 }
+
 
 
 function updateFiles(url, fileList, ws) {
     var max = fileList.length;
-    if(max == 0) return;
-
-    sendMsg(ws, {type: 'js', data: `g_autojs.showImportProgress(${fileList.length})`})
+    if (max == 0) return;
+    if(url.indexOf('127.0.0.1') != -1){
+        return sendMsg(ws, { type: 'js', data: `alert1('小心失误操作!!!')` });
+    }
+    sendMsg(ws, { type: 'js', data: `g_autojs.showImportProgress(${fileList.length})` })
 
     var err = 0;
     var now = 0;
@@ -153,48 +202,34 @@ function updateFiles(url, fileList, ws) {
         var newProgress = parseInt(++now / max * 100);
         if (newProgress != progress) {
             progress = newProgress;
-            sendMsg(ws, {type: 'js', data: `g_autojs.setImportProgress(${progress})`});
-            if(progress == 100){
-                sendMsg(ws, {type: 'js', data: `confirm1('成功更新 ${max - err} '个文件!'${err ? err + '个文件处理失败!' : ''}是否重载页面?', (value) => value && location.reload()})`});
+            sendMsg(ws, { type: 'js', data: `g_autojs.setImportProgress(${progress})` });
+            if (progress == 100) {
+                sendMsg(ws, { type: 'js', data: `confirm1('成功更新 ${max - err} 个文件!${err ? err + '个文件处理失败!' : ''}是否重载页面?', (value) => value && location.reload())` });
             }
         }
     }
     for (var name of fileList) {
-        var saveTo = './test/'+ name;
-        http.get(url + name, (r) => {
-            if (r.statusCode != 200) {
-                err++;
+        downloadFile({
+            url: url + name,
+            saveTo: './' + name,
+            // progress: (progress) => {}, // todo 大文件进度提示
+            complete: (err) => {
+                if (err) {
+                    err++;
+                }
                 callback();
-                r.resume();
-            }else{
-                var fileBuff = [];
-                r.on('data', (chunk) => { fileBuff.push(Buffer.from(chunk)); });
-                r.on('end', () => {
-                    try {
-                        var totalBuff = Buffer.concat(fileBuff);
-                        fs.appendFile(saveTo, totalBuff, function(err) {
-                            callback();
-                            if (err){
-                                err++;
-                            }
-                        });
-                    } catch (e) {
-                        console.error(e.message);
-                    }
-                });
             }
-            
         });
-
     }
 }
 
 function sendMsg(client, msg) {
-    if (typeof (msg) == 'object') msg = JSON.stringify(msg);
+    if (typeof(msg) == 'object') msg = JSON.stringify(msg);
     client.send(msg);
 }
 
 // 检测目录图片改动
+
 function checkFolderUpdate(resPath, paths, ws) {
     // files.removeDir('./savePics');
     var imgs = [];
@@ -207,8 +242,9 @@ function checkFolderUpdate(resPath, paths, ws) {
     if (max > 0) {
         var saved = 0;
         var progress = 0;
-        sendMsg(ws, {type: 'js', data: `g_autojs.showImportProgress(${max})`})
+        sendMsg(ws, { type: 'js', data: `g_autojs.showImportProgress(${max})` })
         var err = 0;
+        var res = [];
         for (var img of imgs) {
             var path = resPath + '/' + img.m.substr(0, 1) + '/';
             if (!files.isDir(path)) {
@@ -227,16 +263,17 @@ function checkFolderUpdate(resPath, paths, ws) {
             }
             // 缩略图
             resizeImage(newFile);
-
             img.f = ext; // 不需要文件路径，只保留后缀名
+            res.push(img);
             var newProgress = parseInt(++saved / max * 100);
             if (newProgress != progress) {
                 progress = newProgress;
-                sendMsg(ws, {type: 'js', data: `g_autojs.setImportProgress(${progress})`})
+                sendMsg(ws, { type: 'js', data: `g_autojs.setImportProgress(${progress})` })
             }
         }
-        sendMsg(ws, {type: 'js', data: `alert1('成功导入 ${max - err} '张图片!'${err ? err + '个文件处理失败!' : ''}')`});
-        sendMsg(ws, {type: 'importLocalImages', data: JSON.stringify(imgs)})
+        //sendMsg(ws, { type: 'js', data: `alert1('成功导入 ${max - err} 张图片!${err ? err + '个文件处理失败!' : ''}')` });
+        console.log(res);
+        sendMsg(ws, { type: 'importLocalImages', data: JSON.stringify(res) })
     }
 }
 

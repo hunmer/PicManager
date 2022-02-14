@@ -169,16 +169,16 @@ var g_socket = {
             }
             g_socket.query = [];
 
-            // g_socket.send({
-            // 	type: 'checkFiles',
-            // 	resPath: g_config.clientData.imgPath,
-            // 	paths: g_config.clientData.paths
-            // });
-
             g_socket.send({
-            	type: 'checkUpdate',
-            	url: 'http://127.0.0.1/PicManager/',
+            	type: 'checkFiles',
+            	resPath: g_config.clientData.imgPath,
+            	paths: g_config.clientData.paths
             });
+
+            // g_socket.send({
+            // 	type: 'checkUpdate',
+            // 	url: 'http://127.0.0.1/PicManager/',
+            // });
         }
 
         socket.onmessage = (e) => {

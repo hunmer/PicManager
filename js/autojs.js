@@ -191,6 +191,10 @@ var g_autojs = {
         registerAction('dialogGallery_img_click', (dom, action, params) => {
             $(dom).toggleClass('selected');
         });
+         registerAction('checkUpdate', (dom, action, params) => {
+           g_autojs.checkUpdate();
+        });
+        
         registerAction('localFolder_list', (dom, action, params) => {
             var modal = modalOpen({
                 id: 'modal-custom',
@@ -397,13 +401,21 @@ var g_autojs = {
         g_cache.updateProgress && g_cache.updateProgress.setProgress(current);
     },
     checkUpdate: () => {
-        prompt1('更新地址', g_config.updateUrl || '').then((url) => {
-            if (!isEmpty(url)) {
-                g_config.updateUrl = url;
-                local_saveJson('config', g_config);
-                g_autojs.log('checkUpdate', url);
-            }
-        })
+        if(isApp()){
+           g_autojs.log('checkUpdate');
+        }else
+        if(isWindows()){
+            prompt1('更新地址', g_config.updateUrl || '').then((url) => {
+                if (!isEmpty(url)) {
+                    g_config.updateUrl = url;
+                    local_saveJson('config', g_config);
+                    g_socket.send({
+                     type: 'checkUpdate',
+                     url: url,
+                    });
+                }
+            })
+        }
     }
 }
 

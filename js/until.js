@@ -4,7 +4,7 @@ var g_localKey = 'picManager_';
 var g_cache = {
     isPC: IsPC(),
     isApp: isApp(),
-    isWindow: isWindow(),
+    isWindows: isWindows(),
     closeCustom: () => {},
     closeCustom1: () => {},
 }
@@ -392,7 +392,7 @@ function isApp(){
     return navigator.userAgent.indexOf('isApp') != -1;
 }
 
-function isWindow(){
+function isWindows(){
     return navigator.userAgent.indexOf('isElectron') != -1;
 }
 

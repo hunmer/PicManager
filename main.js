@@ -23,6 +23,10 @@ Menu.setApplicationMenu(null)
 
 var win;
 
+String.prototype.replaceAll = function(s1, s2) {
+    return this.replace(new RegExp(s1, "gm"), s2);
+}
+
 // win.webContents.send('asynchronous-reply', 'whoooooooh!')
 function createWindow() {
     win = new BrowserWindow({
@@ -30,8 +34,8 @@ function createWindow() {
         height: 1000,
         title: 'PicManager',
         frame: false,
-        hasShadow: true,
-        nativeWindowOpen: true,
+        // hasShadow: true,
+        // nativeWindowOpen: true,
         resizable: true,
         webPreferences: {
             webSecurity: false,
@@ -40,7 +44,7 @@ function createWindow() {
         }
     })
 
-    win.loadURL('http://127.0.0.1/PicManager/index.html', {
+    win.loadFile('index.html', {
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64;isElectron) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.50',
     });
 
