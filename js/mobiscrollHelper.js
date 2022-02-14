@@ -1,4 +1,8 @@
 var mobiscrollHelper = {
+
+    init: () => {
+
+    },
     test: () => {
         $(function() {
 
@@ -18,7 +22,7 @@ var mobiscrollHelper = {
             //     buttons: [{
             //         text: _l('确定'),
             //         handler: function(event, instance) {
-                    	
+
             //             console.log(event, instance);
             //         }
             //     }, {
@@ -60,8 +64,47 @@ var mobiscrollHelper = {
         return h + '</select>';
     },
 
+    buildProgress: (opts) => {
+        opts = Object.assign({
+            id: 'progress-demo',
+            title: 'title',
+            max: 100,
+            progress: 0,
+            onProgressChange: (progress) => {},
+            onFinished: () => {},
+        }, opts);
 
+        var dialog = alert1({
+            title: opts.title,
+            html: `
+                <div class="progress h-25" id="${opts.id}">
+                  <div class="progress-bar bg-primary rounded-0" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="${opts.max}">0%</div>
+                </div>
+            `,
+            buttons: ['cancel'],
+        });
+        opts.dialog = dialog;
+        opts.setProgress = function(num) {
+            var progress = parseInt(num / this.max * 100); 
+            if (progress > 100) progress = 100;
+            if (progress < 0) progress = 0;
+            if (progress != this.progress) {
+                this.progress = progress;
+                if (this.onProgressChange(progress) !== false) {
+                    this.dialog.find('.progress-bar').attr('aria-valuenow', progress).html(progress + '%').css('width', progress + '%');
+                    if (progress >= 100) {
+                        if (opts.onFinished() !== false) {
+                            this.dialog.mobiscroll('hide');
+                        }
+                    }
+                }
+            }
+        }
+        return opts;
+    },
+
+  
 }
 
-
+mobiscrollHelper.init();
 mobiscrollHelper.test();

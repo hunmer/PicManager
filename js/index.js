@@ -20,8 +20,9 @@ window.alert1 = function(opts) {
         html: '',
         buttons: ['set'],
     }, opts);
-    buildDialog(opts);
+    return buildDialog(opts);
 }
+
 
 // alert({
 //     html: 'aa',
@@ -51,7 +52,7 @@ window.confirm1 = function(opts, callback) {
             }
         }],
     }, opts);
-    buildDialog(opts);
+    return buildDialog(opts);
 }
 
 // confirm('aa', (value) => {
@@ -74,7 +75,7 @@ window.confirm1 = function(opts, callback) {
 // });
 window.prompt1 = function(opts, callback) {
     if (typeof(opts) != 'object') {
-        opts = { title: opts };
+        opts = { title: opts, html: callback };
     }
     opts = Object.assign({
         title: '请输入',
@@ -94,6 +95,7 @@ window.prompt1 = function(opts, callback) {
             marginBottom: '15px'
         });
     setTimeout(() => $('#textarea_prompt').focus(), 500);
+    return opts.dialog;
 
 }
 
@@ -114,7 +116,6 @@ function buildDialog(opts) {
         headerText: opts.title,
         buttons: opts.buttons,
     });
-    dialog.parents('.mbsc-fr-w').addClass('bg-dark p-10'); // bootstarp 莫名透明
     return dialog;
 }
 
@@ -481,7 +482,7 @@ function mobiscroll_(selector, type, opts, show = true) {
     }, opts));
     if (show) dom.mobiscroll('show')[0];
     setTimeout(() => {
-        $('.mbsc-fr-w').addClass('bg-dark p-10');
+        $('.mbsc-fr-w').addClass('p-10 ' + (g_config.darkMode ? 'bg-dark' : 'bg-white'));
     }, 50);
     // bootstarp 
     return dom;

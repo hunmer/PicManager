@@ -3,10 +3,15 @@ var g_autojs = {
     notif_id: 0,
     a_notif: {},
     log: (type, msg) => {
-        console.log(JSON.stringify({
+        var data = {
             type: type,
             msg: msg
-        }));
+        }
+        if (typeof(_api) != 'undefined') {
+            _api.method(data);
+        } else {
+            console.log(JSON.stringify(data));
+        }
     },
     setOption: (key, value) => {
         g_autojs.log('setOption', { key: key, value: value });
@@ -170,12 +175,10 @@ var g_autojs = {
                 },
             }
         }
-        g_autojs.log('init', JSON.stringify({
-            btns: g_autojs.data.btns,
-            menu: g_autojs.data.menu,
-        }));
+
+
         registerAction('localFolder_remove', (dom, action, params) => {
-            var path = $(dom).prev().html();
+            var path = $(dom).parent().prev().html();
             var i = g_config.clientData.paths.indexOf(path);
             if (i != -1) {
                 g_config.clientData.paths.splice(i, 1);
@@ -225,6 +228,7 @@ var g_autojs = {
                         </tbody>
                     </table>
                     <div class="text-right mt-10">
+                        <a class="btn btn-primary" onclick="g_autojs.log('localFolder_set')" role="button">储存目录</a>
                         <a class="btn btn-primary" onclick="g_autojs.log('localFolder_add')" role="button">新增</a>
                       </div>
             `,
@@ -233,20 +237,23 @@ var g_autojs = {
                 }
             });
         });
-
-        g_autojs.log('localFolder_list', JSON.stringify(g_config.clientData.paths));
-        // var a = [];
-        // for (var i = 1; i < 10; i++) a.push('http://127.0.0.1/PicManager/res/' + i + '.jpg')
-        // g_autojs.addImgFromUrls(a);
+        // 安卓
+        if (isApp()) {
+            g_autojs.log('localFolder_list', JSON.stringify(g_config.clientData.paths));
+            g_autojs.log('init', JSON.stringify({
+                btns: g_autojs.data.btns,
+                menu: g_autojs.data.menu,
+            }));
+        }
     },
 
     addImgFromUrls: (urls, data) => {
         g_autojs.importImages_data = data;
         if (typeof(urls) != 'object') urls = [urls];
         var showing = isModalOpen('modal-custom', 'addImgFromUrl');
-        if(urls.length == 1 && !showing){
+        if (urls.length == 1 && !showing) {
             // 只导入一张不打开对话窗口
-           return g_database.importImagesFromUrls(urls);
+            return g_database.importImagesFromUrls(urls);
         }
         var h = '';
         for (var url of urls) {
@@ -322,6 +329,7 @@ var g_autojs = {
 
     },
     localFolder_add: (path) => {
+        path = path.replaceAll1('**', '\\');
         if (g_config.clientData.paths.indexOf(path) == -1) {
             g_config.clientData.paths.push(path);
             local_saveJson('config', g_config);
@@ -330,8 +338,73 @@ var g_autojs = {
         } else {
             alert('目录已存在');
         }
-    }
+    },
+    localFolder_set: (path) => {
+        path = path.replaceAll1('**', '\\');
+        g_config.clientData.imgPath = path;
+        local_saveJson('config', g_config);
+        location.reload();
+    },
+    showImportProgress: (max) => {
+        g_cache.importProgress = mobiscrollHelper.buildProgress({
+            title: '导入图片中',
+            max: max,
+            onFinished: function() {
+                // 由于没有传入数据。这里不做处理
+                console.log('finish');
+            }
+        });
+    },
+    setImportProgress: (current) => {
+        g_cache.importProgress && g_cache.importProgress.setProgress(current);
+    },
 
+    confirmUpdate: (url, files) => {
+        if (typeof(files) == 'string') files = files.split(",");
+        var max = files.length;
+        if (max == 0) return alert1('无更新!');
+        alert1({
+            title: '可以更新 ' + max + ' 个文件',
+            html: (() => {
+                var h = '';
+                for(var file of files){
+                    h += `<span class="badge badge-primary m-5">${file}</span>`;
+                }
+                return h;
+            })(),
+            buttons: [{
+                text: _l('更新'),
+                handler: function(event) {
+                    g_socket.send({
+                        type: 'updateFiles',
+                        url: url,
+                        files: files,
+                    });
+                }
+            }, 'cancel']
+        })
+    },
+    showUpdateProgress: (max) => {
+        g_cache.updateProgress = mobiscrollHelper.buildProgress({
+            title: '更新中',
+            max: max,
+            onFinished: function() {
+                location.reload();
+            }
+        });
+    },
+    setUpdateProgress: (current) => {
+        g_cache.updateProgress && g_cache.updateProgress.setProgress(current);
+    },
+    checkUpdate: () => {
+        prompt1('更新地址', g_config.updateUrl || '').then((url) => {
+            if (!isEmpty(url)) {
+                g_config.updateUrl = url;
+                local_saveJson('config', g_config);
+                g_autojs.log('checkUpdate', url);
+            }
+        })
+    }
 }
 
 function getElementsUrl(elements) {

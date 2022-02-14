@@ -185,7 +185,6 @@ var g_gallery = {
                     handler: 'cancel'
                 }],
             });
-            dialog.parents('.mbsc-fr-w').addClass('bg-dark p-10'); // bootstarp 莫名透明
             g_database.folder_rm = {
                 folder: d.data('folder'),
                 dialog: dialog,

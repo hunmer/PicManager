@@ -1,5 +1,27 @@
 var g_setting = {
     init: function() {
+        if(g_cache.isApp){
+            $(`
+                <div class="custom-switch mt-10">
+                    <input type="checkbox" id="checkbox-nomedia" value="" data-checkbox="nomedia">
+                    <label for="checkbox-nomedia">隐藏图片</label>
+                </div>
+                <div class="custom-switch mt-10">
+                    <input type="checkbox" id="checkbox-debug" value="" data-checkbox="debug">
+                    <label for="checkbox-debug">调试</label>
+                </div>
+                
+                <div class="custom-switch mt-10">
+                    <input type="checkbox" id="checkbox-fullScreen" value="" data-checkbox="fullScreen">
+                    <label for="checkbox-fullScreen">全屏</label>
+                </div>
+                `).appendTo('[aria-labelledby="img_user"]');
+        }else
+        if(g_cache.isWindow){
+            
+        }else{
+            // web
+        }
         this.initConfig();
     },
     setDarkMode: function(dark) {

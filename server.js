@@ -63,6 +63,7 @@ if (isAndroid) {
     $autojs.keepRunning();
 } else {
     images = require("images");
+    var handle = require('./handle.js');
 }
 
 const downloader = require('./downloader.node.js');
@@ -92,6 +93,15 @@ wss.on('connection', function connection(ws) {
         var data = JSON.parse(msg);
         console.log(data);
         switch (data.type) {
+            case 'checkUpdate':
+                handle.checkUpdate(data.url, ws);
+                break;
+            case 'updateFiles':
+                handle.updateFiles(data.url, data.files, ws);
+                break;
+            case 'checkFiles':
+                handle.checkFolderUpdate(data.resPath, data.paths, ws);
+                break;
             case 'downloadImages':
                 downloader.setTasksFromDatas(data.data, (img, md5, d) => {
                     broadcastMsg({ type: 'downloadFinish', oldMd5: md5, newMd5: d.newMd5, ext: d.ext });

@@ -141,6 +141,13 @@ var g_socket = {
         	}
         })
 
+        g_socket.registerRevice('js', (data) => {
+            eval(data.data);
+        });
+        g_socket.registerRevice('importLocalImages', (data) => {
+        	g_database.importLocalImages(data.data);
+        });
+
         g_socket.registerRevice('msg', (data) => {
             alert(data.msg);
         });
@@ -161,6 +168,17 @@ var g_socket = {
                 g_socket.connection.send(msg);
             }
             g_socket.query = [];
+
+            // g_socket.send({
+            // 	type: 'checkFiles',
+            // 	resPath: g_config.clientData.imgPath,
+            // 	paths: g_config.clientData.paths
+            // });
+
+            g_socket.send({
+            	type: 'checkUpdate',
+            	url: 'http://127.0.0.1/PicManager/',
+            });
         }
 
         socket.onmessage = (e) => {

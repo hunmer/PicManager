@@ -4,6 +4,7 @@ var g_localKey = 'picManager_';
 var g_cache = {
     isPC: IsPC(),
     isApp: isApp(),
+    isWindow: isWindow(),
     closeCustom: () => {},
     closeCustom1: () => {},
 }
@@ -50,7 +51,7 @@ var g_config = local_readJson('config', {
     nomedia: true,
     clientData: {
         paths: [],
-        imgPath:'F:/AppServ/www/PicManager/savePics', // 默认PC端位置
+        imgPath:'./savePics', // 默认PC端位置
     },
     folderGrpups: {
         分类1: ['Folder1'],
@@ -59,7 +60,7 @@ var g_config = local_readJson('config', {
 });
 if(!g_config.clientData.imgPath){
     // todo 咨询图片保存目录
-    g_config.clientData.imgPath = 'F:/AppServ/www/PicManager/savePics';
+    g_config.clientData.imgPath = './savePics';
 }
 
 if(g_config.debug) {
@@ -77,6 +78,15 @@ if(g_config.debug) {
 String.prototype.replaceAll = function(s1, s2) {
     return this.replace(new RegExp(s1, "gm"), s2);
 }
+
+String.prototype.replaceAll1 = function(s1, s2) {
+    var str = this;
+    while(str.indexOf(s1) != -1){
+        str = str.replace(s1, s2);
+    }
+    return str;
+}
+
 
 Array.prototype.searchArray = function(arr) {
    var self = this;
@@ -365,6 +375,10 @@ function toTime(s) {
     return a[0] * 3600 + a[1] * 60 + a[2] * 1;
 }
 
+function isEmpty(a){
+    if(typeof(a) == 'string') return a.length == 0;
+    return a;
+}
 
 function removeAnimation(d) {
     var x = d.attr('animated');
@@ -376,6 +390,10 @@ function removeAnimation(d) {
 
 function isApp(){
     return navigator.userAgent.indexOf('isApp') != -1;
+}
+
+function isWindow(){
+    return navigator.userAgent.indexOf('isElectron') != -1;
 }
 
 function IsPC() {

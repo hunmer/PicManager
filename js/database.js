@@ -212,7 +212,6 @@ var g_database = {
 			        //     handler: 'cancel'
 			        // }],
 			    });
-        	dialog.parents('.mbsc-fr-w').addClass('bg-dark p-10'); // bootstarp 莫名透明
         	g_database.folder_rm = {
         		folder: d.data('folder'),
         		dialog: dialog,
@@ -313,6 +312,7 @@ var g_database = {
 
     // 从手机导入图片
     importLocalImages: (datas) => {
+        console.log(datas);
     	if(typeof(datas) == 'string') datas = JSON.parse(datas);
     	var r = {};
         //var overwrite = confirm('是否完全覆盖!?') && confirm('你确定吗?图片的附带数据(标签..)会被清空!!!');
@@ -413,7 +413,11 @@ var g_database = {
      getImageUrl: (md5, url, thumb = true) => {
         // url 如果是文件格式 则是本地文件
         if(!url) url = g_database.getImgData(md5).i;
-       return ['jpg', 'png'].indexOf(url) != -1 ? 'file:///' + g_config.clientData.imgPath + '/' + md5.substr(0, 1) + '/' + md5 + '.' +url+ (thumb ? '.thumb' : '') : getImageUrl(url, thumb);
+        if(['jpg', 'png'].indexOf(url) != -1 && location.protocol == 'file:'){
+            return g_config.clientData.imgPath + '/' + md5.substr(0, 1) + '/' + md5 + '.' +url+ (thumb ? '.thumb' : '');
+        }
+
+       return getImageUrl(url, thumb);
     },
 
     // 加载图片信息

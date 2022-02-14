@@ -1,19 +1,42 @@
 {
-  "name": "picmanager",
+  "name": "electron-quick-start",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "description": "A minimal Electron application",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "chcp 65001 && electron .",
+    "server": "chcp 65001 && node server.js",
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
+    "build": "electron-builder"
   },
-  "author": "",
-  "license": "ISC",
+  "repository": "https://github.com/electron/electron-quick-start",
+  "keywords": [
+    "Electron"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron-builder": "^22.10.5"
+  },
   "dependencies": {
+    "concurrently": "^7.0.0",
     "crypto": "^1.0.1",
     "express": "^4.17.2",
     "formidable": "^2.0.1",
     "images": "^3.2.3",
+    "node-storage": "^0.0.9",
     "request": "^2.88.2",
     "ws": "^8.4.2"
+  },
+  "build": {
+    "productName": "daily",
+    "appId": "com.neysummer2000.daily",
+    "copyright": "neysummer2000",
+    "directories": {
+      "output": "build"
+    },
+    "win": {
+      "icon": "favicon.ico"
+    }
   }
 }
