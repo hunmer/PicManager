@@ -1,33 +1,147 @@
-// "nodejs";
-// const engines = require("engines");
-// console.log(engines.myEngine().execArgv);
-// const serverEngineId = engines.myEngine().execArgv.serverEngineId;
-// const serverEngine = engines.getRunningEngines().find(e => e.id === serverEngineId);
-// if (!serverEngine) {
-//     console.error('请运行文件"main.js"，而不是直接启动本代码');
-//     return;
-// }
-// $autojs.keepRunning();
 
-// // 监听命令消息
-// engines.myEngine().on('command', (command) => {
-//     // console.log('nodejs: ', command);
-//     // serverEngine.emit('reply', command);
-// });
 
 // -------------------------------------
-const express = require('express');
-const server = express();
+var g_cache = {
+    imgs: {},
+    reqs: {}
+}
+var os = require('os');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const isAndroid = os.platform() == 'android';
+var images;
+var serverEngine;
+if (isAndroid) {
 
-server.use(express.json({limit: '50mb'}));
-server.use(express.urlencoded({ extended: true,limit: '50mb' }));
+    const engines = require("engines");
+    const serverEngineId = engines.myEngine().execArgv.serverEngineId;
+    serverEngine = engines.getRunningEngines().find(e => e.id === serverEngineId);
+    // if (!serverEngine) {
+    //     console.error('请运行文件"main.js"，而不是直接启动本代码');
+    //     return;
+    // }
 
-function registerApi(url, type, callback){
-    server[type](url, callback);
+    // if (serverEngine) {
+    //     serverEngine.emit('reply', {
+    //         type: 'resizeImage',
+    //         file: file
+    //     });
+    // }
+
+    images = require("image");
+
+    // const notification = require('notification');
+    // const app1 = require('app');
+    const settings = require('settings');
+    settings.stableMode.value = true;
+    settings.stopAllOnVolumeUp.value = false;
+
+    // showCounterNotification('server is runing...', 'click to close');
+    // function showCounterNotification(title, text) {
+    //     notification.notify(1002, {
+    //         contentTitle: title,
+    //         contentText: text,
+    //         ticker: "server is running",
+    //         silent: true,
+    //         onContentClick: () => {
+    //             notification.cancel(1002);
+    //         },
+    //         onDelete: () => {
+    //             // 关闭浏览器
+    //             process.exit();
+    //         },
+    //         actions: [
+    //             {
+    //                 title: "test",
+    //                 onClick: () => {
+    //                 },
+    //             }
+    //         ],
+    //     });
+    // }
+    $autojs.keepRunning();
+} else {
+    images = require("images");
 }
 
-function echoJson(req, res, data) {
-    // console.log(req.params, req.body);
+const downloader = require('./downloader.node.js');
+var ifaces = os.networkInterfaces();
+var ip = '127.0.0.1';
+var port = 41596;
+Object.keys(ifaces).forEach(function (ifname) {
+    ifaces[ifname].forEach(function (iface) {
+        if ('IPv4' == iface.family && iface.internal == false && iface.address.substr(0, 8) == '192.168.') {
+            ip = iface.address;
+            return;
+        }
+    });
+});
+
+function sendMsg(client, msg) {
+    if (typeof (msg) == 'object') msg = JSON.stringify(msg);
+    client.send(msg);
+}
+const formidable = require('formidable');
+var WebSocketServer = require('ws').Server;
+var wss = new WebSocketServer({ port: 41595 });
+wss.on('connection', function connection(ws) {
+    // console.log(ws);
+    //sendMsg(ws, {type: 'msg', msg: 'welcome'});
+    ws.on('message', function incoming(msg) {
+        var data = JSON.parse(msg);
+        console.log(data);
+        switch (data.type) {
+            case 'downloadImages':
+                downloader.setTasksFromDatas(data.data, (img, md5, d) => {
+                    broadcastMsg({ type: 'downloadFinish', oldMd5: md5, newMd5: d.newMd5, ext: d.ext });
+                });
+                break;
+            case 'listRecent':
+                var key = data.key;
+                if (g_cache.reqs[key]) {
+                    echoJson(g_cache.reqs[key], data.data);
+                    delete g_cache.reqs[key];
+                }
+                break;
+        }
+    })
+});
+
+function broadcastMsg(msg) {
+    if (typeof (msg) == 'object') msg = JSON.stringify(msg);
+    wss.clients.forEach(function each(client) {
+        client.send(msg);
+    });
+}
+
+console.log('Websocket running at ws://' + ip + ':41595');
+
+const express = require('express');
+const { exit } = require('process');
+const app = express();
+// TODO 其他目录？
+app.use(express.static(__dirname));
+
+// const logger = (req, res, next) => {
+//   console.log(
+//     `请求的ip地址是：${req.ip}, 请求的路径是：${
+//       req.url
+//     }`);
+//   console.log(req);
+//   next();
+// };
+// app.use(logger);
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+function registerApi(url, type, callback) {
+    app[type](url, callback);
+}
+
+function echoJson(res, data) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data));
 }
@@ -40,8 +154,140 @@ api/folder/listRecent
 (x)api/preferences/collect/off
 */
 
+
+// 获取服务器IP
+registerApi('/getServerIp', 'get', (req, res) => {
+   echoJson(res, { ip : getServerIp() });
+});
+
+// 上传临摹照片到局域网的其他设备
+registerApi('/uploadPhotofromNetwork', 'post', (req, res) => {
+   broadcastMsg({type: 'uploadPhotofromNetwork', data: req.body.data});
+   echoJson(res, { msg : '上传成功!' });
+
+});
+
+// // 上传照片到局域网的其他设备
+// registerApi('/uploadPhotofromNetwork', 'post', (req, res) => {
+//    var form = formidable({
+//     uploadDir: __dirname
+//    });
+//     form.parse(req, function (err, fields, files) {
+//         var data = files.fileUpload;
+//        // console.log(fields, data);
+//       fs.rename(data.filepath, './'+data.originalFilename, function (err) {
+//         if (err) throw err;
+//         echoJson(res, { success : '上传成功!' });
+//       });
+//     });
+// });
+
+
+
+// 保存
+registerApi('/get', 'get', (req, res) => {
+    var key = req.query.key;
+    if (key && g_cache.imgs[key]) {
+        echoJson(res, g_cache.imgs[key]);
+        delete g_cache.imgs[key];
+    } else {
+        echoJson(res, { type: 'msg', data: '没有找到资源!' });
+    }
+});
+
+function mkdirsSync(dirname) {
+    if (fs.existsSync(dirname)) {
+        return dirname;
+    }
+    if (mkdirsSync(path.dirname(dirname))) {
+        fs.mkdirSync(dirname);
+        return dirname;
+    }
+}
+
+registerApi('/api/item/addFromURLs', 'post', (req, res) => {
+    // items   由多个 item 组成的 array 物件（参考下方说明）
+    // folderId    如果带有此参数，图片将会添加到指定文件夹
+
+    // url 必填，欲添加图片链接，支持 http、 https、 base64
+    // name    必填，欲添加图片名
+    // website 图片来源网址
+    // annotation  图片注释
+    // tags    图片标签
+    // modificationTime    图片创建时间，可以用此参数控制添加后在 Eagle 的排列顺序
+    // headers 选填，自定义 HTTP headers 属性，可用来绕过特定网站保护机制
+    echoJson(res, {
+        "status": "success"
+    });
+    saveImages(req.body);
+    
+})
+
+function broadcastData(data){
+    var key = new Date().getTime();
+    g_cache.imgs[key] = data;
+    broadcastMsg({ type: 'data', url: getServerIp()+'/get?key=' + key });
+}
+
+function getServerIp(){
+    return 'http://' + ip + ':' + port;
+}
+
+// 解析来自http的数据
+function saveImages(data){
+    var lists = data.items || [data];
+
+    for(var d of lists){
+        if(!d.src) continue;
+         if (d.src.startsWith('data:image/')) {
+            // base64转图片
+            var bin = new Buffer.from(d.src.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+            var md5 = crypto.createHash("md5WithRSAEncryption").update(bin.toString("binary")).digest("hex");
+            var file = mkdirsSync((isAndroid ? '/sdcard/savePics/' : 'F:/AppServ/www/PicManager/savePics/') + md5.substr(0, 1) + '/') + md5 + '.png';
+
+            fs.writeFileSync(file, bin)
+            d.src = 'png';
+            d.md5 = md5;
+            // 略缩图
+            resizeImage(file);
+        }
+    }
+    broadcastData(data);
+}
+
+function resizeImage(file) {
+    if (isAndroid) {
+
+        if (!fs.existsSync(file)) return;
+        var image = images.readImageSync(file);
+        var w = image.width;
+        var cacheFile = path.dirname(file) + '/cache_' + path.basename(file);
+        images.writeImageSync(image.resizeSync(200, parseInt(200 / w * image.height), 0), cacheFile, 50);
+        if (fs.existsSync(cacheFile)) {
+            fs.renameSync(cacheFile, file + '.thumb');
+        }
+    } else {
+        images(file)
+            .resize(200)
+            .save(file + '.thumb', 'png', {
+                quality: 50
+            });
+    }
+}
+
+// 最近使用文件夹 /api/folder/listRecent
+// GET 取得最近用户使用过的文件夹列表
+registerApi('/api/folder/listRecent', 'get', (req, res) => {
+    var key = new Date().getTime();
+    g_cache.reqs[key] = res;
+    return broadcastMsg({ type: 'listRecent', key: key });
+});
+
+/* 适配eagle插件 */
+
 // 应用版本信息 /api/application/info
 // GET 取得当前运行 Eagle App 的详细信息，通常我们可以透过这个方式判断用户设备是否能够运行某些功能。
+
 registerApi('/api/application/info', 'get', (req, res) => {
     var data = {
         "status": "success",
@@ -53,10 +299,9 @@ registerApi('/api/application/info', 'get', (req, res) => {
             "platform": "darwin"
         }
     };
-    echoJson(req, res, data);
+    echoJson(res, data);
 });
 
-// 保存
 registerApi('/', 'post', (req, res) => {
     // version 2.5.1
     // type    image (save-url,screen capture,import-images)
@@ -72,61 +317,17 @@ registerApi('/', 'post', (req, res) => {
 
     // forceHideCollectModal   true (收藏到目录)
     // images [{"type":"image","width":64,"height":64,"src":"http://127.0.0.1/PicManager/res/user.jpg","title":"user"},{"type":"image","width":1440,"height":1920,"src":"http://127.0.0.1/PicManager/res/1.jpg?t=1642853752862","title":"tag1,tag2"}] (import-images)
-
+    var d = req.body;
+    delete d.version & delete d.extendedTags & delete d.metaAlt & delete d.metaTitle & delete d.metaDescription & delete d.metaTags & delete d.forceHideCollectModal;
     var data = { "appVersion": "2.0.0", "preferences": { "showSubfolderContent": false, "useRetina": false, "language": "zh_CN", "general": { "language": "zh_CN", "showMenuItem": "true", "showSidebarBadge": "true", "autoSelect": "true", "showCollectModal": "false", "showCaptureCollectModal": "false", "IPTC": "false", "enableGPU": "true" }, "habits": { "dblclickSidebarItem": "collapse", "scrollBehavior": "paging", "videoScrollBehavior": "progress", "hoverZoom": "on", "renderBehavior": "non-pixelated", "defaultMode": "preview", "alwaysShowAnnotations": "hover", "transparency": "hide", "rememberLastZoom": "on", "defaultRatio": "auto", "keyspace": "preview", "middleBtn": "openNewWindow", "gifViewer": "off", "doubleclick": "internal", "scrollBehaviorTour": true }, "shortcuts": { "keybinds": { "show.eagle": "", "show.search": "", "zoom.in": "Ctrl + =", "zoom.out": "Ctrl + -", "zoom.actual": "Ctrl + 0", "zoom.fit": "Ctrl + 9", "capture.area": "Ctrl + Alt + E", "capture.window": "", "capture.full": "", "quicksearch": "Ctrl + J", "add.to": "Ctrl + Shift + J", "create.folder": "Ctrl + Shift + N", "create.smartFolder": "Ctrl + Shift + Alt + N", "import.pinterest": "Ctrl + Shift + Alt + P", "import.huaban": "Ctrl + Shift + Alt + H", "import.artstation": "Ctrl + Shift + Alt + S", "open.link": "Ctrl + Shift + O", "toggle.filter": "Ctrl+Shift+F", "open.tagfilter": "Ctrl+Shift+T", "switch.library": "Ctrl+L" } }, "theme": "GRAY", "download": { "queueLength": 5 }, "notification": { "soundEffect": { "enable": "true", "when": { "deleteImage": "true", "deleteFolder": "true", "screencapture": "true", "extension": "true" } }, "notification": { "when": { "screencapture": "true", "extension": "true", "repeatImage": "false", "autoImport": "true" } } }, "sidebar": { "untagged": "true", "unfiled": "true", "recent": "true", "random": "true", "quickAccess": "true", "smartFolder": "true", "folder": "true" }, "filter": { "color": "true", "tags": "true", "folders": "true", "shape": "true", "rating": "true", "type": "true", "date": "true", "mtime": "false", "resolution": "true", "fileSize": "false", "comments": "false", "annotation": "true", "url": "true", "camera": "false", "duration": "true", "bpm": "false", "fontActivated": "false" }, "screencapture": { "autoTagging": { "enable": "true" }, "autoWriteClipboard": "false", "useRetina": "true", "shortcutsEnable": "true", "format": "png" }, "video": { "hoverPlay": "true", "zoomFill": "false", "autoPlay": "true", "rememberPosition": "true", "loopShortVideo": "true" }, "font": { "autoTag": "true" }, "proxy": { "enable": "false", "ip": "127.0.0.1", "port": 1087 }, "privacy": { "enable": "false", "password": "", "passwordTips": "" }, "autoImport": { "enable": "false", "path": "" } }, "showCollectModal": false }
-        echoJson(req, res, data);
+
+    if (['screen capture', 'import-images', 'image'].indexOf(d.type) != -1) {
+        saveImages(d);
+    }
+    echoJson(res, data);
+
 
 });
 
-// 最近使用文件夹 /api/folder/listRecent
-// GET 取得最近用户使用过的文件夹列表
-registerApi('/api/folder/listRecent', 'get', (req, res) => {
-    var data = {
-        "status": "success",
-        "data": [{
-                "id": "KBCB8BK86WIW1",
-                "name": "工业风",
-                "description": "",
-                "children": [],
-                "modificationTime": 1591972345736,
-                "tags": [],
-                "password": "",
-                "passwordTips": "",
-                "images": [],
-                "isExpand": true,
-                "newFolderName": "工业风",
-                "imagesMappings": {},
-                "imageCount": 11,
-                "descendantImageCount": 11,
-                "pinyin": "GONGYEFENG",
-                "extendTags": []
-            },
-            {
-                "id": "KBBPIOY46SRWP",
-                "name": "北歐风格",
-                "description": "",
-                "children": [],
-                "modificationTime": 1591773342438,
-                "tags": [],
-                "password": "",
-                "passwordTips": "",
-                "images": [],
-                "isExpand": true,
-                "newFolderName": "北歐风格",
-                "imagesMappings": {},
-                "imageCount": 72,
-                "descendantImageCount": 72,
-                "pinyin": "BEIOUFENGGE",
-                "extendTags": []
-            }
-        ]
-    };
-        echoJson(req, res, data);
-
-});
-
-server.listen(41596);
-console.log('Server running at http://127.0.0.1:41596/');
-
-
-
+app.listen(port);
+console.log('HTTPServer running at http://' + ip + ':' + port + '/');
