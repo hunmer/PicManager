@@ -46,7 +46,7 @@ var g_setting = {
         $('#checkbox-debug').prop('checked', g_config.debug);
         $('#checkbox-nomedia').prop('checked', g_config.nomedia);
         $('#checkbox-fullScreen').prop('checked', g_config.fullScreen);
-        toggleMenu('#menu_main', true);
+        g_menu.showMenu('#menu_main', true);
     },
 
     setBg: function(bg) {

@@ -9,31 +9,63 @@ var g_cache = {
     closeCustom1: () => {},
 }
 
-function soundTip(url){
+function getMD5(file, callback) {
+    if(typeof(file) != 'object'){
+        return SparkMD5.hash(file);
+    }
+    var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
+        chunkSize = 2097152, // read in chunks of 2MB
+        chunks = Math.ceil(file.size / chunkSize),
+        currentChunk = 0,
+        spark = new SparkMD5.ArrayBuffer(),
+        frOnload = function(e) {
+            spark.append(e.target.result);
+            currentChunk++;
+            if (currentChunk < chunks)
+                loadNext();
+            else
+                callback(spark.end());
+        },
+        frOnerror = function() {
+            callback();
+        };
+
+    function loadNext() {
+        var fileReader = new FileReader();
+        fileReader.onload = frOnload;
+        fileReader.onerror = frOnerror;
+        var start = currentChunk * chunkSize,
+            end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
+        fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
+    };
+    loadNext();
+}
+
+function soundTip(url) {
     var _audio = $('#soundTip')[0]
-    _audio.src = './res/'+url;
+    _audio.src = './res/' + url;
     _audio.play();
 }
 
-function setImportantCss(dom, objs){
-    for(var key in objs){
+function setImportantCss(dom, objs) {
+    for (var key in objs) {
         dom.style.removeProperty(key);
         dom.style.setProperty(key, objs[key], 'important');
     }
 }
 
-function _r(data, k, type){
-    if(!data[k]) return;
-    switch(type){
+function _r(data, k, type) {
+    if (!data[k]) return;
+    switch (type) {
         case 'timeout':
-            if(typeof(data[k]) == 'number'){
+            if (typeof(data[k]) == 'number') {
                 clearTimeout(data[k]);
                 delete data[k];
             }
             break;
 
         case 'interval':
-            if(typeof(data[k]) == 'number'){
+            if (typeof(data[k]) == 'number') {
                 clearInterval(data[k]);
                 delete data[k];
             }
@@ -51,25 +83,27 @@ var g_config = local_readJson('config', {
     nomedia: true,
     clientData: {
         paths: [],
-        imgPath:'./savePics', // 默认PC端位置
+        imgPath: './savePics', // 默认PC端位置
     },
     folderGrpups: {
         分类1: ['Folder1'],
     },
     darkMode: true,
 });
-if(!g_config.clientData.imgPath){
+if (!g_config.clientData.imgPath) {
     // todo 咨询图片保存目录
     g_config.clientData.imgPath = './savePics';
 }
 
-if(g_config.debug) {
+if (g_config.debug) {
     loadJs('js/eruda.js', () => {
-        eruda.init(/*{
-            // container: el,
-            tool: ['console', 'elements'],
-            // useShadowDom: true
-        }*/);
+        eruda.init(
+            /*{
+                        // container: el,
+                        tool: ['console', 'elements'],
+                        // useShadowDom: true
+                    }*/
+        );
     });
 
 }
@@ -81,7 +115,7 @@ String.prototype.replaceAll = function(s1, s2) {
 
 String.prototype.replaceAll1 = function(s1, s2) {
     var str = this;
-    while(str.indexOf(s1) != -1){
+    while (str.indexOf(s1) != -1) {
         str = str.replace(s1, s2);
     }
     return str;
@@ -89,8 +123,8 @@ String.prototype.replaceAll1 = function(s1, s2) {
 
 
 Array.prototype.searchArray = function(arr) {
-   var self = this;
-   return !arr.some((i) => {
+    var self = this;
+    return !arr.some((i) => {
         return self.indexOf(i) == -1
     });
 }
@@ -124,28 +158,28 @@ Date.prototype.format = function(fmt) {
     return fmt;
 }
 
-function getDataString(){
-     var data = {};
-     for (var key of local_getList()) {
+function getDataString() {
+    var data = {};
+    for (var key of local_getList()) {
         data[key] = localStorage.getItem(key);
     }
     return JSON.stringify(data);
 }
 
-function getArrValue(arr, defaultV){
+function getArrValue(arr, defaultV) {
     return arr && arr.length ? arr : defaultV;
 }
 
-function domValueAdd(dom, cnt){
+function domValueAdd(dom, cnt) {
     var val = parseInt(dom.innerHTML);
     dom.innerHTML = val + cnt;
 }
 
-function isSameDate(d1, d2){
+function isSameDate(d1, d2) {
     return d1.getDate() == d2.getDate();
 }
 
-function arrayRandom(arr){
+function arrayRandom(arr) {
     return arr[randNum(0, arr.length - 1)];
 }
 
@@ -162,7 +196,11 @@ function local_saveJson(key, data) {
         key = g_localKey + key;
         data = JSON.stringify(data);
         if (data == undefined) data = '[]';
-        return localStorage.setItem(key, data);
+        try {
+            return localStorage.setItem(key, data);
+        } catch (e) {
+           alert('数据保存失败!可能已经到达上限了!');
+        }
     }
     return false;
 }
@@ -184,9 +222,9 @@ function local_getList() {
     return res;
 }
 
-function local_clearAll(skip){
-    for(var key of local_getList()){
-        if(skip && skip.indexOf(key.replace(g_localKey, '')) != -1) continue;
+function local_clearAll(skip) {
+    for (var key of local_getList()) {
+        if (skip && skip.indexOf(key.replace(g_localKey, '')) != -1) continue;
         localStorage.removeItem(key);
     }
 }
@@ -275,7 +313,7 @@ function _s2(s, j = '') {
 
 
 function time_getRent(time) {
-    if(!time) return '';
+    if (!time) return '';
     var today = new Date();
     var s = (parseInt(today.getTime()) - time) / 1000;
     if (s >= 84000) {
@@ -289,10 +327,10 @@ function time_getRent(time) {
     }
     // console.log(getTime(s, '时', '分', '秒前'));
     var s = '';
-    if(today.getDate() != new Date(time).getDate()){
+    if (today.getDate() != new Date(time).getDate()) {
         s = _l('昨天');
     }
-    return s+ getFormatedTime(0, time);
+    return s + getFormatedTime(0, time);
 }
 
 function getTime(s, sh = _l('时'), sm = _l('分'), ss = _l('秒')) {
@@ -331,7 +369,7 @@ function getTime1(s, sh = _l('时'), sm = _l('分')) {
     return _s1(h, sh) + _s(m, sm);
 }
 
-function parseTime(s){
+function parseTime(s) {
     var r = {};
     s = Number(s);
     if (s >= 86400) {
@@ -351,7 +389,7 @@ function parseTime(s){
     return r;
 }
 
-function getVal(value, defaultV){
+function getVal(value, defaultV) {
     return value || defaultV;
 }
 
@@ -368,15 +406,15 @@ function getNow(b = true) {
 
 function toTime(s) {
     var a = s.split(':');
-    if(a.length == 1) return Number(s);
+    if (a.length == 1) return Number(s);
     if (a.length == 2) {
         a.unshift(0);
     }
     return a[0] * 3600 + a[1] * 60 + a[2] * 1;
 }
 
-function isEmpty(a){
-    if(typeof(a) == 'string') return a.length == 0;
+function isEmpty(a) {
+    if (typeof(a) == 'string') return a.length == 0;
     return a;
 }
 
@@ -388,11 +426,11 @@ function removeAnimation(d) {
     return x;
 }
 
-function isApp(){
+function isApp() {
     return navigator.userAgent.indexOf('isApp') != -1;
 }
 
-function isWindows(){
+function isWindows() {
     return navigator.userAgent.indexOf('isElectron') != -1;
 }
 
@@ -414,7 +452,7 @@ function hideSidebar() {
     return false;
 }
 
-function isSidebarShowed(){
+function isSidebarShowed() {
     return $('#page-wrapper').attr('data-sidebar-hidden') != 'hidden';
 }
 
@@ -444,8 +482,8 @@ function cutStrings(s_text, s_start, filter = false) {
     return res;
 }
 
-function downloadData(blob, fileName){
-    if(typeof(blob) != 'blob'){
+function downloadData(blob, fileName) {
+    if (typeof(blob) != 'blob') {
         blob = new Blob([blob]);
     }
     var eleLink = document.createElement('a');
@@ -454,7 +492,7 @@ function downloadData(blob, fileName){
     eleLink.href = URL.createObjectURL(blob);
     document.body.appendChild(eleLink);
     eleLink.click();
-    document.body.removeChild(eleLink); 
+    document.body.removeChild(eleLink);
 }
 
 
@@ -548,8 +586,8 @@ function checkInputValue(doms) {
 
 
 function loadJs(file, success = function() {}, fail = function() {}) {
-    var scriptNode = $('script[src="'+file+'"]');
-    if(scriptNode.length){ // js已加载
+    var scriptNode = $('script[src="' + file + '"]');
+    if (scriptNode.length) { // js已加载
         success();
         return scriptNode[0];
     }
@@ -598,38 +636,38 @@ function getEditorHtml(m) {
     return s;
 }
 
-function showImage(url){
+function showImage(url) {
     g_cache.closeCustom = () => {}
-        $('#modal-custom').find('.modal-title').html('');
-        $('#modal-custom').attr('data-type', 'image').find('.modal-html').html(`
+    $('#modal-custom').find('.modal-title').html('');
+    $('#modal-custom').attr('data-type', 'image').find('.modal-html').html(`
             <div>
-                <img style="width: 100%;" src="`+url+`">
+                <img style="width: 100%;" src="` + url + `">
             </div>
         `);
-        halfmoon.toggleModal('modal-custom');
+    halfmoon.toggleModal('modal-custom');
 }
 
 
 var vibrateInterval;
 // 开始震动
 function startVibrate(duration) {
-    if(!navigator.vibrate) return soundTip('click.mp3');
+    if (!navigator.vibrate) return soundTip('click.mp3');
     navigator.vibrate(duration);
 }
 
 // 停止震动
 function stopVibrate() {
     // 清除间隔和停止持续振动
-    if(!navigator.vibrate) return;
+    if (!navigator.vibrate) return;
 
-    if(vibrateInterval) clearInterval(vibrateInterval);
+    if (vibrateInterval) clearInterval(vibrateInterval);
     navigator.vibrate(0);
 }
 
 //在给定的持续时间和间隔时开始持续的振动
 //假定一个数字值
 function startPeristentVibrate(duration, interval) {
-    if(!navigator.vibrate) return;
+    if (!navigator.vibrate) return;
     vibrateInterval = setInterval(function() {
         startVibrate(duration);
     }, interval);

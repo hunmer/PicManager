@@ -285,6 +285,13 @@ var g_database = {
     },
 
      importImages: (datas, callback, filter = {}) => {
+        console.log(datas);
+        if(Array.isArray(datas)){
+            // base64数据 不清楚md5的
+            // 交给服务器来处理
+            return;
+        }
+
     	var r = new Set();
     	var i = 0;
         for (var key in datas) {

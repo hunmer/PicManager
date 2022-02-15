@@ -1,3 +1,5 @@
+
+
 function sendRequest(opts) {
     return $.ajax(Object.assign({
             dataType: 'json'
@@ -126,13 +128,13 @@ var _audio = $('#audio')[0];
 
 function back() {
     startVibrate(40);
-    if(g_mark.isShow()){
+    if (g_mark.isShow()) {
         g_mark.hide();
     } else
-    if(_viewer.fulled){ // 全屏
+    if (_viewer.fulled) { // 全屏
         $('.viewer-fullscreen-exit').click()
     } else
-    if(g_gallery.previewViewer){
+    if (g_gallery.previewViewer) {
         // 关闭图片预览
         g_gallery.previewViewer.destroy();
         delete g_gallery.previewViewer;
@@ -168,12 +170,11 @@ halfmoon.toggleSidebar1 = halfmoon.toggleSidebar;
 halfmoon.toggleSidebar = function() {
     halfmoon.toggleSidebar1();
 
-    if($('#menu_main').css('display') != 'none'){
-        showMenu('#menu_main', true)
-    }
+
     // 切换侧边栏的时候 内嵌viewer也跟着调整大小
     var width = isSidebarShowed() ? $('.sidebar').width() : '0';
     $('#imageEdit').css('width', `calc(100vw - ${width}px)`);
+    if ($('#menu_main').css('display') != 'none') g_menu.showMenu('#menu_main', true)
     $(window).resize();
 
 }
@@ -181,9 +182,9 @@ halfmoon.toggleSidebar = function() {
 halfmoon.toggleModal1 = halfmoon.toggleModal;
 halfmoon.toggleModal = function(...args) {
     // 关闭modal前的对话框确定
-    if(args[0] == 'modal-custom' && isModalOpen('modal-custom', 'dialog_addExpFromImage') && args.length == 1){
-        if($('#textarea_comment').val() != '' || $('.cameraImgs img').length){
-            if(!confirm('放弃编辑吗？')) return;
+    if (args[0] == 'modal-custom' && isModalOpen('modal-custom', 'dialog_addExpFromImage') && args.length == 1) {
+        if ($('#textarea_comment').val() != '' || $('.cameraImgs img').length) {
+            if (!confirm('放弃编辑吗？')) return;
         }
     }
 
@@ -191,8 +192,8 @@ halfmoon.toggleModal = function(...args) {
     startVibrate(50);
 }
 
-function getCurrentGallery(){
-    switch(g_cache.showing){
+function getCurrentGallery() {
+    switch (g_cache.showing) {
         case 'gallery':
             return g_gallery.grid;
 
@@ -201,9 +202,18 @@ function getCurrentGallery(){
     }
 }
 
+function resizeImage(file, config, callback) {
+    return lrz(file, config)
+        .then(rst => callback(rst))
+        .catch(function(err) {
+            console.log(err);
+        });
+}
+
+
 $(function() {
     g_setting.init();
-    FastClick.attach(document.body);
+    if (isApp()) FastClick.attach(document.body);
     window.addEventListener("popstate", function(event) {
         window.history.pushState(null, null, "index.html");
         if (!back()) { // 不能后退了
@@ -211,41 +221,23 @@ $(function() {
         }
     });
 
-    $('#input_img').on('change', function(event) {
-        var that = this;
-        var config = $(that).attr('data-config');
-        if (config) {
-            config = JSON.parse(config);
-        } else {
-            config = { width: 800, quality: 0.7 };
-        }
-        lrz(that.files[0], config)
-            .then(function(rst) {
-                switch ($(that).attr('data-type')) {
-                    case 'camera':
-                        g_rpg.uploadImage(rst.base64);
-                        break;
-                }
-            })
-            .catch(function(err) {
-                console.log(err);
-            });
-    });
+    $(document)
+        // on('drop', function(e) {
 
-    $(document).
-    on('keyup', function(e) {
+        // })
+        .on('keyup', function(e) {
             switch (e.key.toLowerCase()) {
                 case 'w':
                     if (e.ctrlKey) g_autojs.log('close');
                     break;
                 case 'browserback':
-                   g_autojs.log('history_back');
+                    g_autojs.log('history_back');
                     break;
                 case 'arrowleft':
                     if (e.altKey) g_autojs.log('history_back');
                     break;
                 case 'browserforward':
-                   g_autojs.log('history_forward');
+                    g_autojs.log('history_forward');
                     break;
                 case 'arrowright':
                     if (e.altKey) g_autojs.log('history_forward');
@@ -281,22 +273,22 @@ $(function() {
                     getCurrentGallery().isotope('shuffle');
                     break;
                 case 'sort_normal':
-                    var grid =  getCurrentGallery();
+                    var grid = getCurrentGallery();
                     if (grid.data('isotope').sortHistory[0] != 'original-order') {
                         // 有用插件排过序,恢复
                         grid.isotope({ sortBy: 'original-order' });
                     } else {
-                        if(g_cache.showing == 'gallery'){
+                        if (g_cache.showing == 'gallery') {
                             g_database.loadItems(g_database.filterImage(g_config.filter));
                         }
-                        
+
                     }
                     break;
                 case 'sort_reverse':
                     if (g_cache.showing == 'site' || !g_page.getOpts('gallery').hasMore) { // 没有更多了
                         getCurrentGallery().isotope({ sortBy: 'reverse' });
                     } else {
-                        if(g_cache.showing == 'gallery'){
+                        if (g_cache.showing == 'gallery') {
                             // 直接改变数据
                             g_database.loadItems(g_database.filterImage(g_config.filter).reverse());
                         }
@@ -392,10 +384,10 @@ function _D() {
 }
 
 function showContent(id) {
-   
+
     switch (id) {
         case 'gallery':
-            toggleMenu('#menu_main', false);
+            g_menu.toggleMenu('#menu_main', false);
 
             if (!g_cd.getOpts('image')) {
                 _r(g_cache, 'timer_autoStart', 'timeout');
@@ -406,8 +398,8 @@ function showContent(id) {
             break;
 
         case 'detail':
-            if(!_viewer) return; // 未加载过图片
-            toggleMenu('#menu_main', true);
+            if (!_viewer) return; // 未加载过图片
+            g_menu.toggleMenu('#menu_main', true);
             window.history.pushState(null, null, "?gallery");
             $('#dropdown_more').show();
             break;
@@ -424,14 +416,14 @@ function showContent(id) {
             return;
     }
     g_cache.showing = id;
-    for(var d of $('.toolbar')){
-        d.classList.toggle('hide1', d.id != 'toolbar_'+id);
+    for (var d of $('.toolbar')) {
+        d.classList.toggle('hide1', d.id != 'toolbar_' + id);
     }
-    for(var d of $('.subContent')){
-        d.classList.toggle('hide1', d.id != 'subContent_'+id);
+    for (var d of $('.subContent')) {
+        d.classList.toggle('hide1', d.id != 'subContent_' + id);
     }
     $('#menu_main i.text-primary').removeClass('text-primary');
-    getAction('showContent,'+id).addClass('text-primary');
+    getAction('showContent,' + id).addClass('text-primary');
 }
 
 function modalOpen(opts) {
@@ -455,7 +447,7 @@ function modalOpen(opts) {
 
     modal.find('.close').css('display', opts.canClose ? '' : 'none')[0].onclick = function(event) {
         if (opts.onClose()) {
-            if(opts.autoClear) $(this).find('.modal-title').html('');
+            if (opts.autoClear) $(this).find('.modal-title').html('');
             halfmoon.toggleModal(opts.id);
         }
     }
@@ -494,25 +486,3 @@ function mobiscroll_cancelAll() {
     }
     g_cache.mobiscroll = [];
 }
-
-function showMenu(id, show){
-        $(id+' .fa-arrow-left').toggleClass('hide', true);
-    $(id).css({
-        left: 'calc(50vw - ' + $(id).width() / 2 + 'px)',
-        right: 'unset',
-        display: show ? '' : 'none'
-    });
-}
-
-function toggleMenu(id, hide){
-    $(id+' .fa-arrow-left').toggleClass('hide', !hide);
-    if(!hide){
-        return showMenu(id, true);
-    }
-
-    $(id).css({
-        right: hide ? 0 - ($(id).width() - 20) + 'px' : 'unset',
-        left: hide ? 'unset' : '',
-    });
-}
-

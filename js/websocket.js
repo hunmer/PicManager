@@ -5,7 +5,6 @@ var g_socket = {
     registerRevice: (name, callback) => {
         g_socket.revices[name] = callback;
     },
-
     init: () => {
     	var parseData = (d) => {
     		console.log(d);
@@ -113,11 +112,6 @@ var g_socket = {
         });
         //
         g_socket.registerRevice('data', (data) => {
-        	// if(isApp()){
-        	// 	// 如果是手机则把网址传给客户端，让客户端下载到本地
-        	// 	g_autojs.log('download', data.url)
-        	// 	return;
-        	// }
         	  $.getJSON(data.url, function(json, textStatus) {
         	  	if(textStatus == 'success'){
         	  		parseData(json);
@@ -157,7 +151,6 @@ var g_socket = {
         if (!url) url = 'ws://127.0.0.1:41595';
         var socket = g_socket.connection = new WebSocket(url);
         var error = (e) => {
-        	console.log(e);
         	$('#serverStatus').addClass('bg-danger').removeClass('bg-success');
         	g_socket.reconnect = setTimeout(() => g_socket.connect(), 1000 * 5);
         }
@@ -210,9 +203,4 @@ var g_socket = {
     }
 }
 
-// var enable = 0 || isMobile() && g_config.socket;
-// if(enable){
-	setTimeout(() => g_socket.init(), 3000);
-;
-	
-// }
+	g_socket.init()

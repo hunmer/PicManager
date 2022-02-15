@@ -1,4 +1,14 @@
 
+#file-drop {
+
+}
+#file-drop.hover{
+    display: unset !important;
+}
+#file-drop.hover div {
+    border: 10px dashed red !important; 
+}
+
 .div-border {
     border:  1px solid red;
 }
