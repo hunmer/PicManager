@@ -197,58 +197,11 @@
                     <div class="sidebar-content">
                         <input type="text" class="form-control" placeholder="Search">
                     </div>
-                    <h5 class="sidebar-title">Database</h5>
-                    <div class="sidebar-divider"></div>
-                    <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value="{}">
-                        <span class="sidebar-icon">
-                            <i class="fa fa-inbox" aria-hidden="true"></i>
-                        </span>
-                        <span>全部</span>
-                    </a>
-                    <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"tag_cnt":"data.t && data.t.length == 0"}'>
-                        <span class="sidebar-icon">
-                            <i class="fa fa-file-photo-o" aria-hidden="true"></i>
-                        </span>
-                        <span>未分类</span>
-                    </a>
-                    <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"tag_array":"data.t && data.t.searchArray([`未完善`])"}'>
-                        <span class="sidebar-icon">
-                            <i class="fa fa-question" aria-hidden="true"></i>
-                        </span>
-                        <span>未完善</span>
-                    </a>
-                    <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"tag_array":"data.t && data.t.searchArray([`临摹`])"}'>
-                        <span class="sidebar-icon">
-                            <i class="fa fa-question" aria-hidden="true"></i>
-                        </span>
-                        <span>临摹</span>
-                    </a>
-                    <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"url":"data.i.startsWith(`http`)"}'>
-                        <span class="sidebar-icon">
-                            <i class="fa fa-question" aria-hidden="true"></i>
-                        </span>
-                        <span>网络图片</span>
-                    </a>
-                    <!--  <a class="sidebar-link sidebar-link-with-icon" data-action="tag_list">
-                    <details class="collapse-panel w-full" open>
-                      <summary class="ml-15">
-                            <i class="fa fa-hashtag" aria-hidden="true"></i>
-                        <span>标签</span>
-                      </summary>
-                      <div class="collapse-content mt-10">
-
-                      </div>
-                    </details>
-
-
-                </a> -->
-                    <a class="sidebar-link sidebar-link-with-icon" data-action="setFilter" data-value='{"pratice":1}'>
-                        <span class="sidebar-icon">
-                            <i class="fa fa-history" aria-hidden="true"></i>
-                        </span>
-                        <span>最近</span>
-                    </a>
-                    <br>
+                    <h5 class="sidebar-title">Database
+                        <i class="fa fa-plus float-right mt-5" data-action="filter_edit" aria-hidden="true"></i>
+                    </h5>
+                    <div id="" class="sidebar-divider"></div>
+                    <div id="sidebar_filters"></div>
                     <h5 class="sidebar-title">
                         Folder
                     <i class="fa fa-plus float-right mt-5" data-action="newFolder" aria-hidden="true"></i>
@@ -368,16 +321,16 @@
                 </div>
             </div>
         </div>
-
+        <script src="js/jquery.min.js"></script>
+        <script src="js/until.js"></script>
         <script src="js/localforage.min.js"></script>
         <script src="js/store.js"></script>
+
         <script src="js/pinyin.js"></script>
-        <script src="js/jquery.min.js"></script>
         <script src="js/setting.js"></script>
         <script src="js/background-blur.min.js"></script>
         <script src="js/mobiscrollHelper.js"></script>
         <script src="js/imageRule.js"></script>
-        <script src="js/until.js"></script>
         <script src="js/md5.js"></script>
         <script src="js/mobiscroll.custom-3.0.0-beta6.min.js"></script>
         <script src="js/viewer.min.js"></script>
@@ -395,12 +348,14 @@
         <script src="js/page.js"></script>
         <script src="js/imageLoader.js"></script>
         <script src="js/gallery.js"></script>
-        <script src="js/database.js"></script>
         <script src="js/mark.js"></script>
         <script src="js/tag.js"></script>
         <script src="js/websocket.js"></script>
         <script src="js/rpg.js"></script>
         <script src="js/site.js"></script>
         <script src="./renderer.js"></script>
+        <script src="js/event.js"></script>
+        <script src="js/database.js"></script>
+        <script src="js/filter.js"></script>
     </body>
 </html>

@@ -79,6 +79,8 @@ app.on('window-all-closed', function() {
     if (process.platform !== 'darwin') app.quit()
 })
 
+
+// 从浏览器发来的操作消息
 ipcMain.on("method", (event, data) => {
     console.log(data);
 

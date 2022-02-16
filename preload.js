@@ -10,9 +10,9 @@ contextBridge.exposeInMainWorld('_api', {
 	}
 })
 
-ipcRenderer.on('method', (event, arg) => {
-  console.log(arg);
-});
+// ipcRenderer.on('method', (event, arg) => {
+//   console.log(arg);
+// });
 // ipcRenderer.send('message-from-renderer', '渲染进程发送消息过来了');
 
 window.addEventListener('DOMContentLoaded', () => {

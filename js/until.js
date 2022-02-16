@@ -9,9 +9,66 @@ var g_cache = {
     closeCustom1: () => {},
 }
 
+var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
+
+var g_config = local_readJson('config', {
+    debug: false,
+    nomedia: true,
+    clientData: {
+        paths: [],
+        imgPath: './savePics', // 默认PC端位置
+    },
+    folderGrpups: {
+        分类1: ['Folder1'],
+    },
+    darkMode: true,
+});
+if (!g_config.clientData.imgPath) {
+    // todo 咨询图片保存目录
+    g_config.clientData.imgPath = './savePics';
+}
+
+if (g_config.debug) {
+    loadJs('js/eruda.js', () => {
+        eruda.init(
+            /*{
+                        // container: el,
+                        tool: ['console', 'elements'],
+                        // useShadowDom: true
+                    }*/
+        );
+    });
+
+}
+
+
+String.prototype.replaceAll = function(s1, s2) {
+    return this.replace(new RegExp(s1, "gm"), s2);
+}
+
+String.prototype.replaceAll1 = function(s1, s2) {
+    var str = this;
+    while (str.indexOf(s1) != -1) {
+        str = str.replace(s1, s2);
+    }
+    return str;
+}
+
+
+Array.prototype.searchArray = function(arr) {
+    var self = this;
+    return !arr.some((i) => {
+        return self.indexOf(i) == -1
+    });
+}
+
+var g_down = {
+
+}
+
 function getMD5(file, callback) {
     if(typeof(file) != 'object'){
-        return SparkMD5.hash(file);
+        return SparkMD5.hash(file).toLowerCase();
     }
     var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
         chunkSize = 2097152, // read in chunks of 2MB
@@ -76,61 +133,6 @@ function _r(data, k, type) {
 // todo
 function _l(s) {
     return s;
-}
-
-var g_config = local_readJson('config', {
-    debug: false,
-    nomedia: true,
-    clientData: {
-        paths: [],
-        imgPath: './savePics', // 默认PC端位置
-    },
-    folderGrpups: {
-        分类1: ['Folder1'],
-    },
-    darkMode: true,
-});
-if (!g_config.clientData.imgPath) {
-    // todo 咨询图片保存目录
-    g_config.clientData.imgPath = './savePics';
-}
-
-if (g_config.debug) {
-    loadJs('js/eruda.js', () => {
-        eruda.init(
-            /*{
-                        // container: el,
-                        tool: ['console', 'elements'],
-                        // useShadowDom: true
-                    }*/
-        );
-    });
-
-}
-
-
-String.prototype.replaceAll = function(s1, s2) {
-    return this.replace(new RegExp(s1, "gm"), s2);
-}
-
-String.prototype.replaceAll1 = function(s1, s2) {
-    var str = this;
-    while (str.indexOf(s1) != -1) {
-        str = str.replace(s1, s2);
-    }
-    return str;
-}
-
-
-Array.prototype.searchArray = function(arr) {
-    var self = this;
-    return !arr.some((i) => {
-        return self.indexOf(i) == -1
-    });
-}
-
-var g_down = {
-
 }
 
 function getRandomColor() {
@@ -227,6 +229,8 @@ function local_clearAll(skip) {
         if (skip && skip.indexOf(key.replace(g_localKey, '')) != -1) continue;
         localStorage.removeItem(key);
     }
+    local_saveJson('keys', []);
+    g_store.removeAll();
 }
 
 function getGETArray() {

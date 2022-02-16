@@ -1,5 +1,3 @@
-
-
 function sendRequest(opts) {
     return $.ajax(Object.assign({
             dataType: 'json'
@@ -21,6 +19,7 @@ window.alert1 = function(opts) {
         title: '提示',
         html: '',
         buttons: ['set'],
+
     }, opts);
     return buildDialog(opts);
 }
@@ -53,6 +52,9 @@ window.confirm1 = function(opts, callback) {
                 instance.hide();
             }
         }],
+         onEnterKey: () => {
+            $('.mbsc-fr-btn0').click();
+        }
     }, opts);
     return buildDialog(opts);
 }
@@ -76,7 +78,7 @@ window.confirm1 = function(opts, callback) {
 //     }],
 // });
 window.prompt1 = function(opts, callback) {
-    if (typeof(opts) != 'object') {
+    if (typeof(opts) != 'object' && typeof(callback) != 'function') {
         opts = { title: opts, html: callback };
     }
     opts = Object.assign({
@@ -89,6 +91,9 @@ window.prompt1 = function(opts, callback) {
                 instance.hide();
             }
         }, 'cancel'],
+        onEnterKey: () => {
+            $('.mbsc-fr-btn0').click();
+        }
     }, opts);
     opts.html = `<textarea id="textarea_prompt" rows="3" class="form-control alt-dm" placeholder="...">` + opts.html + `</textarea>`,
         opts.dailog = buildDialog(opts).parents('.mbsc-fr-c').css({
@@ -117,6 +122,16 @@ function buildDialog(opts) {
         closeOnOverlayTap: false,
         headerText: opts.title,
         buttons: opts.buttons,
+        onShow: () => {
+            // 对话框去除并自定义回车键的功能(默认时关闭界面的)
+            $('.mbsc-wdg').on('keydown', (e) => {
+                if (e.key.toLowerCase() == 'enter') {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    opts.onEnterKey && opts.onEnterKey();
+                }
+            })
+        }
     });
     return dialog;
 }
@@ -130,6 +145,10 @@ function back() {
     startVibrate(40);
     if (g_mark.isShow()) {
         g_mark.hide();
+    } else
+    if (g_site.preview) {
+        g_site.preview.destroy();
+        delete g_site.preview;
     } else
     if (_viewer.fulled) { // 全屏
         $('.viewer-fullscreen-exit').click()
@@ -212,6 +231,8 @@ function resizeImage(file, config, callback) {
 
 
 $(function() {
+    document.oncontextmenu = () => false;
+
     g_setting.init();
     if (isApp()) FastClick.attach(document.body);
     window.addEventListener("popstate", function(event) {
@@ -227,6 +248,9 @@ $(function() {
         // })
         .on('keyup', function(e) {
             switch (e.key.toLowerCase()) {
+                case 'f11':
+                    if (isWindows()) toggleFullScreen();
+                    break;
                 case 'w':
                     if (e.ctrlKey) g_autojs.log('close');
                     break;
@@ -388,11 +412,9 @@ function showContent(id) {
     switch (id) {
         case 'gallery':
             g_menu.toggleMenu('#menu_main', false);
-
             if (!g_cd.getOpts('image')) {
                 _r(g_cache, 'timer_autoStart', 'timeout');
             }
-
             $('#dropdown_more').hide();
             $('[data-action="back"]').prop('disabled', true);
             break;

@@ -6,7 +6,14 @@ const request = require('request');
 
 var i = 0;
 
+/*
+缺点: 没有储存图片目录，需要和服务器进行握手。
+参数过于难以理解
 
+
+*/
+
+var g_cache = {};
 function downloadFile(opts) {
     var received_bytes = 0;
     var total_bytes = 0;
@@ -62,9 +69,14 @@ const files = {
     write: (file, content) => fs.writeFileSync(file, content),
     getExtension: (file) => path.extname(file).replace('.', ''),
     remove: (file) => {fs.rmSync(file)},
+    copy: (oldFile, newFile) => {
+        fs.copyFileSync(oldFile, newFile);
+        return fs.existsSync(newFile);
+    },
     move: (oldFile, newFile) => {
-        // fs.copyFileSync(oldFile, newFile);
-        fs.renameSync(oldFile, newFile);
+        fs.copyFileSync(oldFile, newFile);
+        fs.unlinkSync(oldFile);
+        // fs.renameSync(oldFile, newFile);
         return fs.existsSync(newFile);
     },
     join: (dir, file) => path.join(dir, file),
@@ -118,7 +130,7 @@ function importSavedPath(skip) {
     var path = g_config.getResPath();
     if (files.isDir(path)) {
         var imgs = [];
-        searchFiles(path, imgs, ['jpg', 'png'], 2, skip);
+        searchDirFiles(path, imgs, ['jpg', 'png'], 2, skip);
         for (var img of imgs) {
             resizeImage(img.f); // 修复没有略缩图的图片
             img.f = files.getExtension(img.f);
@@ -127,13 +139,13 @@ function importSavedPath(skip) {
     }
 }
 
-
-function searchFiles(dir, list, fileExts, C, skip) {
+// 获取指定目录下的图片
+function searchDirFiles(dir, list, fileExts, C, skip) {
     fs.readdirSync(dir).forEach(fileName => {
         var path = files.join(dir, fileName);
         if (files.isDir(path) && ((!C && C != 0) || C > 0)) {
             if (files.isEmptyDir(path)) return files.removeDir(path);
-            searchFiles(path, list, fileExts, C - 1);
+            searchDirFiles(path, list, fileExts, C - 1);
             return;
         }
         for (var i = 0; i < fileExts.length; i++) {
@@ -149,6 +161,25 @@ function searchFiles(dir, list, fileExts, C, skip) {
             }
         }
     });
+}
+
+// 获取参数里的所有图片，参数可能包含目录也可能包含图片
+function getTargetFiles(list, ws){
+    var res = [];
+    var exts = ['jpg', 'png'];
+    for(var item of list){
+        if(files.isFile(item)){
+            if(exts.indexOf(files.getExtension(item)) != -1){
+                res.push({
+                    f: item,
+                    m: getFileMd5(item),
+                });
+            }
+        }else{
+            searchDirFiles(path, res, exts, 2, skip);
+        }
+    }
+    scanFiles(res, '', ws);
 }
 
 function getFileMd5(file) {
@@ -224,20 +255,28 @@ function updateFiles(url, fileList, ws) {
 }
 
 function sendMsg(client, msg) {
+    if(!client) return console.log(msg);
+
     if (typeof(msg) == 'object') msg = JSON.stringify(msg);
     client.send(msg);
 }
 
 // 检测目录图片改动
-
 function checkFolderUpdate(resPath, paths, ws) {
+    g_cache.resPath = resPath;
     // files.removeDir('./savePics');
     var imgs = [];
     for (var path of paths) {
         if (files.isDir(path)) {
-            searchFiles(path, imgs, ['jpg', 'png'], 2);
+            searchDirFiles(path, imgs, ['jpg', 'png'], 2);
         }
     }
+    scanFiles(imgs, resPath, ws);
+}
+
+// 移动文件
+function scanFiles(imgs, resPath, ws){
+    if(!resPath) resPath = g_cache.resPath;
     var max = imgs.length;
     if (max > 0) {
         var saved = 0;
@@ -281,4 +320,5 @@ module.exports = {
     checkFolderUpdate: checkFolderUpdate,
     checkUpdate: checkUpdate,
     updateFiles: updateFiles,
+    getTargetFiles: getTargetFiles,
 }

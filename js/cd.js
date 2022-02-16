@@ -59,11 +59,11 @@ var g_cd = {
             alert(h || '没有数据!');
         });
         registerAction('history_save', (dom, action, params) => {
-            confirm1('结束计时吗?', (value) => {
+            confirm1('结束计时吗?',  (value) => {
                 if (!value) return;
-                confirm1('是否保存计时?', (value) => {
+                confirm1('是否保存计时?', async (value) => {
                     if (!value) return g_cd.cancelTimer('image', false);
-                    var d = g_database.getImgData(g_cd.opts['image'].key);
+                    var d = await g_database.getImgData(g_cd.opts['image'].key);
                     g_rpg.saveDialog({
                         tags: d.t || [],
                         comment: '',

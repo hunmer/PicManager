@@ -28,7 +28,7 @@ var g_page = {
 	get: (name) => {
 		if(g_page.lists[name]) return g_page.lists[name];
 	},
-	nextPage: (name) => {
+	nextPage: async (name) => {
 		// todo 加载条
 		var d = g_page.get(name);
 		if(d){
@@ -51,7 +51,7 @@ var g_page = {
 			var h = '';
 			for(var i=0;i<load;i++){
 				var index = i+d.lastIndex;
-				var r = d.parseItem(index, keys[index], d.datas[keys[index]]);
+				var r = await d.parseItem(index, keys[index], d.datas[keys[index]]);
 				if(r) h+= r;
 			}
 			if(h.length){

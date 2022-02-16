@@ -93,6 +93,10 @@ wss.on('connection', function connection(ws) {
         var data = JSON.parse(msg);
         console.log(data);
         switch (data.type) {
+            case 'scanFiles':
+                // 保存拖动到浏览器的文件
+                handle.getTargetFiles(data.files, ws);
+                break;
             case 'checkUpdate':
                 handle.checkUpdate(data.url, ws);
                 break;

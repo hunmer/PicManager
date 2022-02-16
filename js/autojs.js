@@ -355,7 +355,7 @@ var g_autojs = {
             max: max,
             onFinished: function() {
                 // 由于没有传入数据。这里不做处理
-                console.log('finish');
+                // toastPAlert('成功导入'+max+'张图片.')
             }
         });
     },

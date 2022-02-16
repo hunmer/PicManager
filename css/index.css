@@ -1,11 +1,16 @@
 
+.hover:hover {
+    color: var(--primary-color);
+    font-style: italic;
+}
+
 #file-drop {
 
 }
-#file-drop.hover{
+#file-drop.drop_active{
     display: unset !important;
 }
-#file-drop.hover div {
+#file-drop.drop_active div {
     border: 10px dashed red !important; 
 }
 
@@ -239,18 +244,26 @@ a {
   outline: none;
   text-decoration:none; 
 }
+/*
+input,textarea {
+    -webkit-user-select:auto; 
+}
+*/
 
-body {
-     -webkit-overflow-scrolling: touch;
-
+* {
     -webkit-touch-callout: none;
       -webkit-user-select: none;
       -khtml-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
       user-select: none;
-
     -webkit-user-drag: none;
+}
+body {
+     -webkit-overflow-scrolling: touch;
+
+
+
     color: var(--lm-base-text-color);
     overflow: hidden;
     background-position: center top;

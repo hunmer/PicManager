@@ -10,7 +10,7 @@ var g_menu = {
     },
 
     showMenu: function(id, show) {
-    	var sideWidth = isSidebarShowed() ? $('.sidebar').width() : '0';
+        var sideWidth = isSidebarShowed() ? $('.sidebar').width() : '0';
         $(id + ' .fa-arrow-left').toggleClass('hide', true);
 
         $(id).css({

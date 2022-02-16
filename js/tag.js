@@ -246,7 +246,7 @@ var g_tag = {
         return groupHtml + '</div>';
     },
     // 打开主界面
-    openDialog: (key) => {
+    openDialog: async (key) => {
         g_tag.showingKey = key;
         var data = g_database.getImgData(key);
         if (!data) return;
@@ -267,7 +267,7 @@ var g_tag = {
             html: `
                 <div class="row">
                     <div class="col-sm-12 col-md-6 mb-10 border-right flex-center-vh">
-                          <img id="dialog_tag_img" src="` + g_database.getImageUrl(key, data.i, false) + `" style="width: 100%;margin: 0 auto;padding: 10px;">
+                          <img id="dialog_tag_img" src="` + await g_database.getImageUrl(key, data.i, false) + `" style="width: 100%;margin: 0 auto;padding: 10px;">
                     </div>
                     <div class="col col-sm-6 col-md-3 p-10">
                         <input type="text" id="input_tag" class="form-control" placeholder="输入标签" onkeydown="if(event.keyCode==13) g_tag.addTagToShowing(this.value, true)" oninput="g_tag.searchTag(this.value);">

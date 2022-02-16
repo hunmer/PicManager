@@ -1,13 +1,13 @@
 var _viewer;
 var g_gallery = {
-        grid: undefined,
-        hover: {},
-        hidePreview: () => {
-            if (g_gallery.preview) g_gallery.preview.hide();
-        },
-        init: () => {
+    grid: undefined,
+    hover: {},
+    hidePreview: () => {
+        if (g_gallery.preview) g_gallery.preview.hide();
+    },
+    init: () => {
 
-            g_gallery.rm = $(`
+        g_gallery.rm = $(`
             <div style="position: fixed;top: 0; left: 0;width: 100%;height: 100%;z-index: 99999;display: none;background-color: rgba(0, 0, 0, .5);" onclick="
             if(event.target == this){
              var x = event.clientX;
@@ -36,129 +36,131 @@ var g_gallery = {
                 </div>
             </div>
         `).appendTo('body');
-            g_gallery.preview = $(`<div style="width: 100%;position: fixed;left: 0;z-index: 2;display: none;"></div>`).appendTo('body');
+        g_gallery.preview = $(`<div style="width: 100%;position: fixed;left: 0;z-index: 2;display: none;"></div>`).appendTo('body');
 
-            if (g_cache.isPC) {
-                $('#sidebar-right-hover').on('mouseover mouseout', function(event) {
-                    if (event.type == "mouseover") { // 进入
+        if (g_cache.isPC) {
+            $('#sidebar-right-hover').on('mouseover mouseout', function(event) {
+                if (event.type == "mouseover") { // 进入
 
-                        g_cache.sidebarHover = setTimeout(() => {
-                            $('#sidebar-right-hover').hide();
-                            var sidebar = $('#div_detail');
-                            if (sidebar.hasClass('hide')) {
-                                sidebar.attr('data-ishover', true);
-                                g_gallery.switchDetailBar(true);
-                            }
-                        }, 150)
-                    } else {
-                        clearTimeout(g_cache.sidebarHover)
-                    }
-                });
-
-                $('#div_detail').on('mouseout', function(event) {
-                    var sidebar = $('#div_detail');
-                    if (!$(event.relatedTarget).parents('#div_detail').length) { // 不是父元素下的子元素触发的
-                        if (event.clientX <= sidebar.offset().left) { // 如果鼠标是向左边移动
-                            if (sidebar.attr('data-ishover')) {
-                                sidebar.attr('data-ishover', null);
-                                g_gallery.switchDetailBar(false);
-                            }
+                    g_cache.sidebarHover = setTimeout(() => {
+                        $('#sidebar-right-hover').hide();
+                        var sidebar = $('#div_detail');
+                        if (sidebar.hasClass('hide')) {
+                            sidebar.attr('data-ishover', true);
+                            g_gallery.switchDetailBar(true);
                         }
+                    }, 150)
+                } else {
+                    clearTimeout(g_cache.sidebarHover)
+                }
+            });
 
+            $('#div_detail').on('mouseout', function(event) {
+                var sidebar = $('#div_detail');
+                if (!$(event.relatedTarget).parents('#div_detail').length) { // 不是父元素下的子元素触发的
+                    if (event.clientX <= sidebar.offset().left) { // 如果鼠标是向左边移动
+                        if (sidebar.attr('data-ishover')) {
+                            sidebar.attr('data-ishover', null);
+                            g_gallery.switchDetailBar(false);
+                        }
                     }
 
-                });
+                }
 
-                $(document).on('mouseover mouseout', '.photo', function(event) {
-                    var d = g_gallery.hover;
-                    if (event.type == "mouseover") { // 进入
-                        if (d.timer) clearTimeout(d.timer);
-                        d.timer = setTimeout(() => {
-                            delete d.timer;
-                            var dom = $('.photo:hover');
-                            if (dom.length) {
-                                var offset = dom.offset();
-                                var parent = $('#gallery_list');
-                                var style = {
-                                    left: parent.offset().left,
-                                };
-                                // 计算div的顶部与高度
-                                var wh = $(window).height();
-                                if (offset.top < wh / 2) { // 小于屏幕一半
-                                    x = offset.top + dom.height() + 10;
-                                    style.top = x;
-                                    style.height = wh - x;
-                                } else {
-                                    x = offset.top - 10;
-                                    style.bottom = x;
-                                    style.height = x;
-                                }
+            });
 
-                                // 计算图片合理显示位置
-                                var l = parent.offset().left;
-                                x = offset.left - l;
-                                var img = $(`<img src="` + g_database.getImageUrl($(dom).parents('[data-md5]').data('md5'), '', false) + `" style="height: 100%;position: absolute;">`);
-                                img.on('load', function(event) { // 图片加载完毕
-                                    if (x + this.width * style.height / this.height > parent.width()) { // 超出屏幕
-                                        img.css('right', l + 'px');
-                                    } else {
-                                        img.css('left', x + 'px');
-                                    }
-                                    g_gallery.preview.fadeIn('slow');
-                                })
-                                g_gallery.preview.css(style).html(img);
+            $(document).on('mouseover mouseout', '.photo', function(event) {
+                var d = g_gallery.hover;
+                if (event.type == "mouseover") { // 进入
+                    if (d.timer) clearTimeout(d.timer);
+                    d.timer = setTimeout(async () => {
+                        delete d.timer;
+                        var dom = $('.photo:hover');
+                        if (dom.length) {
+                            var offset = dom.offset();
+                            var parent = $('#gallery_list');
+                            var style = {
+                                left: parent.offset().left,
+                            };
+                            // 计算div的顶部与高度
+                            var wh = $(window).height();
+                            if (offset.top < wh / 2) { // 小于屏幕一半
+                                x = offset.top + dom.height() + 10;
+                                style.top = x;
+                                style.height = wh - x;
+                            } else {
+                                x = offset.top - 10;
+                                style.bottom = x;
+                                style.height = x;
                             }
-                        }, 1000);
-                        return;
-                    }
-                    if (d.timer) clearTimeout(d.timer) & delete d.timer;
-                    g_gallery.preview.fadeOut('slow');
-                });
-            }
 
+                            // 计算图片合理显示位置
+                            var l = parent.offset().left;
+                            x = offset.left - l;
+                            
+                            var img = $(`<img src="` + await g_database.getImageUrl($(dom).parents('[data-md5]').data('md5'), '', false) + `" style="height: 100%;position: absolute;">`);
 
-            registerAction('switchDetailBar', (dom, action, params) => {
-                g_gallery.switchDetailBar();
+                            img.on('load', function(event) { // 图片加载完毕
+                                if (x + this.width * style.height / this.height > parent.width()) { // 超出屏幕
+                                    img.css('right', l + 'px');
+                                } else {
+                                    img.css('left', x + 'px');
+                                }
+                                g_gallery.preview.fadeIn('slow');
+                            })
+                            g_gallery.preview.css(style).html(img);
+                        }
+                    }, 1000);
+                    return;
+                }
+                if (d.timer) clearTimeout(d.timer) & delete d.timer;
+                g_gallery.preview.fadeOut('slow');
             });
-            registerAction('switchImageTools', (dom, action, params) => {
-                var show = $(dom).toggleClass('text-primary').hasClass('text-primary');
-                $('#toolbar_pic_items').css('display', show ? 'inherit' : 'none')
-                $('#badge_cd').toggleClass('hide1', show || !g_cd.getOpts('image'));
-            });
+        }
 
 
-            registerAction('errorImages', (dom, action, params) => {
-                    var h = ``;
-                    for (var md5 of g_gallery.errorImgs) {
-                        h += `
+        registerAction('switchDetailBar', (dom, action, params) => {
+            g_gallery.switchDetailBar();
+        });
+        registerAction('switchImageTools', (dom, action, params) => {
+            var show = $(dom).toggleClass('text-primary').hasClass('text-primary');
+            $('#toolbar_pic_items').css('display', show ? 'inherit' : 'none')
+            $('#badge_cd').toggleClass('hide1', show || !g_cd.getOpts('image'));
+        });
+
+
+        registerAction('errorImages', (dom, action, params) => {
+            var h = ``;
+            for (var md5 of g_gallery.errorImgs) {
+                h += `
                          <div class="alert alert-danger mb-10" data-md5="${md5}" role="alert">
                           <h4 class="alert-heading">图片加载错误</h4>
                           ${md5}
                             <i onclick="g_gallery.removeErrorImg('${md5}')" class="fa fa-trash-o text-danger float-right"></i>
                         </div>   
                             `;
-                    }
-                    modalOpen({
-                        id: 'modal-custom',
-                        fullScreen: true,
-                        type: 'errorImgs',
-                        width: '80%',
-                        title: '错误图片',
-                        canClose: true,
-                        html: h + `
+            }
+            modalOpen({
+                id: 'modal-custom',
+                fullScreen: true,
+                type: 'errorImgs',
+                width: '80%',
+                title: '错误图片',
+                canClose: true,
+                html: h + `
                         <div class="text-right mt-10">
                             <a onclick="g_gallery.removeAllErrorImg()" class="btn btn-danger" role="button">删除文件</a>
                             <a class="btn btn-primary" role="button" onclick="g_gallery.errorImgs = []; g_gallery.updateErrImage();">清除通知</a>
                             
                           </div>
                         `,
-                        onClose: () => {
-                            return true;
-                        }
-                    });
+                onClose: () => {
+                    return true;
+                }
             });
-        registerAction('img_share', (dom, action, params) => {
-            g_autojs.log('shareFile', g_database.getLocalFile(g_gallery.rmMd5))
+        });
+        registerAction('img_share', async (dom, action, params) => {
+            g_autojs.log('shareFile', await g_database.getLocalFile(g_gallery.rmMd5))
             g_gallery.showMenu(false);
         });
         registerAction('mulit_select', (dom, action, params) => {
@@ -168,7 +170,7 @@ var g_gallery = {
 
 
 
-        registerAction('img_setFolder', (dom, action, params) => {
+        registerAction('img_setFolder', async (dom, action, params) => {
             var h = '';
             var dialog = mobiscroll_($('#mobi_div').html(mobiscrollHelper.buildGroupSelect({
                 id: '',
@@ -196,7 +198,7 @@ var g_gallery = {
             for (var d of doms) {
                 var md5 = $(d).parents('[data-md5]').data('md5');
                 g_gallery.grid.isotope('remove', d);
-                g_autojs.log('deleteImage', g_database.getLocalFile(md5))
+                g_autojs.log('deleteImage', await g_database.getLocalFile(md5))
                 g_database.removeImgData(md5);
             }
             setTimeout(() => g_gallery.grid.isotope('layout'), 200);
@@ -205,11 +207,11 @@ var g_gallery = {
         });
 
         registerAction('img_delete', (dom, action, params) => {
-            if(dom.tagName != 'IMG'){ // 按钮触发删除
-                dom = $('.grid-item[data-md5="'+g_gallery.rmMd5+'"] img');
+            if (dom.tagName != 'IMG') { // 按钮触发删除
+                dom = $('.grid-item[data-md5="' + g_gallery.rmMd5 + '"] img');
             }
             var doms = $('#gallery_list .grid-item .img_selected')
-            if(!doms.length) doms = [dom]; // 没有多选
+            if (!doms.length) doms = [dom]; // 没有多选
 
             if (!confirm('是否删除' + doms.length + '张图片?')) return;
             for (var d of doms) {
@@ -336,7 +338,7 @@ var g_gallery = {
                 navbar: 0,
                 title: 0,
                 toggleOnDblclick: false,
-                hide(){
+                hide() {
                     g_gallery.previewViewer.destroy();
                     delete g_gallery.previewViewer;
                 },
@@ -376,14 +378,14 @@ var g_gallery = {
             ready() {
                 img.hidden = true;
             },
-            viewed() {
+            async viewed() {
                 $('.viewer-backdrop').backgroundBlur({
                     blurAmount: 10, // 模糊度
                     imageClass: 'tinted-bg-blur',
                     overlayClass: 'tinted-bg-overlay',
                     duration: 1500, // 图片淡出时间
                     endOpacity: 1 // 图像最终的不透明度
-                }).backgroundBlur(g_database.getImageUrl(g_database.showingImage));
+                }).backgroundBlur(await g_database.getImageUrl(g_database.showingImage));
 
                 $('#detail_picSize .text-right').html(_viewer.imageData.naturalWidth + 'x' + _viewer.imageData.naturalHeight);
             },
@@ -446,12 +448,12 @@ var g_gallery = {
                 // resize: true,
                 transitionDuration: 200,
                 getSortData: {
-                  // filename: '.file-name',
-                  // index: '[data-index]',
-                  reverse: function( itemElem ) {
-                    var index = $( itemElem ).attr('data-index');
-                    return 0 - parseInt( index );
-                  }
+                    // filename: '.file-name',
+                    // index: '[data-index]',
+                    reverse: function(itemElem) {
+                        var index = $(itemElem).attr('data-index');
+                        return 0 - parseInt(index);
+                    }
                 }
 
             });
@@ -467,8 +469,8 @@ var g_gallery = {
         g_gallery.gridProgress();
     },
 
-    getImageHtml: (md5, d, index) => {
-        var img = g_database.getImageUrl(md5, d.i)
+    getImageHtml: async (md5, d, index) => {
+        var img = await g_database.getImageUrl(md5, d.i)
         return `<div class="grid-item" data-md5="` + md5 + `" data-index="${index}">
                     <div style="height: ` + arrayRandom([150, 175, 200]) + `px;background-color: ` + getRandomColor() + `;">
                       <img class="photo lazyload" data-action="gallery_img_click" src="` + img + `" alt="` + d.t + `" title="` + d.t + `">
@@ -481,31 +483,31 @@ var g_gallery = {
     addErrorImg: function(md5) {
         if (this.errorImgs.indexOf(md5) == -1) {
             $('[data-action="errorImages"]').removeClass('hide')
-            .find('.badge').html(this.errorImgs.push(md5));
+                .find('.badge').html(this.errorImgs.push(md5));
         }
     },
-    removeAllErrorImg: function(){
+    removeAllErrorImg: function() {
         confirm1('你确定要删除所有错误文件信息吗?', (value) => {
-            if(value){
-                for(var md5 of this.errorImgs){
+            if (value) {
+                for (var md5 of this.errorImgs) {
                     g_database.removeImgData(md5);
                     $(`.alert[data-md5="${md5}"]`).remove();
                 }
-              this.errorImgs.length = [];
-              this.updateErrImage();
+                this.errorImgs.length = [];
+                this.updateErrImage();
             }
         })
     },
-    removeErrorImg: function(md5){
+    removeErrorImg: function(md5) {
         var i = this.errorImgs.indexOf(md5);
-        if(i != -1) this.errorImgs.splice(i, 1);
+        if (i != -1) this.errorImgs.splice(i, 1);
         g_database.removeImgData(md5);
         $(`.alert[data-md5="${md5}"]`).remove();
-      this.updateErrImage();
+        this.updateErrImage();
     },
-    updateErrImage: function(){
-          var c = this.errorImgs.length;
-        if(c == 0 && isModalOpen('modal-custom', 'errorImgs')){
+    updateErrImage: function() {
+        var c = this.errorImgs.length;
+        if (c == 0 && isModalOpen('modal-custom', 'errorImgs')) {
             halfmoon.toggleModal('modal-custom');
         }
         $('[data-action="errorImages"]').toggleClass('hide', c == 0).find('.badge').html(c);

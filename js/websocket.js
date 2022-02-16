@@ -5,10 +5,12 @@ var g_socket = {
     registerRevice: (name, callback) => {
         g_socket.revices[name] = callback;
     },
+    isConnected: () => {
+    	return  g_socket.connection.readyState == 1;
+    },
     init: () => {
     	var parseData = (d) => {
     		console.log(d);
-    		var now = new Date().getTime();
     		var folders = [];
     		if(d.folderID){
     			if(d.folderID == 'choose'){
@@ -30,7 +32,6 @@ var g_socket = {
 					 		n: img.title,
 							i: img.src,
 							u: d.url,
-							c: now,
 							w: img.width,
 							h: img.height,
 					 	}
@@ -49,7 +50,6 @@ var g_socket = {
 							i: d.src,
 							u: d.url,
 							t: d.tag,
-							c: now
 					 	};
 					 	if(d.props){
 					 		Object.assign(d1, d.props); // 自定义属性
@@ -102,8 +102,8 @@ var g_socket = {
         	g_socket.send({type: 'listRecent', data: r, key: data.key});
         });
         // 下载多图片
-        g_socket.registerRevice('downloadFinish', (data) => {
-        	var d = g_database.getImgData(data.oldMd5);
+        g_socket.registerRevice('downloadFinish', async (data) => {
+        	var d = await g_database.getImgData(data.oldMd5);
         	if(d){
         		 g_database.removeImgData(data.oldMd5, false); // 删除旧数据
         	}

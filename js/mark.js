@@ -1,9 +1,9 @@
 var g_mark = {
 
     // 打开主界面
-    openDialog: (key) => {
+    openDialog: async (key) => {
         g_mark.showingKey = key;
-        var data = g_database.getImgData(key);
+        var data = await g_database.getImgData(key);
         if (!data) return;
         g_mark.showingData = data;
 
@@ -25,7 +25,7 @@ var g_mark = {
 				<div class="row w-full">
 					<div class="col-6">
 						<div style="position:relative" id="div_markImg">
-							<img src="`+g_database.getImageUrl(key, data.i, false)+`" style="width: 100%; -webkit-user-drag: none;" onclick="modalImgClick(event);">
+							<img src="`+await g_database.getImageUrl(key, data.i, false)+`" style="width: 100%; -webkit-user-drag: none;" onclick="modalImgClick(event);">
 							<div id="area_select" style="display: none;position: fixed; z-index: 2;border: 2px solid blue;"></div>
 						</div>
 					</div>
@@ -94,10 +94,10 @@ var g_mark = {
             $('#area_select').css('borderRadius', action[1] == 'c' ? '50%' : '')
         });
 
-        registerAction('mark_clear', (dom, action, params) => {
+        registerAction('mark_clear', async (dom, action, params) => {
             if (confirm('清空吗?')) {
                 var key = g_mark.showingKey;
-                var data = g_database.getImgData(key, false);
+                var data = await g_database.getImgData(key, false);
                 if (data) {
                     $('.img-mark-dots').remove();
                     data.m = {};
@@ -106,10 +106,10 @@ var g_mark = {
                 }
             }
         });
-        registerAction('dot_delete', (dom, action, params) => {
+        registerAction('dot_delete', async (dom, action, params) => {
             if (confirm('删除吗?')) {
                 var key = g_mark.showingKey;
-                var data = g_database.getImgData(key, false);
+                var data = await g_database.getImgData(key, false);
                 if (data) {
                     var dotKey = action.length > 1 ? action[1] : g_mark.dot.attr('data-key');
                     delete data.m[dotKey];
