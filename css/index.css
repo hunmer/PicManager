@@ -1,3 +1,61 @@
+/* room 开始 */
+
+.room_img_heart_mine {
+    border: 1px solid red !important;
+}
+
+
+.selected_player img {
+    border: 2px solid var(--primary-color);
+}
+
+.bottom_right_menu {
+     display: grid;
+    grid-row-gap: 15px;
+    background-color: transparent !important;
+}
+#room_chat.withViewer #msg_list {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+
+.room_subContent , #room_images{
+    /*height: 100vh*/
+}
+
+
+.chat-msg{
+    padding: 10px;
+    position: relative;
+}
+
+.chat-msg .preview_btn {
+    position: absolute;
+    right: 10px;
+    bottom: 5px;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+}
+/*.viewer-navbar{
+    height: 80px !important;
+
+}
+.viewer-navbar li {
+    height: 80px !important;
+    width: 80px !important;
+}
+.viewer-navbar img {
+    height: 80px !important;
+    width: 80px !important;
+}
+
+.viewer-navbar {
+    height: 80px;
+}*/
+
+
+/* room 结束 */
 
 .hover:hover {
     color: var(--primary-color);
@@ -45,7 +103,7 @@
     opacity: .4;
     position: fixed;
     bottom: 10%;
-    height: 35px;
+    /*height: 35px;*/
     /*width: 40%;*/
     /*left: 30%;*/
     z-index: 2;
@@ -209,6 +267,14 @@
 .user-icon {
     width: 30px;
 }
+.user-icon-small {
+    width: 20px;
+    height: 20px;
+}
+.user-icon-big {
+    width: 40px;
+    height: 40px;
+}
 
 #toolbar_right {
     position: absolute;
@@ -272,6 +338,10 @@ body {
     font-family: janFont, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
+.subContent {
+    overflow-x: hidden;
+}
+
 #colors {
     text-align: center;
     display: flex;
@@ -290,6 +360,7 @@ body {
 }
 
 .toolbar{
+        width: 100%;
     display: inline-flex;
     justify-content: flex-end;
 }
@@ -373,7 +444,9 @@ div.grid .photo,
 }
 /* 手机或以下  */
 @media only screen and (max-width: 375px) {
-    
+    #bottom_room {
+        max-width: 100% !important;
+    }
 }
 
 /* 平板电脑以下  */
@@ -389,7 +462,7 @@ div.grid .photo,
 }
 
 .grid-item img {
-    display: block;
+    /*display: block;*/
     max-width: 100%;
 }
 

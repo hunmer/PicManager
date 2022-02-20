@@ -13,132 +13,9 @@ function sendRequest(opts) {
         });
 }
 
-window.alert1 = function(opts) {
-    if (typeof(opts) != 'object') opts = { html: opts }
-    opts = Object.assign({
-        title: '提示',
-        html: '',
-        buttons: ['set'],
-
-    }, opts);
-    return buildDialog(opts);
-}
-
-
-// alert({
-//     html: 'aa',
-//     buttons: [{
-//         text: _l('确定'),
-//         handler: function(event){
-//             alert('ok');
-//         }
-//     }]
-// });
-window.confirm1 = function(opts, callback) {
-    var b = typeof(opts) == 'object';
-    if (!b) opts = { html: opts };
-    opts = Object.assign({
-        title: '请选择',
-        buttons: b ? ['set', 'cancel'] : [{
-            text: _l('确定'),
-            handler: function(event, instance) {
-                if (callback(true) == false) return;
-                instance.hide();
-            }
-        }, {
-            text: _l('取消'),
-            handler: function(event, instance) {
-                if (callback(false) == false) return;
-                instance.hide();
-            }
-        }],
-         onEnterKey: () => {
-            $('.mbsc-fr-btn0').click();
-        }
-    }, opts);
-    return buildDialog(opts);
-}
-
-// confirm('aa', (value) => {
-//     alert(value);
-// })
-
-// confirm({
-//     html: 'aa',
-//     buttons: [{
-//         text: _l('确定'),
-//         handler: function(event){
-//            alert('ok');
-//         }
-//     }, {
-//         text: _l('取消'),
-//         handler: function(event){
-//            alert('cancel');
-//         }
-//     }],
-// });
-window.prompt1 = function(opts, callback) {
-    if (typeof(opts) != 'object' && typeof(callback) != 'function') {
-        opts = { title: opts, html: callback };
-    }
-    opts = Object.assign({
-        title: '请输入',
-        html: '',
-        buttons: [{
-            text: _l('确定'),
-            handler: function(event, instance) {
-                if (typeof(callback) == 'function' && callback($('#textarea_prompt').val(), event) === false) return;
-                instance.hide();
-            }
-        }, 'cancel'],
-        onEnterKey: () => {
-            $('.mbsc-fr-btn0').click();
-        }
-    }, opts);
-    opts.html = `<textarea id="textarea_prompt" rows="3" class="form-control alt-dm" placeholder="...">` + opts.html + `</textarea>`,
-        opts.dailog = buildDialog(opts).parents('.mbsc-fr-c').css({
-            padding: 0,
-            marginRight: '15px',
-            marginBottom: '15px'
-        });
-    setTimeout(() => $('#textarea_prompt').focus(), 500);
-    return opts.dialog;
-
-}
-
-// prompt1('aa', (value) => {
-//     alert(value);
-//     return true;
-// })
-
-function buildDialog(opts) {
-    var dialog = mobiscroll_($('#mobi_div').html(`
-        <div id="widget">
-            <div class="md-dialog">
-                ` + opts.html + `
-            </div>
-        </div>
-        `), 'widget', {
-        closeOnOverlayTap: false,
-        headerText: opts.title,
-        buttons: opts.buttons,
-        onShow: () => {
-            // 对话框去除并自定义回车键的功能(默认时关闭界面的)
-            $('.mbsc-wdg').on('keydown', (e) => {
-                if (e.key.toLowerCase() == 'enter') {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    opts.onEnterKey && opts.onEnterKey();
-                }
-            })
-        }
-    });
-    return dialog;
-}
 
 
 var _audio = $('#audio')[0];
-
 
 
 function back() {
@@ -192,6 +69,9 @@ halfmoon.toggleSidebar = function() {
 
     // 切换侧边栏的时候 内嵌viewer也跟着调整大小
     var width = isSidebarShowed() ? $('.sidebar').width() : '0';
+    
+    // $('#room_chat').css('left', `${width + 10}px`);
+
     $('#imageEdit').css('width', `calc(100vw - ${width}px)`);
     if ($('#menu_main').css('display') != 'none') g_menu.showMenu('#menu_main', true)
     $(window).resize();
@@ -206,6 +86,9 @@ halfmoon.toggleModal = function(...args) {
             if (!confirm('放弃编辑吗？')) return;
         }
     }
+
+    // 隐藏房间消息
+    if(typeof(g_room) != 'undefined') g_room.toggleChat(true);
 
     halfmoon.toggleModal1(args);
     startVibrate(50);
@@ -329,15 +212,7 @@ $(function() {
         })
 
     $(window).resize(function(event) {
-
-        for (var d of $('.overflow-h')) {
-            var d = $(d);
-            var m = d.attr('data-maxheight');
-            if (isNaN(parseInt(m))) {
-                m = $(window).height() - d.offset().top - $(m).height() - 50;
-            }
-            d.css('height', Math.min($(window).height() - d.offset().top, m) + 'px');
-        }
+       resizeCustomScroll();
         $('#rm_target').hide();
         switch (g_cache.showing) {
             case 'detail':
@@ -361,15 +236,26 @@ $(function() {
 
     g_gallery.switchDetailBar(false);
 
-    if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
-        g_database.loadFolder(g_config.lastOpenFolder);
-        return;
-    }
-    $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();
+    // if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
+    //     g_database.loadFolder(g_config.lastOpenFolder);
+    //     return;
+    // }
+    // $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();
 
-    // showContent('site');
+    showContent('room');
 
 });
+
+function resizeCustomScroll(){
+     var bottom = 0;
+        if($('.navbar-fixed-bottom').css('display') != 'none'){
+            bottom += $('.navbar-fixed-bottom').height();
+        }
+        for (var d of $('.overflow-h')) {
+            var d = $(d);
+            d.css('height', `calc(100vh - ${d.offset().top}px - ${bottom}px)`);
+        }
+}
 
 function isMobile() {
     var i = window.innerHeight / window.innerWidth;
@@ -407,8 +293,21 @@ function _D() {
     console.log(arguments);
 }
 
-function showContent(id) {
+function registerContent(opts){
+    $(opts.html).appendTo('.content-wrapper');
+    g_cache.contents[opts.id] = opts;
+}
 
+function showContent(id) {
+    if(id != g_cache.showing){ // 更新视图
+     $('.navbar-fixed-bottom').html('').hide();
+    }
+     var d = g_cache.contents[id] || {};
+    if(d){
+        d.onShow && d.onShow();
+        d.initNavBottom && d.initNavBottom();
+    }
+    $('.content-wrapper').css('overflowY', d.overflowY ? 'hidden' : 'auto'); // 自定义滚动内容
     switch (id) {
         case 'gallery':
             g_menu.toggleMenu('#menu_main', false);
@@ -434,9 +333,9 @@ function showContent(id) {
         case 'search':
             break;
 
-        default:
-            return;
     }
+    $('[data-action="history_newNote"]').toggleClass('hide', id=='room');
+
     g_cache.showing = id;
     for (var d of $('.toolbar')) {
         d.classList.toggle('hide1', d.id != 'toolbar_' + id);

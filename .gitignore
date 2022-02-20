@@ -2,6 +2,8 @@
 node_modules/
 test/
 imgs/
+a/
+saves/
 savePics/
 savePics1/
 picManager.sublime-workspace

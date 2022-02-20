@@ -1,0 +1,46 @@
+
+span[data-action="stricker_toTab"] {
+    padding: 10px;
+   
+}
+
+span[data-action="stricker_toTab"] img {
+     width: 20px;
+    height: 20px;
+}
+
+
+._emoji {
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: -2px;
+    font-size: 20px;
+}
+
+ #stricker_types span {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+
+.stricker_active {
+   border-bottom: 4px solid var(--primary-color) !important;
+}
+.emoji_tab_active {
+   border-bottom: 4px solid var(--primary-color) !important;
+}
+
+.emoji_active {
+   border-bottom: 4px solid var(--primary-color) !important;
+}
+#modal-stricker .col-4 img,
+#bottom_stricker img {
+    width: inherit;
+    padding: 10px;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.selected {
+    border: 1px solid var(--dm-button-primary-border-color-hover);
+}

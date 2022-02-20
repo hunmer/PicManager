@@ -45,7 +45,7 @@ var g_rpg = {
                 if (textStatus == 'success' && json.ip) {
                     json.ip+='/upload/'
 
-                    loadJs('js/qrcode.min.js', () => {
+                    loadRes([{url: 'js/qrcode.min.js', type: 'js'}], () => {
                         var modal = modalOpen({
                             id: 'modal-custom-1',
                             type: 'dialog_uploadImagefromNetwork',

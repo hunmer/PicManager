@@ -2,6 +2,7 @@ var _GET = getGETArray();
 var socket_url = 'wss:///daily-websock1.glitch.me';
 var g_localKey = 'picManager_';
 var g_cache = {
+    contents: {},
     isPC: IsPC(),
     isApp: isApp(),
     isWindows: isWindows(),
@@ -11,7 +12,16 @@ var g_cache = {
 
 var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
 
+function getSystemLang(){
+    var lang = navigator.language.substr(0, 2).toLowerCase();
+    return ['zh', 'jp', 'en'].includes(lang) ? lang : 'zh';
+}
 var g_config = local_readJson('config', {
+    lang: getSystemLang(),
+    user: {
+        name: randomString(6),
+        icon: './img/user.jpg'
+    },
     debug: false,
     nomedia: true,
     clientData: {
@@ -29,13 +39,13 @@ if (!g_config.clientData.imgPath) {
 }
 
 if (g_config.debug) {
-    loadJs('js/eruda.js', () => {
+    loadRes([{url: 'js/eruda.js', type: 'js'}], () => {
         eruda.init(
             /*{
-                        // container: el,
-                        tool: ['console', 'elements'],
-                        // useShadowDom: true
-                    }*/
+            // container: el,
+            tool: ['console', 'elements'],
+            // useShadowDom: true
+        }*/
         );
     });
 
@@ -55,19 +65,91 @@ String.prototype.replaceAll1 = function(s1, s2) {
 }
 
 
-Array.prototype.searchArray = function(arr) {
-    var self = this;
-    return !arr.some((i) => {
-        return self.indexOf(i) == -1
+function searchArray(arr, search) {
+    return !search.some((i) => {
+        return arr.indexOf(i) == -1
     });
 }
+
+function _get(a){
+    return typeof(a) == 'function' ? a() : a;
+}
+
+ function gridProgress(grid, key){
+    grid.imagesLoaded()
+        .progress(function(instance, image) {
+            var par = image.img.parentElement;
+            if (!image.isLoaded) {
+                // 图片加载错误
+                var item = par.parentElement;
+                return grid.isotope('remove', item);
+            }
+            $(par).css({ height: '', backgroundColor: '' });
+            _r(g_cache, 'layoutInitTimer', 'timeout');
+            g_cache.layoutInitTimer = setTimeout(() => {
+                grid.isotope('layout');
+            }, 2000);
+        })
+        .always(function(instance) {
+            _r(g_cache, 'layoutInitTimer', 'timeout');
+            grid.isotope('layout');
+            delete g_page.loading[key];
+
+            setTimeout(() => {
+                var opt = g_page.getOpts(key);
+                var content = $(opt['element']);
+                if (content[0].scrollHeight <= content.height()) {
+                    g_page.nextPage(key);
+                }
+            }, 500);
+            // resizeCustomScroll();
+
+        })
+
+
+}
+
+var g_uuids = []
+
+function uuid() {
+    while (true) {
+        var s = [];
+        var hexDigits = "0123456789abcdef";
+        for (var i = 0; i < 36; i++) {
+            s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+        }
+        s[14] = "4";
+        s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
+        s[8] = s[13] = s[18] = s[23] = "-";
+        var uuid = s.join("");
+        if (g_uuids.indexOf(uuid) == -1) {
+            break;
+        }
+    }
+    g_uuids.push(uuid);
+    return uuid;
+}
+
 
 var g_down = {
 
 }
 
+function me() {
+    return g_config.user.name;
+}
+
+function randomString(e) {    
+    e = e || 32;
+    var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
+    a = t.length,
+    n = "";
+    for (i = 0; i < e; i++) n += t.charAt(Math.floor(Math.random() * a));
+    return n
+}
+
 function getMD5(file, callback) {
-    if(typeof(file) != 'object'){
+    if (typeof(file) != 'object') {
         return SparkMD5.hash(file).toLowerCase();
     }
     var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
@@ -100,7 +182,7 @@ function getMD5(file, callback) {
 
 function soundTip(url) {
     var _audio = $('#soundTip')[0]
-    _audio.src = './res/' + url;
+    _audio.src = url.startsWith('http') ? url : './res/' + url;
     _audio.play();
 }
 
@@ -128,11 +210,6 @@ function _r(data, k, type) {
             }
             break;
     }
-}
-
-// todo
-function _l(s) {
-    return s;
 }
 
 function getRandomColor() {
@@ -201,7 +278,7 @@ function local_saveJson(key, data) {
         try {
             return localStorage.setItem(key, data);
         } catch (e) {
-           alert('数据保存失败!可能已经到达上限了!');
+            alert('数据保存失败!可能已经到达上限了!');
         }
     }
     return false;
@@ -589,26 +666,36 @@ function checkInputValue(doms) {
 }
 
 
-function loadJs(file, success = function() {}, fail = function() {}) {
-    var scriptNode = $('script[src="' + file + '"]');
-    if (scriptNode.length) { // js已加载
-        success();
-        return scriptNode[0];
+function loadRes(files, callback) {
+    var i = 0;
+    const onProgress = () => {
+        if (++i == files.length) {
+            callback && callback();
+        }
     }
-    var D = document;
-    scriptNode = D.createElement('script');
-    scriptNode.type = "text/javascript";
-    scriptNode.src = file;
-    var targ = D.getElementsByTagName('head')[0] || D.body || D.documentElement;
-    targ.appendChild(scriptNode);
-    scriptNode.onload = function() {
-        success();
+    for (var file of files) {
+        if (file.type == "js") {
+            if ($('script[src="' + file.url + '"]').length) { // js已加载
+                onProgress();
+                continue;
+            }
+            var fileref = document.createElement('script');
+            fileref.setAttribute("type", "text/javascript");
+            fileref.setAttribute("src", file.url)
+        } else if (file.type == "css" || file.type == "cssText") {
+            if ($('link[href="' + file.url + '"]').length) { // css已加载
+                onProgress();
+                continue;
+            }
+            var fileref = document.createElement("link");
+            fileref.setAttribute("rel", "stylesheet");
+            fileref.setAttribute("type", "text/css");
+            fileref.setAttribute("href", file.url)
+        }
+        document.getElementsByTagName("head")[0].appendChild(fileref).onload = () => onProgress()
     }
-    scriptNode.onerror = function() {
-        fail();
-    }
-    return scriptNode;
 }
+
 
 function insertStyle(cssText) {
     var head = document.getElementsByTagName("head")[0];
@@ -676,3 +763,109 @@ function startPeristentVibrate(duration, interval) {
         startVibrate(duration);
     }, interval);
 }
+
+/**
+ * 网络图像文件转Base64
+ */
+function getBase64Image(img, ext) {
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+    var dataURL = canvas.toDataURL("image/" + ext || img.src.substring(img.src.lastIndexOf(".") + 1).toLowerCase());
+    return dataURL;
+}
+ 
+/**
+*Base64字符串转二进制
+*/
+function dataURLtoBlob(dataurl) {
+    var arr = dataurl.split(','),
+    mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]),
+    n = bstr.length,
+    u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {
+        type: mime
+    });
+}
+ 
+function getImgToBase64(url,callback, format){//将图片转换为Base64
+  var canvas = document.createElement('canvas'),
+    ctx = canvas.getContext('2d'),
+    img = new Image;
+  img.crossOrigin = 'Anonymous';
+  img.onload = function(){
+    canvas.height = img.height;
+    canvas.width = img.width;
+    ctx.drawImage(img,0,0);
+    var dataURL = canvas.toDataURL(format || 'image/webp');
+    callback(dataURL);
+    canvas = null;
+  }
+  img.src = url;
+}
+ 
+function dataURLtoFile(dataurl, filename) {
+    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, {type:mime});
+}
+
+function  initMenu(id, data) {
+        var h = '';
+        for (var d of data) {
+            h += `
+             <a data-action="${d.action}" class="btn ${d.class} p-0 rounded-circle" style="width: 35px;height: 35px;">
+                <i class="fa ${d.icon} fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
+            </a>
+            `
+        }
+        $(id).html(h);
+    }
+
+    function showSubContent(classes, id){
+        for(var con of $('.'+classes)){
+            var finded = con.id == classes+','+id;
+            $(con).toggleClass('hide', !finded);
+            var btn = getAction(con.id);
+            btn.toggleClass('btn-primary', finded);
+        }
+    }
+
+function initViewer(img, opts, prop){
+    prop.viewer = new Viewer(img, Object.assign({
+            toolbar: 0,
+            navbar: 0,
+            title: 0,
+            url(image) {
+                var url = image.src.replace('https://i.pinimg.com/236x/', 'https://i.pinimg.com/originals/')
+                return url;
+            },
+            // transition:false,
+            ready() {
+                // img.hidden = true;
+            },
+            viewed(event) {
+                if(prop.blurBg){
+                    $(prop.viewer.viewer).backgroundBlur({
+                        blurAmount: 10, // 模糊度
+                        imageClass: 'tinted-bg-blur',
+                        overlayClass: 'tinted-bg-overlay',
+                        duration: 1500, // 图片淡出时间
+                        endOpacity: 1 // 图像最终的不透明度
+                    }).backgroundBlur(prop.bgUrl);
+                }
+            },
+            toggleOnDblclick: false,
+        }, opts));
+    return prop.viewer;
+}
+

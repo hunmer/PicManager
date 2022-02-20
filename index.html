@@ -35,6 +35,7 @@
         <link rel="stylesheet" href="css/animate.min.css">
         <link rel="stylesheet" href="css/index.css">
         <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/emoji.css">
         <title>PicManager</title>
     </head>
     <body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars">
@@ -67,10 +68,8 @@
                 </div>
             </div>
         </div>
-        <!--  data-sidebar-hidden="hidden"  with-navbar-fixed-bottom  -->
-        <div id="page-wrapper" class="page-wrapper with-navbar with-sidebar with-transitions overflow-x-hide" data-sidebar-type="full-height">
-
-
+        <!--  data-sidebar-hidden="hidden"    -->
+        <div id="page-wrapper" class="page-wrapper with-navbar with-sidebar with-navbar-fixed-bottom with-transitions overflow-x-hide" data-sidebar-type="full-height">
 
             <div class="sticky-alerts" style="z-index: 99999;">
                 <div id="FYsY6Z" class="alert dispose">
@@ -219,6 +218,7 @@
                                 <button class="btn btn-block btn-secondary mt-10" type="button" data-action="downloadData">下载配置</button>
                                 <button class="btn btn-block btn-danger mt-10" type="button" data-action="resetData">清除緩存</button>
                                 <button class="btn btn-block btn-success mt-10" type="button" data-action="checkUpdate">检测更新</button>
+                                <button class="btn btn-block mt-10" type="button" data-action="setting">设置</button>
                                 <div class="custom-switch mt-10">
                                     <input type="checkbox" id="checkbox-darkMode" value="" data-checkbox="darkMode">
                                     <label for="checkbox-darkMode">夜间</label>
@@ -309,9 +309,9 @@
                         </div>
             </div>
                 <div id="subContent_gallery" class="subContent">
-                    <div id="gallery" class="gallery">
+                    <div id="gallery" class="gallery" style="overflow-y: hidden;"><!-- 用父元素的滚动条 -->
                         <div id="sidebar-right-hover"></div>
-                        <div id="gallery_list"></div>
+                        <div id="gallery_list" style=""></div>
                     </div>
                 </div>
                 <div id="subContent_detail" class="subContent">
@@ -320,8 +320,11 @@
                     </div>
                 </div>
             </div>
+            <nav class="navbar navbar-fixed-bottom" style="display: none;">
+            </nav>
         </div>
         <script src="js/jquery.min.js"></script>
+        <script src="js/lang.js"></script>
         <script src="js/until.js"></script>
         <script src="js/localforage.min.js"></script>
         <script src="js/store.js"></script>
@@ -342,6 +345,7 @@
         <script src="js/lazyload.min.js"></script>
         <script src="js/cd.js"></script>
         <script src="js/index.js"></script>
+        <script src="js/user.js"></script>
         <script src="js/file.js"></script>
         <script src="js/menu.js"></script>
         <script src="js/autojs.js"></script>
@@ -357,5 +361,7 @@
         <script src="js/event.js"></script>
         <script src="js/database.js"></script>
         <script src="js/filter.js"></script>
+        <script src="js/room.js"></script>
+        <script src="js/emoji.js"></script>
     </body>
 </html>

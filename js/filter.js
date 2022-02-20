@@ -13,12 +13,12 @@ var g_filter = {
         2: {
             name: "未完善",
             icon: "fa-question",
-            value: JSON.stringify({ tag_array: "data.t && data.t.searchArray([`未完善`])" })
+            value: JSON.stringify({ tag_array: "data.t && searchArray(data.t, [`未完善`])" })
         },
         3: {
             name: "临摹",
             icon: "fa-file-photo-o",
-            value: JSON.stringify({ tag_array: "data.t && data.t.searchArray([`临摹`])" })
+            value: JSON.stringify({ tag_array: "data.t && searchArray(data.t, [`临摹`])" })
         },
         4: {
             name: "网络图片",

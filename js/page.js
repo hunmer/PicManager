@@ -2,7 +2,7 @@ var g_page = {
 	lists: {},
 	loading: {},
 	getOpts: (name) => {
-		return g_page.lists[name] || {}
+		return g_page.lists[name];
 	},
 	setList: (name, opts) => {
 		g_gallery.clearGallery();
@@ -34,7 +34,7 @@ var g_page = {
 		if(d){
             g_page.loading[name] = new Date().getTime() + d.timeout;
 
-			var keys = Object.keys(d.datas);
+			var keys = Object.keys(_get(d.datas));
 			var max = keys.length - d.lastIndex;
 			if(max == 0){
 				if(d.requestData){ // 网络加载
@@ -51,7 +51,7 @@ var g_page = {
 			var h = '';
 			for(var i=0;i<load;i++){
 				var index = i+d.lastIndex;
-				var r = await d.parseItem(index, keys[index], d.datas[keys[index]]);
+				var r = await d.parseItem(index, keys[index], _get(d.datas)[keys[index]]);
 				if(r) h+= r;
 			}
 			if(h.length){

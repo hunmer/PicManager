@@ -26,7 +26,6 @@ var g_mark = {
 					<div class="col-6">
 						<div style="position:relative" id="div_markImg">
 							<img src="`+await g_database.getImageUrl(key, data.i, false)+`" style="width: 100%; -webkit-user-drag: none;" onclick="modalImgClick(event);">
-							<div id="area_select" style="display: none;position: fixed; z-index: 2;border: 2px solid blue;"></div>
 						</div>
 					</div>
 					<div id="mark_noteList" class="col-6 p-10">
@@ -68,7 +67,48 @@ var g_mark = {
 
     // 初始化
     init: () => {
+        g_mark.showingData = {m: {}};
         g_mark.gallery = false;
+        g_mark.opts = {
+            // 清空标记
+            beforeClearMark: async function(){
+                var key = g_mark.showingKey;
+                var data = await g_database.getImgData(key, false);
+                if (data) {
+                    data.m = {};
+                    g_mark.showingData.m = {};
+                    g_database.saveImgData(key, data);
+                }
+            },
+            onClearMark: () => {
+
+            },
+            // 删除标记
+            beforeDeleteMark: async function(action){
+                   var key = g_mark.showingKey;
+                    var data = await g_database.getImgData(key, false);
+                    if (data) {
+                        var dotKey = action.length > 1 ? action[1] : g_mark.dot.attr('data-key');
+                        delete data.m[dotKey];
+                        g_database.saveImgData(key, data)
+                    }
+                    
+            },
+            onDeleteMark: () => {
+
+            },
+            // 新增标记
+            onApplyMark: function(){
+                g_mark.showingData.m[g_mark.dot.attr('data-key')] = g_mark.editingData;
+                g_database.saveImgData(g_mark.showingKey, g_mark.showingData);
+            },
+
+            // 设置标记模式
+            onSetMarkMode: function(){
+
+            }
+
+        }
         //  onclick="getTextWithPrompt(event, 'コメント')"
         g_mark.div = $(`
 
@@ -81,9 +121,14 @@ var g_mark = {
 			</div>
 		`).appendTo('body');
 
+                
+        $(`<div id="area_select" style="display: none;position: fixed; z-index: 2;border: 2px solid blue;"></div>`).appendTo('body')
+
         registerAction('mark_setMark', (dom, action, params) => {
+            $('#area_select').css('display', 'none');
             var actived = $(dom).hasClass('text-primary');
-            $('#bar_mark_left .text-primary').removeClass('text-primary');
+            g_mark.opts.onSetMarkMode(action[1], !actived);
+            g_mark.getBtns().removeClass('text-primary');
             if (actived) {
                 delete g_mark.markMode;
                 return;
@@ -96,28 +141,23 @@ var g_mark = {
 
         registerAction('mark_clear', async (dom, action, params) => {
             if (confirm('清空吗?')) {
-                var key = g_mark.showingKey;
-                var data = await g_database.getImgData(key, false);
-                if (data) {
+                if(!g_mark.opts.beforeClearMark || g_mark.opts.beforeClearMark() !== false){
                     $('.img-mark-dots').remove();
-                    data.m = {};
-                    g_database.saveImgData(key, data);
+                    g_mark.hide();
                     g_mark.initMarkTexts();
+                    g_mark.opts.onClearMark && g_mark.opts.onClearMark()
                 }
             }
         });
         registerAction('dot_delete', async (dom, action, params) => {
             if (confirm('删除吗?')) {
-                var key = g_mark.showingKey;
-                var data = await g_database.getImgData(key, false);
-                if (data) {
+                if(!g_mark.opts.beforeDeleteMark || g_mark.opts.beforeDeleteMark(action) !== false){
                     var dotKey = action.length > 1 ? action[1] : g_mark.dot.attr('data-key');
-                    delete data.m[dotKey];
-                    g_database.saveImgData(key, data)
                     $('.img-mark-dots[data-key="' + dotKey + '"]').remove();
+                    g_mark.hide();
+                    g_mark.initMarkTexts();
+                    g_mark.opts.onDeleteMark && g_mark.opts.onDeleteMark(dotKey)
                 }
-                g_mark.hide();
-                g_mark.initMarkTexts();
             }
         });
 
@@ -126,65 +166,78 @@ var g_mark = {
             if (text == '') return toastPAlert('请输入文本', 1000, '', 'alert-primary');
             g_mark.dot.attr('data-title', text);
             g_mark.editingData.t = text;
-            if(!g_mark.showingData.m) g_mark.showingData.m = {};
-            g_mark.showingData.m[g_mark.dot.attr('data-key')] = g_mark.editingData;
-            g_database.saveImgData(g_mark.showingKey, g_mark.showingData);
-            g_mark.hide();
-            g_mark.initMarkTexts();
+            if(!g_mark.opts.onApplyMark() || g_mark.opts.onApplyMark() !== false){
+                g_mark.hide();
+                g_mark.initMarkTexts();
+            }
         });
         registerAction('dot_click', (dom, action, params) => {
+
             dom = $(dom);
-            g_mark.text = dom.attr('data-title');
-            // if (editing) {
-            //     return toastPAlert(g_mark.text, 10000, '', 'alert-primary');
-            // }
+            var text = dom.attr('data-title');
+            if(!g_mark.opts.beforeDotClick || g_mark.opts.beforeDotClick(text) !== false){
+                 g_mark.text = text;
+                console.log(text);
+                // if (editing) {
+                //     return toastPAlert(g_mark.text, 10000, '', 'alert-primary');
+                // }
 
-            var i = g_mark.div.width() / 2;
-            var x = dom.offset().left;
-            var mw = $(window).width();
-            if (x + i > mw) {
-                x = mw - g_mark.div.width();
-            } else {
-                x -= i;
+                var i = g_mark.div.width() / 2;
+                var x = dom.offset().left;
+                var mw = $(window).width();
+                if (x + i > mw) {
+                    x = mw - g_mark.div.width();
+                } else {
+                    x -= i;
+                }
+
+                var y = dom.offset().top + 20;
+                var mh = $(window).height();
+                if (y + g_mark.div.height() > mh) {
+                    y = mh - g_mark.div.height();
+                }
+
+                g_mark.dot = dom;
+                g_mark.key = dom.attr('data-key');;
+                g_mark.div.find('textarea').val(g_mark.text)
+                addAnimation(g_mark.div.css({
+                    left: x + 'px',
+                    top: y + 'px',
+                    display: 'unset'
+                }), 'flipInX', () => {
+                    // g_mark.div.find('textarea').focus();
+                });
+
+                g_mark.opts.onDotClick && g_mark.opts.onDotClick(g_mark.div);
             }
+           
 
-            var y = dom.offset().top + 20;
-            var mh = $(window).height();
-            if (y + g_mark.div.height() > mh) {
-                y = mh - g_mark.div.height();
-            }
-
-            g_mark.dot = dom;
-            g_mark.key = dom.attr('data-key');;
-            g_mark.div.find('textarea').val(g_mark.text)
-            addAnimation(g_mark.div.css({
-                left: x + 'px',
-                top: y + 'px',
-                display: 'unset'
-            }), 'flipInX', () => {
-                // g_mark.div.find('textarea').focus();
-            });
         });
 
         // g_mark.openDialog('test4');
         
 
     },
+
+    getBtns: () => {
+            return $('[data-action="mark_setMark,n"], [data-action="mark_setMark,c"], [data-action="mark_setMark,s"], [data-action="mark_clear"]');
+
+        },
     // 初始化标记
     initMark: (data) => {
         for (var key in data.m) {
-            var p = key.split('_');
             g_mark.newMark(key, data.m[key]);
         }
-        g_mark.initMarkTexts();
+        g_mark.initMarkTexts(data.m);
     },
     // 加载标记文本列表
-    initMarkTexts: () => {
+    initMarkTexts: (data) => {
+        if(!data) data = g_mark.showingData.m;
         var h = '';
-        for (var key in g_mark.showingData.m) {
+        for (var key in data) {
             h += `
     		<div class="alert mb-10" role="alert">
-			  <span>` + g_mark.showingData.m[key].t + `</span>
+			  <span>` + data[key].t + `</span>
 			  <div class="mt-10 text-right">
 			  	<i data-action="dot_delete,` + key + `" class="fa fa-trash-o text-danger" aria-hidden="true"></i>
 			  	` + getFormatedTime(5, key) + `
@@ -231,8 +284,6 @@ var g_mark = {
 				    `;
                 break;
         }
-
-
         // if (g_mark.gallery) {
         //     x = _viewer.image.width * (x / 100) + 'px';
         //     y = _viewer.image.height * (y / 100) + 'px';
@@ -294,7 +345,7 @@ var g_area;
 var g_areaTimer;
 
 $(document)
-    .on('mousedown', '#div_markImg img', (event) => {
+    .on('mousedown touchstart', '#div_markImg img', (event) => {
         if (!g_mark.markMode) return;
         g_b_area = true;
         g_areaTimer = setTimeout(() => {
@@ -304,40 +355,14 @@ $(document)
             }
         }, 1000);
     })
-    .on('mouseup', (event) => {
+    .on('mouseup touchend', (event) => {
         if (!g_mark.markMode) return;
         if (g_b_area) {
             g_b_area = false;
             if (!g_areaTimer) setEnd(event);
         }
     })
-    .on('touchstart', '#div_markImg img', (event) => {
-        if (!g_mark.markMode) return;
-
-        g_b_area = true;
-        g_areaTimer = setTimeout(() => {
-            g_areaTimer = undefined;
-            if (g_b_area) {
-                setStart(event.currentTarget, event);
-            }
-        }, 1000);
-    })
-    .on('touchend', (event) => {
-        if (!g_mark.markMode) return;
-
-        if (g_b_area) {
-            g_b_area = false;
-            if (!g_areaTimer) setEnd(event);
-        }
-    })
-    .on('mousemove', (event) => {
-        if (!g_mark.markMode) return;
-
-        if (g_b_area & !g_areaTimer && g_area) {
-            setSize(event.currentTarget, event);
-        }
-    })
-    .on('touchmove', (event) => {
+    .on('mousemove touchmove', (event) => {
         if (!g_mark.markMode) return;
 
         if (g_b_area & !g_areaTimer && g_area) {

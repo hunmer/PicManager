@@ -1,5 +1,10 @@
 var g_setting = {
     init: function() {
+
+        
+        registerAction('setting', (dom, action, params) => {
+            g_user.modal();
+        });
         if(g_cache.isApp){
             $(`
                 <div class="custom-switch mt-10">

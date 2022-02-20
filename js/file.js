@@ -3,7 +3,7 @@ var g_file = {
         $(function() {
 
             $('#input_img').on('change', function(event) {
-                g_file.parseFiles(this, $(that).attr('data-type'), $(that).attr('data-config'));
+                g_file.parseFiles(this.files, $(this).attr('data-type'), $(this).attr('data-config'));
                 this.value = '';
             });
 
@@ -47,11 +47,11 @@ var g_file = {
 
             $('.sidebar').on('dragover', e => {
                 var target = e.target;
-                if(target.hasClass('.folder-name')){
+                if (target.hasClass('.folder-name')) {
                     // 目录
                     var folder = $(target).parents('[data-folder]').data('folder');
-                }else
-                if(true){
+                } else
+                if (true) {
                     // 过滤器
                 }
                 console.log(e);
@@ -70,11 +70,9 @@ var g_file = {
     },
 
     parseFiles: function(files, type, config) {
-        console.log(files);
 
         var len = files.length;
         if (len == 0) return;
-        g_autojs.showImportProgress(len);
 
         var msgs = [];
         // todo 如果文件过大，提示是否压缩。
@@ -83,22 +81,19 @@ var g_file = {
         var cnt = 0;
         var datas = {};
         var callback = (obj) => {
-            var file = obj.origin;
-            var fileName = file.name;
-
-            getMD5(file, async (md5) => {
+            const onProgress = (obj, parmas) => {
                 var finished = ++cnt == len;
                 g_autojs.setImportProgress(cnt);
-
-                var pic = await g_database.getImgData(md5);
-                if (pic) {
-                    msgs.push(`图片 ${fileName} , ${md5} 已存在!`);
-                    return;
-                }
                 var base64 = obj.result || obj.base64;
                 switch (type) {
+                    case 'icon':
+                        // 裁剪
+                        cropImage(base64, {}, () => {
+                            $('#user_icon').attr('src', _cropper.getCroppedCanvas({width: 50, height: 50}).toDataURL('image/webp'));
+                        });
+                        break;
                     case 'images':
-                        datas[md5] = {
+                        datas[parmas.md5] = {
                             i: base64,
                             n: fileName,
                         }
@@ -120,8 +115,28 @@ var g_file = {
                 if (finished && msgs.length) {
                     alert1(msgs.join("</br>"))
                 }
-            })
+            }
+
+            if (cnt == 0) {
+                g_autojs.showImportProgress(len);
+            }
+            var file = obj.origin;
+            var fileName = file.name;
+
+            if (['images'].includes(type)) {
+                getMD5(file, async (md5) => {
+                    var pic = await g_database.getImgData(md5);
+                    if (pic) {
+                        msgs.push(`图片 ${fileName} , ${md5} 已存在!`);
+                        return;
+                    }
+                    onProgress(obj, { md5: md5 });
+                });
+                return;
+            }
+            onProgress(obj);
         }
+
         const toBase64 = (file) => {
             let reader = new FileReader();
             reader.origin = file;
@@ -146,6 +161,7 @@ var g_file = {
                 continue;
             }
             if (!f.type.startsWith('image/')) continue;
+
             if (['camera'].indexOf(type) == -1) {
                 // todo 可定义是否启用
                 // todo 自定义大小
@@ -169,4 +185,36 @@ var g_file = {
     }
 
 }
+
+function cropImage(src, opts, callback){
+
+    modalOpen({
+            id: 'modal-custom-1',
+            fullScreen: true,
+            type: 'user',
+            width: '80%',
+            title: _l('crop_裁剪图片'),
+            canClose: true,
+            html: `
+                      <img id="cropImage" class="w-full" src="${src}">
+                      <button class="btn btn-primary mt-10 btn-block" onclick="if(!_cropper || _cropper._callback() !== false) halfmoon.toggleModal('modal-custom-1'); _cropper.destroy(); delete _cropper;">` + _l('crop_保存') + `</button>
+                        `,
+            onShow: () => {
+                loadRes([
+                    {url: 'js/cropper.min.js', type: 'js'},
+                    {url: 'css/cropper.min.css', type: 'css'},
+                    ], () => {
+                        _cropper = new Cropper($('#cropImage')[0], Object.assign({
+                            aspectRatio: 1 / 1, 
+                            viewMode : 3,
+                        }, opts));
+                        _cropper._callback = callback;
+                   })
+            },
+            onClose: () => {
+                return true;
+            }
+        });
+}
+var _cropper;
 g_file.init();

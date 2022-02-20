@@ -363,35 +363,17 @@ var g_gallery = {
         g_cache.openImageAt = new Date().getTime();
         showContent('detail');
         if (_viewer) _viewer.destroy();
+        g_database.getImageUrl(g_database.showingImage).then(thumb => {
+             _viewer = initViewer($('#imageEdit img')[0], {
+                inline: true,
+            }, {
+                blurBg: true,
+                bgUrl: thumb,
+            });
 
-        var img = $('#imageEdit img')[0];
-        _viewer = new Viewer(img, {
-            inline: true,
-            toolbar: 0,
-            navbar: 0,
-            title: 0,
-            url(image) {
-                var url = image.src.replace('https://i.pinimg.com/236x/', 'https://i.pinimg.com/originals/')
-                return url;
-            },
-            // transition:false,
-            ready() {
-                img.hidden = true;
-            },
-            async viewed() {
-                $('.viewer-backdrop').backgroundBlur({
-                    blurAmount: 10, // 模糊度
-                    imageClass: 'tinted-bg-blur',
-                    overlayClass: 'tinted-bg-overlay',
-                    duration: 1500, // 图片淡出时间
-                    endOpacity: 1 // 图像最终的不透明度
-                }).backgroundBlur(await g_database.getImageUrl(g_database.showingImage));
-
-                $('#detail_picSize .text-right').html(_viewer.imageData.naturalWidth + 'x' + _viewer.imageData.naturalHeight);
-            },
-            toggleOnDblclick: false,
+            //    $('#detail_picSize .text-right').html(_viewer.imageData.naturalWidth + 'x' + _viewer.imageData.naturalHeight);
+           _viewer.show();
         });
-        _viewer.show();
 
         ////////////////
         _r(g_cache, 'timer_autoStart', 'timeout');

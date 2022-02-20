@@ -226,8 +226,49 @@ var g_database = {
         });
         // g_database.loadImage('test10');
         // return;
+    },
 
+    showSaveDialog: (data) => {
+        if(!data.length) data = [data];
+        var keys 
+        var selected = [];
+        var list = {}
+        var folders = g_database.getFolders();
+        for(folder in folders){
+            var d = folders[folder];
+            list[folder] = d.name;
+            if(data.length == 1 && d.imgs.includes(data[0])){ // 选中
+                selected.push(folder);
+            }
+        }
+        console.log(list, selected);
+            var h = $(mobiscrollHelper.buildMulitSelect({
+                id: 'mulitselect-demo',
+                name: data.length+'张图片',
+                data: list,
+                selected: selected
+            })).prepend('body');
+            var dialog = mobiscroll_(h, 'select', {
+                minWidth: 200,
+                closeOnOverlayTap: false,
+                headerText: '设置保存目录',
+                buttons: [{
+                    text: _l('确定'),
+                    handler: function(event, instance) {
+                        var vals = instance.getVal();
+                        console.log(vals);
 
+                        // g_database.importImages(data, (i) => {
+                        //     toastPAlert('成功导入'+i+'张图片!');
+                        //     g_database.saveToFolder(vals);
+                        // });
+                    }
+                }, {
+                    text: _l('取消'),
+                    handler: 'cancel'
+                }],
+            });
+            console.log(dialog);
     },
 
     // 获取目录分组
@@ -350,6 +391,10 @@ var g_database = {
         }
     },
 
+    getFolders: () => {
+        return g_folders;
+    },
+
     // 获取最近保存了图片的目录
     getRecentFolder: () => {
         return Object.keys(g_folders).sort((a, b) => {
@@ -358,14 +403,18 @@ var g_database = {
     },
 
     // 保存图片到目录
-    saveToFolder: (folder, keys) => {
+    saveToFolder: (folders, keys) => {
+        if(!Array.isArray(folders)) folders = [folders];
         var i = 0;
-        for (var key of keys) {
-            if (g_folders[folder].imgs.indexOf(key) == -1) {
-                i++;
-                g_folders[folder].imgs.push(key);
+        for(var folder of folders){
+            for (var key of keys) {
+                if (g_folders[folder].imgs.indexOf(key) == -1) {
+                    i++;
+                    g_folders[folder].imgs.push(key);
+                }
             }
         }
+        
         if (i) {
             local_saveJson('folders', g_folders);
             g_database.initFolders();
@@ -601,9 +650,9 @@ var g_database = {
 
     // 获取目录下的所有图片
     getAllImgs: async function(cache = true) {
-        if (cache && g_imgCache.size) {
-            return g_imgCache;
-        }
+        // if (cache && g_imgCache.size) {
+        //     return g_imgCache;
+        // }
         var res = [];
         for (var name of g_store.tables) {
             var keys = await g_store.keys(name);
@@ -612,6 +661,10 @@ var g_database = {
         g_imgCache = new Set(res);
         local_saveJson('keys', Array.from(g_imgCache));
         return res;
+    },
+
+    imageExists: (key) => {
+        return g_imgCache.has(key);
     },
 
     // 获取图片数据

@@ -213,7 +213,7 @@ var g_site = {
             }
         }
         g_site.grid.find('.lazyload').lazyload()
-        g_site.gridProgress();
+        gridProgress(g_site.grid, 'site');
     },
     clearGallery: () => {
         if (g_site.grid) {
@@ -222,35 +222,5 @@ var g_site = {
         }
         $('#gallery_site').html('');
     },
-    gridProgress: () => {
-        g_site.grid.imagesLoaded()
-            .progress(function(instance, image) {
-                var par = image.img.parentElement;
-                if (!image.isLoaded) {
-                    // 图片加载错误
-                    var item = par.parentElement;
-                    return g_site.grid.isotope('remove', item);
-                }
-                $(par).css({ height: '', backgroundColor: '' });
-                _r(g_cache, 'layoutInitTimer', 'timeout');
-                g_cache.layoutInitTimer = setTimeout(() => {
-                    g_site.grid.isotope('layout');
-                }, 2000);
-            })
-            .always(function(instance) {
-                _r(g_cache, 'layoutInitTimer', 'timeout');
-                g_site.grid.isotope('layout');
-                delete g_page.loading['site'];
-
-                setTimeout(() => {
-                    var content = $('.content-wrapper');
-                    if (content[0].scrollHeight <= content.height()) {
-                        g_page.nextPage('site');
-                    }
-                }, 500);
-
-            })
-
-
-    },
+   
 }
