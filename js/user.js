@@ -40,12 +40,14 @@ var g_user = {
         registerAction('user_setProfile', (dom, action, params) => {
             var v = checkInputValue($('#user_input_name'));
             if (!v) return;
+            var icon = $('#user_icon').attr('src');
             g_config.user = {
                 name: v[0],
-                icon: $('#user_icon').attr('src'),
+                icon: icon,
             }
             local_saveJson('config', g_config);
             g_user.setIcon();
+            g_room.send({type: 'updateIcon', data: icon})
 
             if(isModalOpen('modal-custom', 'user')) halfmoon.toggleModal('modal-custom');
             toastPAlert(_l('user_成功设置'), 'alert-success');

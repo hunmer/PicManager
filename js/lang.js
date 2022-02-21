@@ -41,10 +41,16 @@ function _l(k) {
     var lang = g_config.lang || 'zh';
     if (g_lang[k] && g_lang[k][lang]) {
         k = g_lang[k][lang];
-        for (var i = 1; i < arguments.length; i++) {
-            k = k.replace('%' + i, arguments[i]);
+    }
+    var args = Array.from(arguments);
+    args.shift(); // 去除第一个 k
+    var len = args.length;
+    if (len) {
+        args = len == 1 && Array.isArray(args[0]) ? args[0] : args; // 如果是数组则用数组
+        for (var i = 0; i < args.length; i++) {
+            k = k.replace('%' + i, args[i]);
         }
+        return k;
     }
     return k;
 }
-

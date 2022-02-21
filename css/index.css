@@ -50,6 +50,12 @@
 }
 #room_chat.withViewer #msg_list {
     background-color: rgba(0, 0, 0, 0.9);
+    color: #ffffff;
+}
+
+#room_chat.withViewer .d-flex i {
+    color: #ffffff !important;
+
 }
 
 

@@ -1,8 +1,17 @@
 var g_file = {
-    openDialog: (type, multiple = false, config = { quality: 0.7 }) => {
+    callbacks: {},
+    openDialog: (type, multiple = false, opts = {}) => {
+        Object.assign({
+            lrz: { quality: 0.7 },
+            cropper: false,
+        }, opts);
+        if(opts.callback){
+            g_file.callbacks[type] = opts;
+        }
+
         $('#input_img').prop('multiple', multiple).attr({
                     'data-type': type,
-                    'data-config': JSON.stringify(config)
+                    'data-config': JSON.stringify(opts.lrz)
                 }).click();
     },
     init: () => {
@@ -123,6 +132,18 @@ var g_file = {
                         break;
                     case 'camera':
                         g_rpg.uploadImage(base64);
+                        break;
+
+                    default: // 自定义
+                        if(g_file.callbacks[type]){
+                            var opts = g_file.callbacks[type];
+                            if(opts.cropper){
+                                cropImage(base64, opts.cropper, opts.callback);
+                            }else{
+                                opts.callback(base64);
+                            }
+                        }
+                            
                         break;
                 }
 

@@ -13,6 +13,7 @@ var g_emoji = {
                 sid: undefined,
             }
         });
+            g_cache.reloadImage = [];
         g_cache.tags = Object.entries(g_stricker_options.tags);
         g_emoji.registerAction();
         _audio_stricker = $('<audio autoplay></audio>').appendTo('body')[0];
@@ -36,7 +37,7 @@ var g_emoji = {
         var file = 'emojis/' + type + '.json';
         g_emoji.lastEmojiType = type;
         if (window.location.protocol == 'file:') {
-            loadJs(file);
+            loadRes([{url: file, type: 'js'}]);
         } else {
             $.ajax({
                 url: file,
@@ -229,7 +230,6 @@ var g_emoji = {
         });
         registerAction('stricker_toTab', (dom, action, params) => {
             $('.selected').removeClass('selected');
-            g_cache.reloadImage = [];
             clearInterval(g_cache.reloadImage_timer);
             g_cache.reloadImage_timer = 0;
 

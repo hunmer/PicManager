@@ -235,6 +235,12 @@ $(function() {
                 }
                 break;
 
+            case 'room':
+                // fun = () => {
+                //     if (g_gallery.grid) g_gallery.grid.isotope('layout')
+                // }
+                break;
+
             default:
                 return;
         }

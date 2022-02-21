@@ -1,6 +1,9 @@
 var g_page = {
 	lists: {},
 	loading: {},
+	removeOpts: (name) => {
+		if(g_page.lists[name]) delete g_page.lists[name]; 
+	},
 	getOpts: (name) => {
 		return g_page.lists[name];
 	},
