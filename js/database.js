@@ -228,47 +228,55 @@ var g_database = {
         // return;
     },
 
+    // 获取图片所关联的目录
+    getImageLinkedFolders: () => {
+
+    },
+
+    initImportData: (data) => {
+
+    },
+
     showSaveDialog: (data) => {
-        if(!data.length) data = [data];
-        var keys 
+        var keys = Object.keys(data);
+
         var selected = [];
         var list = {}
         var folders = g_database.getFolders();
         for(folder in folders){
             var d = folders[folder];
             list[folder] = d.name;
-            if(data.length == 1 && d.imgs.includes(data[0])){ // 选中
+            if(keys.length == 1 && d.imgs.includes(keys[0])){ // 一张图片显示默认选中
                 selected.push(folder);
             }
         }
-        console.log(list, selected);
             var h = $(mobiscrollHelper.buildMulitSelect({
                 id: 'mulitselect-demo',
-                name: data.length+'张图片',
+                title: keys.length+'张图片',
                 data: list,
                 selected: selected
             })).prepend('body');
             var dialog = mobiscroll_(h, 'select', {
                 minWidth: 200,
-                closeOnOverlayTap: false,
+                closeOnOverlayTap: true,
                 headerText: '设置保存目录',
                 buttons: [{
                     text: _l('确定'),
                     handler: function(event, instance) {
-                        var vals = instance.getVal();
-                        console.log(vals);
-
-                        // g_database.importImages(data, (i) => {
-                        //     toastPAlert('成功导入'+i+'张图片!');
-                        //     g_database.saveToFolder(vals);
-                        // });
+                        var folders = instance.getArrayVal();
+                        g_database.importImages(data, (i) => {
+                            toastPAlert('成功导入'+i+'张图片!');
+                            if(folders.length){
+                                g_database.saveToFolder(folders, keys);
+                            }
+                        });
+                        instance.hide();
                     }
                 }, {
                     text: _l('取消'),
                     handler: 'cancel'
                 }],
             });
-            console.log(dialog);
     },
 
     // 获取目录分组
@@ -313,26 +321,34 @@ var g_database = {
         var i = 0;
         var now = new Date().getTime();
         for (var key in datas) {
+            var d = datas[key];
+            if(isEmpty(d.i)) continue;
+            if(typeof(key) != 'string' || key.length != 32){
+                // 可能是数组可能是没有设置md5
+                key = getMD5(d.i); // 获取图片md5
+            }
+            d.c = now;
+            g_database.saveImgData(key, d, false);
             i++;
-            datas[key].c = now;
-            g_database.saveImgData(key, datas[key], false);
         }
         if (i > 0 && typeof(callback) == 'function') callback(i);
         if (i > 100) return location.reload();
 
         // 如果这些图片满足现在所展示的过滤界面则实时更新界面
-        (async () => {
-            // todo 导入的图片超出一定数量 只展示部分或者刷新？
-            if (JSON.stringify(filter) == JSON.stringify(g_config.filter)) {
-                var h = '';
+        if(['detail', 'gallery'].includes(g_cache.showing)){
+            (async () => {
+                // todo 导入的图片超出一定数量 只展示部分或者刷新？
+                if (JSON.stringify(filter) == JSON.stringify(g_config.filter)) {
+                    var h = '';
 
-                for (var md5 in datas) {
-                    $('.grid-item[data-md5="' + md5 + '"]').remove();
-                    h += await g_gallery.getImageHtml(md5, datas[md5])
+                    for (var md5 in datas) {
+                        $('.grid-item[data-md5="' + md5 + '"]').remove();
+                        h += await g_gallery.getImageHtml(md5, datas[md5])
+                    }
+                    g_gallery.loadHtml(h, { insertMode: 'prepend' });
                 }
-                g_gallery.loadHtml(h, { insertMode: 'prepend' });
-            }
-        })();
+            })();
+        }
     },
 
 

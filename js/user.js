@@ -35,10 +35,7 @@ var g_user = {
         })
 
         registerAction('user_uploadIcon', (dom, action, params) => {
-            $('#input_img').attr({
-                'data-config': JSON.stringify({ width: 50, quality: 0.5 }),
-                'data-type': 'icon'
-            })[0].click();
+                g_file.openDialog('icon', false, { width: 50, quality: 0.5 });
         });
         registerAction('user_setProfile', (dom, action, params) => {
             var v = checkInputValue($('#user_input_name'));

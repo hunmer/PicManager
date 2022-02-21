@@ -44,7 +44,7 @@ var mobiscrollHelper = {
     },
     buildSelect: (opts) => {
         opts = Object.assign({ id: 'select-demo', data: {} }, opts);
-        var h = '<select name="' + opts.name + '" id="' + opts.id + '">';
+        var h = '<select name="' + opts.title + '" id="' + opts.id + '">';
         for (var key in opts.data) {
             h += '<option value="' + key + '"' + (opts.selected && opts.selected == key ? ' selected' : '') + '>' + opts.data[key] + '</option>';
         }
@@ -54,7 +54,7 @@ var mobiscrollHelper = {
     buildMulitSelect: (opts) => {
         opts = Object.assign({ id: 'mulitselect-demo', data: {} ,selected: []}, opts);
         console.log(opts);
-        var h = '<select name="' + opts.name + '" id="' + opts.id + '" multiple>';
+        var h = '<select name="' + opts.title + '" id="' + opts.id + '" multiple>';
         for (var key in opts.data) {
             h += '<option value="' + key + '"' + (opts.selected.indexOf(key) != -1 ? ' selected' : '') + '>' + opts.data[key] + '</option>';
         }
@@ -111,11 +111,13 @@ var mobiscrollHelper = {
                 buttons: [{
                     text: _l('确定'),
                     handler: function(event, instance) {
-                        opts.callback && opts.callback(instance);
+                        opts.callback && opts.callback(true, instance);
                     }
                 }, {
                     text: _l('取消'),
-                    handler: 'cancel'
+                     handler: function(event, instance) {
+                        opts.callback && opts.callback(false, instance); // 不知道啥原因点击项目就关闭窗口了，只能检测是不是点击了取消
+                    }
                 }],
             }, opts.opts));
             return dialog;
@@ -289,56 +291,5 @@ $(document).ready(function() {
 
 
     return;
-mobiscrollHelper.select({
-        name: '选择计时方式',
-        data: ['投票', '随机', '自由'],
-        selected: 1,
-        callback: (instance) => {
-            console.log(instance.getVal());
-            switch(parseInt(instance.getVal())){
-                case 0:
-                    g_room.send({
-                        type: 'startVote',
-                        data: {}
-                    });
-                    break;
 
-                case 1:
-                    var imgs = g_room.roomData.imgs;
-                    var keys = Object.keys(imgs);
-                    const fun = () => {
-                        var random = imgs[arrayRandom(keys)];
-                        confirm1({
-                            title: '是否选择这张图?',
-                            html: `<img src="${random.src}" class="w-full">`,
-                            buttons: ['set', {
-                                text: '再抽',
-                                handler: function(event, instance) {
-                                    fun();
-                                }
-                            }, 'cancel']
-                        }, sure => {
-                            console.log(sure);
-                            if(sure){
-                                 g_room.onRevice({
-                                    type: 'countdown_start',
-                                    data: random
-                                });
-                            } 
-                        })
-                    }
-                    fun();
-                   
-                    break;
-
-                case 2:
-                    
-                    break;
-            }
-            //instance.hide();
-        },
-        opts: {
-            headerText: 'title',
-        },
-    });
 });

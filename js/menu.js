@@ -5,6 +5,7 @@ var g_menu = {
             <i data-action="showContent,gallery" class="fa fa-home fa-2x" aria-hidden="true"></i>
             <i data-action="showContent,detail" class="fa fa-photo fa-2x" aria-hidden="true"></i>
             <i data-action="showContent,site" class="fa fa-internet-explorer fa-2x" aria-hidden="true"></i>
+            <i data-action="showContent,room" class="fa fa-gamepad fa-2x" aria-hidden="true"></i>
             <i onclick="g_menu.toggleMenu('#menu_main', true)" class="fa fa-arrow-right fa-2x" aria-hidden="true"></i>
         </div>`).appendTo('body');
     },

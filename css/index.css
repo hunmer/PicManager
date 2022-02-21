@@ -1,5 +1,39 @@
 /* room 开始 */
 
+
+ .textScroll {
+    width: 100px;
+    overflow: hidden;
+}
+
+.textScroll span {
+    display: inline-block;
+    white-space: nowrap;
+    animation: 15s wordsLoop linear infinite normal;
+}
+
+@keyframes wordsLoop {
+    0% {
+        transform: translateX(200px);
+        -webkit-transform: translateX(200px);
+    }
+    100% {
+        transform: translateX(-100%);
+        -webkit-transform: translateX(-100%);
+    }
+}
+
+@-webkit-keyframes wordsLoop {
+    0% {
+        transform: translateX(200px);
+        -webkit-transform: translateX(200px);
+    }
+    100% {
+        transform: translateX(-100%);
+        -webkit-transform: translateX(-100%);
+    }
+}
+
 .room_img_heart_mine {
     border: 1px solid red !important;
 }
@@ -362,7 +396,7 @@ body {
 .toolbar{
         width: 100%;
     display: inline-flex;
-    justify-content: flex-end;
+    /*justify-content: flex-end;*/
 }
 
 .toolbar i {

@@ -34,10 +34,7 @@ var g_rpg = {
         g_shops = d;
         // g_shops = local_readJson('shops', d);
         registerAction('uploadImage', (dom, action, params) => {
-            $('#input_img').prop('multiple', true).attr({
-                'data-type': 'camera',
-                'data-config': JSON.stringify({ quality: 0.7 })
-            }).click();
+                g_file.openDialog('camera', true);
         });
         registerAction('uploadImagefromNetwork', (dom, action, params) => {
             // 服务器IP 

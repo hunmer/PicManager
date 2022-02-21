@@ -1,3 +1,4 @@
+
 var _GET = getGETArray();
 var socket_url = 'wss:///daily-websock1.glitch.me';
 var g_localKey = 'picManager_';
@@ -793,7 +794,6 @@ function dataURLtoBlob(dataurl) {
         type: mime
     });
 }
- 
 function getImgToBase64(url,callback, format){//将图片转换为Base64
   var canvas = document.createElement('canvas'),
     ctx = canvas.getContext('2d'),
@@ -833,9 +833,10 @@ function  initMenu(id, data) {
 
     function showSubContent(classes, id){
         for(var con of $('.'+classes)){
-            var finded = con.id == classes+','+id;
+            var finded = con.id == classes+'_'+id;
             $(con).toggleClass('hide', !finded);
-            var btn = getAction(con.id);
+
+            var btn = $(`[data-action="${classes}"][data-value="${con.id.split('_').pop()}"]`)
             btn.toggleClass('btn-primary', finded);
         }
     }

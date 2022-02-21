@@ -349,19 +349,20 @@ var g_autojs = {
         local_saveJson('config', g_config);
         location.reload();
     },
-    showImportProgress: (max) => {
+    showImportProgress: (max, title) => {
         g_cache.importProgress = mobiscrollHelper.buildProgress({
-            title: '导入图片中',
+            title: title || '导入图片中',
             max: max,
             onFinished: function() {
-                // 由于没有传入数据。这里不做处理
-                // toastPAlert('成功导入'+max+'张图片.')
+                // 不处理
             }
         });
     },
     setImportProgress: (current) => {
         g_cache.importProgress && g_cache.importProgress.setProgress(current);
     },
+
+   
 
     confirmUpdate: (url, files) => {
         if (typeof(files) == 'string') files = files.split(",");

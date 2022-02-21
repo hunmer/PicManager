@@ -143,9 +143,9 @@ var g_mark = {
             if (confirm('清空吗?')) {
                 if(!g_mark.opts.beforeClearMark || g_mark.opts.beforeClearMark() !== false){
                     $('.img-mark-dots').remove();
+                    g_mark.opts.onClearMark && g_mark.opts.onClearMark()
                     g_mark.hide();
                     g_mark.initMarkTexts();
-                    g_mark.opts.onClearMark && g_mark.opts.onClearMark()
                 }
             }
         });
@@ -154,9 +154,9 @@ var g_mark = {
                 if(!g_mark.opts.beforeDeleteMark || g_mark.opts.beforeDeleteMark(action) !== false){
                     var dotKey = action.length > 1 ? action[1] : g_mark.dot.attr('data-key');
                     $('.img-mark-dots[data-key="' + dotKey + '"]').remove();
-                    g_mark.hide();
-                    g_mark.initMarkTexts();
                     g_mark.opts.onDeleteMark && g_mark.opts.onDeleteMark(dotKey)
+                     g_mark.hide();
+                    g_mark.initMarkTexts();
                 }
             }
         });

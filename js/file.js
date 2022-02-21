@@ -1,4 +1,10 @@
 var g_file = {
+    openDialog: (type, multiple = false, config = { quality: 0.7 }) => {
+        $('#input_img').prop('multiple', multiple).attr({
+                    'data-type': type,
+                    'data-config': JSON.stringify(config)
+                }).click();
+    },
     init: () => {
         $(function() {
 
@@ -8,10 +14,7 @@ var g_file = {
             });
 
             registerAction('dialog_openImageFile', (dom, action, params) => {
-                $('#input_img').prop('multiple', true).attr({
-                    'data-type': 'images',
-                    'data-config': JSON.stringify({ quality: 0.7 })
-                }).click();
+                g_file.openDialog('images', true);
             });
 
             const inArea = (event, target) => {
@@ -80,12 +83,23 @@ var g_file = {
         // todo 移动鼠标可选择导入目录
         var cnt = 0;
         var datas = {};
+        var temp_arr = [];
         var callback = (obj) => {
             const onProgress = (obj, parmas) => {
                 var finished = ++cnt == len;
                 g_autojs.setImportProgress(cnt);
                 var base64 = obj.result || obj.base64;
                 switch (type) {
+                    case 'room_sendImage': // 发送照片到聊天
+                        g_room.sendMsg({
+                            img: base64
+                        });
+                        break;
+                    case 'room_addImgs,gallery': // 上传图片到房间画廊
+                    case 'room_addImgs,photo': // 上传图片到房间照片
+                        temp_arr.push(base64);
+                        if (finished) g_room.addImages(temp_arr, type);
+                        break;
                     case 'icon':
                         // 裁剪
                         cropImage(base64, {}, () => {

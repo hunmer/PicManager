@@ -1,3 +1,10 @@
+
+mobiscroll.settings = {
+     theme: 'bootstrap',
+     lang: 'zh',
+     themeVariant: 'dark'
+};
+
 function sendRequest(opts) {
     return $.ajax(Object.assign({
             dataType: 'json'
@@ -385,13 +392,14 @@ g_cache.mobiscroll = [];
 
 function mobiscroll_(selector, type, opts, show = true) {
     if (typeof(selector) == 'string') selector = $(selector);
+
     var id = selector.attr('id');
-    if (g_cache.mobiscroll.indexOf(id) == -1) g_cache.mobiscroll.push(id);
+    if (g_cache.mobiscroll.indexOf(id) == -1) g_cache.mobiscroll.push(id); // 加入列表
+
     var dom = selector.mobiscroll()[type](Object.assign({
-        theme: 'bootstrap',
         display: 'center',
         animate: 'fade',
-        lang: 'zh',
+       
     }, opts));
     if (show) dom.mobiscroll('show')[0];
     setTimeout(() => {

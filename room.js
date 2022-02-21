@@ -7,6 +7,8 @@ var crypto = require('crypto');
 var request = require('request');
 var images = require("images");
 
+fs.rmSync('./saves/', { recursive: true, force: true });
+
 var app = express();
 app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
@@ -25,7 +27,7 @@ app.use(function(req, res, next) {
 app.use(express.static(__dirname));
 
 var g_cache = {
-
+    timer: {},
 }
 var server = http.createServer(app);
 var wss = new WebSocket.Server({ server });
@@ -42,7 +44,11 @@ wss.on('connection', function connection(ws) {
 });
 
 function getSavePath(md5) {
-    return '/saves/' + md5 + '.jpg';
+    var s=  './saves/' + md5 ;
+    if(md5.indexOf('.') == -1){ // 没有扩展名
+        s += '.jpg';
+    }
+    return s;
 }
 
 function mkdirsSync(dirname) {
@@ -61,16 +67,63 @@ function getGameData(room) {
     for (var pl of roomData.players) {
         var name = pl._username;
         ret[name] = {
-            icon: getPlayerIcon(pl._uuid),
+            icon: getFilePath(pl._uuid),
             cnt: roomData.data[name] ? Object.keys(roomData.data[name]).length : 0
         }
     }
     return ret;
 }
 
+function broadcast(room, type, data, props) {
+    _room.sendBroadcast(room, {
+        type: type,
+        data: data,
+        props: props
+    })
+}
+
+function overGame(room) {
+    if (g_cache.timer[room]) {
+        clearInterval(g_cache.timer[room].task);
+        delete g_cache.timer[room];
+        broadcast(room, 'overGame', { reason: 'timeout' });
+    }
+}
+
+function startGame(room, game, data) {
+    overGame(room);
+    var roomData = _room.getRoom(room, false);
+    if (roomData) {
+        var time = Math.max(game.time, 0);
+        var increase = time == 0;
+        g_cache.timer[room] = { // 这里直接创建个对象就可以动态修改数据了
+            startTime: new Date().getTime(),
+            time: time,
+            increase: increase,
+        }
+        g_cache.timer[room].task = setInterval(() => {
+            var t = increase ? ++g_cache.timer[room].time : --g_cache.timer[room].time;
+            if (!increase && t <= 0) {
+                overGame(room);
+            } else
+            if (t % 60 == 0) {
+                // 同步
+                broadcast(room, 'syncTime', t);
+            }
+        }, 1000);
+        roomData.game = game;
+        roomData.data = data;
+        broadcast(room, 'startGame', {
+            game: roomData.game,
+            data: roomData.data,
+        });
+    }
+
+}
+
 function onMessage(msg, ws) {
     var r = JSON.parse(msg);
-    console.log(r);
+    // console.log(r);
     if (!r.uuid || !r.player) return;
     var d = r.data;
     // 
@@ -80,43 +133,64 @@ function onMessage(msg, ws) {
         if (!roomData) return;
 
 
-         if (['startVote'].includes(r.type)) { // 需要房主权限
-            if(!r.key || roomData.key != r.key){
-                return sendData(ws, { type: 'alert', data: {msg: '你没有权限操作', class: 'alert-danger' }})
-            }
+        if (['startVote', 'startGame'].includes(r.type)) { // 需要房主权限
+            // if (!r.key || roomData.key != r.key) {
+            //     return sendData(ws, { type: 'alert', data: { msg: '你没有权限操作', class: 'alert-danger' } })
+            // }
         }
     }
-   
-    switch (r.type) {
 
+    switch (r.type) {
+        case 'startGame':
+            startGame(ws._room, d.game, {});
+            break;
         case 'startVote':
-            _room.sendBroadcast(ws._room, msg);
+            var voteTime = 3;
+            broadcast(ws._room, 'startVote', { time: voteTime });
             setTimeout(() => {
                 // 获取投票结果
-                
-            }, 1000 * 5);
+                var r = roomData.vote;
+                var ret = {};
+                for (var k of Object.keys(r).sort((a, b) => {
+                        return r[b].length - r[a].length
+                    })) {
+                    ret[k] = {
+                        cnt: r[k].length, // todo 显示玩家头像
+                        // todo 投票时禁止删除图片
+                        value: roomData.imgs[k]
+                    }
+                }
+                broadcast(ws._room, 'voteResult', ret);
+
+                var keys = Object.keys(ret);
+                if (keys.length) {
+                    startGame(ws._room, {
+                        type: 'copy',
+                        data: ret[keys[0]].value,
+                        time: d.time
+                    }, {});
+                }
+            }, 1000 * voteTime);
             break;
-        /* vote */
+            /* vote */
         case 'heart':
-            for(var md5 in roomData.vote){
+            for (var md5 in roomData.vote) {
                 var i = roomData.vote[md5].indexOf(ws._username);
-                if(i != -1){
+                if (i != -1) {
                     // todo 如果是单选的那就取消旧的， 如果不是则提示超出上限
-                     roomData.vote[md5].splice(i, 1);
-                     if(roomData.vote[md5].length == 0) delete roomData.vote[md5];
-                     break;
+                    roomData.vote[md5].splice(i, 1);
+                    if (roomData.vote[md5].length == 0) delete roomData.vote[md5];
+                    break;
                 }
             }
-            if(!roomData.vote[d.id]) roomData.vote[d.id] = [];
+            if (!roomData.vote[d.id]) roomData.vote[d.id] = [];
             roomData.vote[d.id].push(ws._username);
-            _room.sendBroadcast(ws._room, {
-                type: 'voteList',
-                data: roomData.vote
-            });
+            broadcast(ws._room, 'voteList', roomData.vote);
+
             break;
 
-        /* mark */
-        // 获取玩家标记
+            /* mark */
+            // 获取玩家标记
         case 'getPlayerMark':
             roomData.data[d.target] && sendData(ws, {
                 type: 'playerMark',
@@ -133,17 +207,15 @@ function onMessage(msg, ws) {
             } else {
                 roomData.data[r.player] = d;
             }
-            _room.sendBroadcast(ws._room, {
-                type: 'markList',
-                data: getGameData(roomData)
-            });
+            broadcast(ws._room, 'markList', getGameData(roomData));
             break;
 
-        case 'addImgs':
+        case 'room_addImgs,gallery':
+        case 'room_addImgs,photo':
             var res = {};
             var c = 0;
             var exists = 0;
-            var uploaded = _room.getRoom(ws._room).imgs; // todo
+            var uploaded = _room.getRoom(ws._room)[r.type == 'room_addImgs,gallery' ? 'imgs' : 'photos']; // todo
             const callback = (url, md5) => {
                 if (md5) {
                     var img = {
@@ -154,59 +226,51 @@ function onMessage(msg, ws) {
                     uploaded[md5] = img;
                 }
                 if (++c == d.length) {
-                    console.log(res);
-                    if (exists) sendData(ws, { type: 'alert', data: {msg: exists + '张图片已经被上传过了!', class: 'alert-danger' }});
-                    _room.sendBroadcast(r.room, {
-                        type: 'addImgs',
-                        data: res
-                    });
+                    if (exists) sendData(ws, { type: 'alert', data: { msg: exists + '张图片已经被上传过了!', class: 'alert-danger' } });
+                    broadcast(ws._room, 'addImgs', res, {type: r.type});
                 }
             }
             for (var img of d) {
                 var md5 = crypto.createHash('md5').update(img).digest("hex");
-
                 if (uploaded[md5]) {
                     // 图片已被上传过
                     exists++;
                     callback();
-                    continue;
-                }
-
-
+                }else
                 if (img.startsWith('data:image')) {
-                    saveBase64Image(getSavePath(md5), img, (err, file, bin) => {
+                    saveBase64Image(md5, img, (err, file, md5) => {
                         if (!err) {
-                            images(bin)
+                            images(file)
                                 .resize(200)
-                                .save(file + '.thumb', {
+                                .save(file + '.thumb', 'jpg', {
                                     quality: 50
                                 });
                         }
                         callback('{host}' + file, md5);
                     });
-                    continue;
+                }else{
+                    callback(img, md5);
                 }
-                callback(img, md5);
             }
             break;
 
-        // case 'deleteImg':
-        //     var file = './saves/' + data.md5 + '.jpg';
-        //     fs.exists(file, function(exists) {
-        //         if (exists) {
-        //             fs.unlink(file, (err) => {
-        //                 if (err == null) {
-        //                     delete pics[data.md5];
-        //                     fs.writeFile('pics.json', JSON.stringify(pics), (err) => {
-        //                         if (err == null) {
-        //                             broadcastMsg(JSON.stringify({ type: 'pics_datas', data: getPicDatas(), removed: data.md5 }));
-        //                         }
-        //                     });
-        //                 }
-        //             });
-        //         }
-        //     });
-        //     break;
+            // case 'deleteImg':
+            //     var file = './saves/' + data.md5 + '.jpg';
+            //     fs.exists(file, function(exists) {
+            //         if (exists) {
+            //             fs.unlink(file, (err) => {
+            //                 if (err == null) {
+            //                     delete pics[data.md5];
+            //                     fs.writeFile('pics.json', JSON.stringify(pics), (err) => {
+            //                         if (err == null) {
+            //                             broadcastMsg(JSON.stringify({ type: 'pics_datas', data: getPicDatas(), removed: data.md5 }));
+            //                         }
+            //                     });
+            //                 }
+            //             });
+            //         }
+            //     });
+            //     break;
         case 'listRoom':
             break;
         case 'login':
@@ -216,13 +280,13 @@ function onMessage(msg, ws) {
             ws._loginAt = new Date().getTime();
 
             if (d.icon && d.icon.startsWith('data:image/')) {
-                saveBase64Image(getSavePath(r.uuid), d.icon, (err, file, bin) => {
+                saveBase64Image(r.uuid, d.icon, (err, file, md5) => {
                     if (!err) {
-                        // images(bin)
-                        //     .resize(50)
-                        //     .save(file, {
-                        //         quality: 100
-                        //     });
+                        // images(file)
+                        // .resize(50)
+                        // .save(file, 'jpg', {
+                        //     quality: 80
+                        // });
                     }
                 });
             }
@@ -232,29 +296,51 @@ function onMessage(msg, ws) {
                 data: _room.listRoom()
             })
             _o(`${player} 登录了`);
-            _room.joinRoom('chat', '', ws);
+            // _room.joinRoom('chat', '', ws);
+            setTimeout(() =>{
+                _room.joinRoom('lobby', '', ws);
+
+            }, 500)
             break;
 
         case 'chatMsg':
             var roomData = _room.getRoom(ws._room, false);
             if (roomData) {
-                var ret = {
-                    msg: delHtmlTag(d.msg),
-                    img: d.img,
-                    audio: d.audio,
-                    time: new Date().getTime(),
-                    player: r.player,
-                    icon: getPlayerIcon(r.uuid)
-                }
-                _room.sendBroadcast(ws._room, {
-                    type: 'chatMsg',
-                    data: ret
-                });
 
-                for (var i = roomData.msgs.length; i > 10; i--) {
-                    roomData.msgs.shift();
+                const callback = () => {
+                    var ret = {
+                        msg: delHtmlTag(d.msg),
+                        img: d.img,
+                        audio: d.audio,
+                        time: new Date().getTime(),
+                        player: r.player,
+                        icon: getFilePath(r.uuid)
+                    }
+                    broadcast(ws._room, 'chatMsg', ret);
+
+                    for (var i = roomData.msgs.length; i > 10; i--) {
+                        roomData.msgs.shift();
+                    }
+                    roomData.msgs.push(ret);
                 }
-                roomData.msgs.push(ret);
+                // TODO 把图片保存下来
+                if (typeof(d.img) == 'string' && d.img.startsWith('data:image')) {
+                    saveBase64Image(crypto.createHash('md5').update(d.img).digest("hex"), d.img, (err, file, md5) => {
+                        console.log(err, file,md5);
+                        if (!err) {
+                            images(file)
+                            .resize(200)
+                            .save(file + '.thumb', 'jpg', {
+                                quality: 50
+                            });
+                            d.img = [getFilePath(md5), getFilePath(md5 + '.jpg.thumb')];
+                            callback();
+                        }
+                    });
+                }else{
+                    callback();
+
+                }
             }
             break;
 
@@ -266,16 +352,20 @@ function onMessage(msg, ws) {
             break;
 
     }
+    if(r.part){
+        sendData(ws, {type: 'part'});
+    }
 }
 
-function saveBase64Image(file, data, callback) {
-    if (!fs.existsSync(file)) {
+function saveBase64Image(fileName, data, callback) {
+    var file = getSavePath(fileName);
+    //if (!fs.existsSync(file)) {
         mkdirsSync(path.dirname(file));
         var bin = new Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), 'base64');
         fs.writeFile(file, bin, err => {
-            callback(err, file, bin);
+            callback(err, file, fileName);
         });
-    }
+    //}
 }
 
 function delHtmlTag(str) {
@@ -288,9 +378,9 @@ function _o(...args) {
     console.log(args);
 }
 
-function getPlayerIcon(uuid) {
-    var icon =getSavePath(uuid);
-    return fs.existsSync(icon) ? '{host}' + icon : 'img/chisato.jpg'
+function getFilePath(uuid, def = 'img/chisato.jpg') {
+    var file = getSavePath(uuid);
+    return fs.existsSync(file) ? '{host}' + file : def
 }
 
 /*
@@ -306,11 +396,13 @@ const SUCC_CREATE_ROOM = 3;
 var _room = {
     list: {
         chat: {
+            room: 'chat',
             msgs: [],
             players: [],
         },
         lobby: {
             // password: '4444',
+            room: 'lobby', // 还是加个主键名会比较方便
             owner: 'admin',
             title: '默认房间默认房间默认房间默认房间',
             desc: '欢迎欢迎',
@@ -329,7 +421,8 @@ var _room = {
             // },
             createAt: new Date().getTime(),
             players: [], // clients
-            imgs: { aa: { src: './a/10.jpg', player: 'maki' }, bb: { src: './a/11.jpg', player: 'maki' } }
+            imgs: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/10.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/11.jpg', player: 'maki' } },
+            photos: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/1.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/2.jpg', player: 'maki' } },
             // players: ['yande', 'konachan', 'sakugabooru', 'sankakucomplex', 'danbooru', 'behoimi', 'safebooru', 'gelbooru', 'worldcosplay', 'kawaiinyan', 'bilibili', 'anime_picture', 'lolibooru', 'zerochan', 'shuushuu', 'e926', 'e621', 'hypnohub', 'rule34'],
         }
     },
@@ -380,6 +473,7 @@ var _room = {
         var room = this.uuid(),
             key = this.uuid();
         this.setRoomProps(room, {
+            room: room,
             owner: ws._username,
             title: data.title.toString(),
             desc: data.desc.toString(),
@@ -395,29 +489,27 @@ var _room = {
             imgs: {},
 
             ip: ws._socket.remoteAddress,
-            ownerUuid: ws._uuid, 
+            ownerUuid: ws._uuid,
             key: key, // 房主密钥
         });
 
         sendData(ws, {
             type: 'createRoom',
             data: {
-                 room: room, // 房间标识
-                 key: key,
-                 password: data.password
+                room: room, // 房间标识
+                key: key,
+                password: data.password
             }
         });
         // 给大厅的所有玩家发送更新
-        _room.sendBroadcast('chat', {
-          type: 'listRoom',
-            data: _room.listRoom()
-        });
+        broadcast('chat', 'listRoom', _room.listRoom());
+
     },
     joinRoom: function(room, password, ws) {
         var d = this.getRoom(room, false);
         if (d && d.players.indexOf(ws) == -1) {
-            if(d.password && d.password != password){
-                return sendData(ws, { type: 'alert', data: {msg: '密码错误', class: 'alert-danger' }});
+            if (d.password && d.password != password) {
+                return sendData(ws, { type: 'alert', data: { msg: '密码错误', class: 'alert-danger' } });
             }
             d.players.push(ws);
             ws._room = room;
@@ -431,7 +523,7 @@ var _room = {
                 type: 'on-player-join',
                 data: {
                     player: ws._username,
-                    icon: getPlayerIcon(ws._username)
+                    icon: getFilePath(ws._username)
                 }
             });
             return true;
@@ -483,13 +575,15 @@ var _room = {
         delete d.key;
         delete d.ownerUuid;
         delete d.vote;
-        if(d.password != undefined){
+        if (d.password != undefined) {
             d.password = d.password.length > 0;
         }
         if (fromLobby) {
             delete d.data; // 游戏数据
             delete d.msgs; // 聊天记录
+            if(d.game) d.game = d.game.type; // 游戏类型
         } else {
+            if(d.game) d.game.time = g_cache.timer[d.room].time; // 剩余游戏时间
             if (d.data) d.data = getGameData(d)
         }
         // 把client转换成名字
@@ -498,7 +592,7 @@ var _room = {
             var name = ws._username;
 
             list[name] = {
-                icon: getPlayerIcon(ws._uuid)
+                icon: getFilePath(ws._uuid)
             };
         }
         d.players = list;
@@ -543,7 +637,7 @@ function getData(data) {
 function sendData(ws, data) {
     if (ws.readyState === WebSocket.OPEN) {
         var data = getData(data);
-        console.log('send -> ' + ws._username + ' -> ' + data);
+        // console.log('send -> ' + ws._username + ' -> ' + data);
         ws.send(data);
     }
 }
