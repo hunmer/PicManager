@@ -7,8 +7,10 @@ var crypto = require('crypto');
 var request = require('request');
 var images = require("images");
 
-fs.rmSync('./saves/', { recursive: true, force: true });
+if (fs.existsSync('./saves/')) {
+    fs.rmdirSync('./saves/', { recursive: true, force: true });
 
+}
 var app = express();
 app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
@@ -17,7 +19,6 @@ app.use(function(req, res, next) {
         'Access-Control-Allow-Headers',
         'Content-Type, Authorization, access_token'
     )
-
     if ('OPTIONS' === req.method) {
         res.send(200)
     } else {
@@ -38,14 +39,12 @@ wss.on('connection', function connection(ws) {
         onMessage(msg, ws);
     });
     ws.on('close', function close() {
-        // 如果服务器主动关闭的话无法获取数据
         if (ws._username) {
-            console.log(ws._username + '断开连接!');
             var p = getPlayerDetail(ws);
             g_cache.timeout[p.uuid] = {
                 timer: setTimeout(() => {
-                    console.log(_room.removePlayer(p.player, p.room));
-                }, 1000 * 5),
+                    _room.removePlayer(p.player, p.room);
+                }, 1000 * 10),
                 room: p.room
             }
         }
@@ -96,6 +95,10 @@ function getGameData(room) {
     return ret;
 }
 
+function isSystemRoom(room) {
+    return ['lobby', 'chat', 'r15', 'r18'].includes(room);
+}
+
 function broadcast(room, type, data, props) {
     _room.sendBroadcast(room, {
         type: type,
@@ -143,9 +146,17 @@ function startGame(room, game, data) {
 
 }
 
+
+
 function onMessage(msg, ws) {
-    var r = JSON.parse(msg);
-    console.log(r);
+    var r;
+    try {
+        r = JSON.parse(msg);
+    } catch (e) {
+        return;
+    }
+
+    // console.log(r);
     if (!r.uuid || !r.player) return;
     var d = r.data;
     // 
@@ -156,7 +167,6 @@ function onMessage(msg, ws) {
 
 
         if (['startVote', 'startGame'].includes(r.type)) { // 需要房主权限
-            console.log(_room.getPlayerByName(roomData.owner, ws._room));
             if (_room.getPlayerByName(roomData.owner, ws._room) && roomData.key != r.key) {
                 return sendData(ws, { type: 'alert', data: { msg: '你没有权限操作', class: 'alert-danger' } })
             }
@@ -261,13 +271,9 @@ function onMessage(msg, ws) {
                     callback();
                 } else
                 if (img.startsWith('data:image')) {
-                    saveBase64Image(md5, img, (err, file, md5) => {
+                    saveBase64Image(md5, img, (err, file, md5, format) => {
                         // if (!err) {
-                            images(file)
-                                .resize(200)
-                                .save(file + '.thumb', 'jpg', {
-                                    quality: 50
-                                });
+                        resizeImage(file, format);
                         // }
                         callback(getFilePath(md5), md5);
                     });
@@ -282,7 +288,6 @@ function onMessage(msg, ws) {
             break;
         case 'exit':
             if (d != undefined && d.close && _room.isRoomOwner(roomData, r.key)) {
-                console.log('房主关闭房间');
                 _room.removeRoom(ws._room);
                 return;
             }
@@ -291,7 +296,7 @@ function onMessage(msg, ws) {
             _room.updateLobby(ws);
             break;
         case 'updateIcon':
-             if (d && d.startsWith('data:image/')) {
+            if (d && d.startsWith('data:image/')) {
                 saveBase64Image(getMd5(ws._uuid), d);
                 return _room.playerEvent(ws._room, 'on-player-change-icon', getPlayerDetail(ws));
             }
@@ -327,6 +332,7 @@ function onMessage(msg, ws) {
 
                 const callback = () => {
                     var ret = {
+                        isOwner: roomData.owner == ws._username,
                         msg: delHtmlTag(d.msg),
                         img: d.img,
                         audio: d.audio,
@@ -342,15 +348,11 @@ function onMessage(msg, ws) {
                     roomData.msgs.push(ret);
                 }
                 if (typeof(d.img) == 'string' && d.img.startsWith('data:image')) {
-                    saveBase64Image(getMd5(d.img), d.img, (err, file, md5) => {
+                    saveBase64Image(getMd5(d.img), d.img, (err, file, md5, format) => {
                         // if (!err) {
-                            images(file)
-                                .resize(200)
-                                .save(file + '.thumb', 'jpg', {
-                                    quality: 50
-                                });
-                            d.img = [getFilePath(md5), getFilePath(md5 + '.jpg.thumb')];
-                            callback();
+                        resizeImage(file, format);
+                        d.img = [getFilePath(md5), getFilePath(md5 + '.jpg.thumb')];
+                        callback();
                         // }
                     });
                 } else {
@@ -372,6 +374,18 @@ function onMessage(msg, ws) {
     }
 }
 
+function resizeImage(file, format, size = 200, quality = 50) {
+    if (['jpeg', 'png', 'gif'].includes(format)) {
+        images(file)
+            .resize(size)
+            .save(file + '.thumb', 'jpg', {
+                quality: quality
+            });
+    } else {
+        fs.copyFileSync(file, file + '.thumb');
+    }
+}
+
 function saveBase64Image(fileName, data, callback) {
     var file = getSavePath(fileName);
     //if (!fs.existsSync(file)) {
@@ -379,7 +393,7 @@ function saveBase64Image(fileName, data, callback) {
     var bin = new Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), 'base64');
     if (callback) {
         fs.writeFile(file, bin, err => {
-            callback(err, file, fileName);
+            callback(err, file, fileName, data.substr(0, data.indexOf(';')).split('/')[1]);
         });
     } else {
         fs.writeFileSync(file, bin);
@@ -399,7 +413,7 @@ function _o(...args) {
     console.log(args);
 }
 
-function getFilePath(uuid, def = 'img/chisato.jpg') {
+function getFilePath(uuid, def = 'img/user.jpg') {
     var file = getSavePath(uuid);
     return fs.existsSync(file) ? '{host}' + file : def
 }
@@ -424,6 +438,14 @@ const ERR_ROOM_NOT_EXISTS = 2;
 const SUCC_ROOM_SETTING_APPLY = 1;
 const SUCC_CREATE_ROOM = 3;
 const CONFIRM_CREATE_ROOM = 4;
+// game: {
+//     type: 'copy',
+//     data: {
+//         src: './a/1.jpg',
+//         player: 'maki'
+//     }
+// },
+
 var _room = {
     list: {
         chat: {
@@ -432,30 +454,59 @@ var _room = {
             players: {},
         },
         lobby: {
-            // password: '4444',
-            room: 'lobby', // 还是加个主键名会比较方便
-            owner: 'admin',
-            title: '默认房间默认房间默认房间默认房间',
+            room: 'lobby',
+            owner: '',
+            title: '默认房间',
             desc: '欢迎欢迎',
-            cover: './res/cover.jpg',
-            bg: './res/bg.jpg',
+            cover: './img/cover.jpg',
+            bg: '',
             maxPlayers: 0,
             msgs: [],
             data: {},
             vote: {},
-            // game: {
-            //     type: 'copy',
-            //     data: {
-            //         src: './a/1.jpg',
-            //         player: 'maki'
-            //     }
-            // },
+            createAt: new Date().getTime(),
+            players: {},
+            imgs: {},
+            photos: {},
+            // imgs: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/10.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/11.jpg', player: 'maki' } },
+            // photos: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/1.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/2.jpg', player: 'maki' } },
+            tags: ["全年龄", "迎新"],
+        },
+        r15: {
+            // password: '4444',
+            room: 'r15', // 还是加个主键名会比较方便
+            owner: '',
+            title: '限制级-R15',
+            desc: '限制级（R-15）：未满15岁少年，一律禁止其入场与收看（有虐待描写）。',
+            cover: './img/r15.jpg',
+            bg: '',
+            maxPlayers: 0,
+            msgs: [],
+            data: {},
+            vote: {},
             createAt: new Date().getTime(),
             players: {}, // clients
-            imgs: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/10.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/11.jpg', player: 'maki' } },
-            photos: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/1.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/2.jpg', player: 'maki' } },
-            // players: ['yande', 'konachan', 'sakugabooru', 'sankakucomplex', 'danbooru', 'behoimi', 'safebooru', 'gelbooru', 'worldcosplay', 'kawaiinyan', 'bilibili', 'anime_picture', 'lolibooru', 'zerochan', 'shuushuu', 'e926', 'e621', 'hypnohub', 'rule34'],
-        }
+            imgs: {},
+            photos: {},
+            tags: ["R15", "限制级"],
+        },
+        r18: {
+            room: 'r18',
+            owner: '',
+            title: '成人级-R18',
+            desc: '未满18岁一律禁止入场与收看（有强烈的性、暴力、反社会行为；或美化吸毒之描写）。',
+            cover: './img/r18.jpg',
+            bg: '',
+            maxPlayers: 0,
+            msgs: [],
+            data: {},
+            vote: {},
+            createAt: new Date().getTime(),
+            players: {}, // clients
+            imgs: {},
+            photos: {},
+            tags: ["R18", "成人级"],
+        },
     },
     uuids: [],
     uuid: function() {
@@ -484,7 +535,7 @@ var _room = {
     setRoomProps: function(room, data) {
         var d = this.getRoom(room, false);
         if (!d) return;
-        for (var k of ['title', 'maxPlayers', 'password', 'desc', 'cover', 'bg']) {
+        for (var k of ['title', 'maxPlayers', 'password', 'desc', 'cover', 'bg', 'tags']) {
             if (data[k] == undefined) continue;
             var val = data[k];
             if (['cover', 'bg'].includes(k) && val.startsWith('data:image')) {
@@ -493,6 +544,7 @@ var _room = {
                     d[k] = getFilePath(md5);
                 }
             } else {
+                if (k == 'tags') val = val.split(',').splice(0, 5);
                 d[k] = val;
             }
         }
@@ -510,7 +562,7 @@ var _room = {
 
         data.title = delHtmlTag(data.title);
         data.desc = delHtmlTag(data.desc);
-        if (!['chat', 'lobby'].includes(ws._room) && ws._room && ws._key) {
+        if (!isSystemRoom(ws._room) && ws._room && ws._key) {
             // 验证
             if (this.isRoomOwner(ws._room, ws._key)) {
                 // 修改房间属性
@@ -551,6 +603,7 @@ var _room = {
             vote: {},
             players: {},
             imgs: {},
+            tags: data.tags.toString().split(',').splice(0, 5),
 
             ip: ws._socket.remoteAddress,
             ownerUuid: ws._uuid,
@@ -586,7 +639,7 @@ var _room = {
         if (!d) return sendMsg(ws, ERR_ROOM_NOT_EXISTS);
 
         // 退出旧房间
-        if (ws._room) {
+        if (ws._room && ws._room != room) {
             this.removePlayer(ws._username, ws._room);
         }
 
@@ -627,18 +680,17 @@ var _room = {
         if (g_cache.closeRoom[room]) {
             clearTimeout(g_cache.closeRoom[room]);
             delete g_cache.closeRoom[room];
-            console.log('取消');
         }
 
     },
 
-    playerEvent: function(room, event, p){
+    playerEvent: function(room, event, p) {
         var d = this.getRoom(room);
-        if(!d) return;
-         this.sendBroadcast(room, {
+        if (!d) return;
+        this.sendBroadcast(room, {
             type: event,
             data: {
-                player: p.username,
+                player: p.player,
                 icon: getFilePath(getMd5(p.uuid))
             },
             props: this.getNameList(d.players),
@@ -655,7 +707,6 @@ var _room = {
                 type: 'on-room-close',
                 roomTitle: d.title
             });
-            console.log(`关闭房间 ${d.room}`)
             delete this.list[d.room];
             this.updateLobby();
 
@@ -673,7 +724,6 @@ var _room = {
     getRoomPlayers: function(room) {
         var d = this.getRoom(room);
         var r = d ? d.players : [];
-        console.log(`room: ${room} players: ${Object.keys(r).length}`);
         return Object.values(r);
     },
     sendBroadcast: function(room, data) {
@@ -726,11 +776,10 @@ var _room = {
         var d = this.getRoom(room, false);
         if (d) {
             if (d.players[name]) {
-                console.log('移除玩家 ' + name);
                 var detail = getPlayerDetail(d.players[name]);
                 delete d.players[name];
                 this.playerEvent(d.room, 'on-player-quit', detail);
-                if (Object.keys(d.players).length == 0 && !['chat', 'lobby'].includes(d.room)) {
+                if (Object.keys(d.players).length == 0 && !isSystemRoom(d.room)) {
                     g_cache.closeRoom[room] = setTimeout(() => {
                         _room.removeRoom(room);
                     }, 1000 * 60 * 30);
@@ -767,21 +816,6 @@ function sendData(ws, data, close = false) {
         }
     }
 }
-// const interval = setInterval(function ping() {
-//     var names = [];
-//     wss.clients.forEach(function each(ws) {
-//         if (ws._username) names.push(ws._username);
-//     });
-//     for (let uuid in logs) {
-//         var d = logs[uuid];
-//         if (names.indexOf(d.name) == -1) {
-//             console.log(d.name + '断开连接!');
-//             console.log(_room.removePlayer(d.name, d.room));
-//             delete logs[uuid];
-//         }
-//     }
-// }, 3000);
-
 wss.on('close', function close() {
     clearInterval(interval);
     console.log('server closed!');

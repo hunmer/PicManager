@@ -425,8 +425,8 @@ function setEnd(ev) {
     g_b_area = false;
     delete g_area;
     var text = prompt('请输入说明');
-    if (typeof(text) != 'string' || !text.length) return;
     var area = $('#area_select');
+    if (typeof(text) != 'string' || !text.length) return area.hide();
     var offset1 = area.offset();
     var offset2 = $('#div_markImg').offset();
     var x = offset1.left - offset2.left;

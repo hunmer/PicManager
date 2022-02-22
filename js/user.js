@@ -41,13 +41,20 @@ var g_user = {
             var v = checkInputValue($('#user_input_name'));
             if (!v) return;
             var icon = $('#user_icon').attr('src');
+            var oldName = me();
             g_config.user = {
                 name: v[0],
                 icon: icon,
             }
             local_saveJson('config', g_config);
             g_user.setIcon();
-            g_room.send({type: 'updateIcon', data: icon})
+            if (g_room.isConnected()) {
+                if(oldName != name){ // 更换名字
+                    g_room.leaveRoom();
+                }else{
+                    g_room.send({type: 'updateIcon', data: icon})
+                }
+            }
 
             if(isModalOpen('modal-custom', 'user')) halfmoon.toggleModal('modal-custom');
             toastPAlert(_l('user_成功设置'), 'alert-success');

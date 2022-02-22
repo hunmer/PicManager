@@ -5,6 +5,18 @@ var g_gallery = {
     hidePreview: () => {
         if (g_gallery.preview) g_gallery.preview.hide();
     },
+
+    getElement: (md5) => {
+        return $('#gallery_list .grid-item[data-md5="'+md5+'"]');
+    },
+
+    getSelecteImages: function(){
+        var doms = $('#gallery_list .grid-item .img_selected');
+        if(!doms.length && g_gallery.rmMd5){
+            doms.push(this.getElement(g_gallery.rmMd5));
+        }
+        return doms;
+    },
     init: () => {
 
         g_gallery.rm = $(`
@@ -27,7 +39,7 @@ var g_gallery = {
                     <button class="btn btn-block btn-primary mt-10" data-action="tagImage" type="button"><i class="fa fa-tag" aria-hidden="true"></i>
                         标签
                     </button>
-                     <button class="btn btn-block btn-primary mt-10" data-action="img_share" type="button"><i class="fa fa-share" aria-hidden="true"></i>
+                     <button class="btn btn-block btn-primary mt-10" data-action="img_share" type="button" data-mulitable="1"><i class="fa fa-share" aria-hidden="true"></i>
                         分享
                     </button>
                     <button class="btn btn-block btn-danger mt-10" data-action="img_delete" type="button" data-mulitable="1"><i class="fa fa-trash-o" aria-hidden="true"></i>
@@ -69,7 +81,7 @@ var g_gallery = {
 
             });
 
-            $(document).on('mouseover mouseout', '.photo', function(event) {
+            $(document).on('mouseover mouseout', '#subContent_gallery .photo', function(event) {
                 var d = g_gallery.hover;
                 if (event.type == "mouseover") { // 进入
                     if (d.timer) clearTimeout(d.timer);
@@ -160,7 +172,51 @@ var g_gallery = {
             });
         });
         registerAction('img_share', async (dom, action, params) => {
-            g_autojs.log('shareFile', await g_database.getLocalFile(g_gallery.rmMd5))
+            if(g_room.isConnected()){
+                var doms = g_gallery.getSelecteImages(dom);
+                const fun = async (type) => {
+                     var res = [];
+                    for (var d of doms) {
+                        var data = await g_database.getImgData(getParentData(d));
+                        res.push(data.i);
+                    }
+                    g_room.addImages(res, type, () => {
+                            confirm1('分享成功!是否前往查看?', sure => {
+                                if(sure){
+                                    showContent('room');
+                                    if(type == 'room_addImgs,gallery'){
+                                        g_room.showSubContent('gallery');
+                                    }else
+                                    if(type == 'room_addImgs,photo'){
+                                        g_room.showSubContent('photo');
+                                    }else{
+                                        g_room.toggleChat(false);
+                                    }
+                                }
+                            })
+                    });
+                }
+                var btns = [{
+                    text: '聊天',
+                    handler: (event, instance) => {fun('room_sendImage');instance.hide()}
+                }, 'cancel'];
+                if(g_room.getData('room') != 'chat'){
+                    btns.unshift({
+                        text: '画廊',
+                        handler: (event, instance) => {fun('room_addImgs,gallery');instance.hide()}
+                    }, {
+                        text: '照片',
+                        handler: (event, instance) => {fun('room_addImgs,photo');instance.hide()}
+                    });
+                }
+                 confirm1({
+                    title: '分享到哪里?',
+                    html: doms.length+'张图片',
+                    buttons: btns
+                });
+            }else{
+                g_autojs.log('shareFile', await g_database.getLocalFile(g_gallery.rmMd5))
+            }
             g_gallery.showMenu(false);
         });
         registerAction('mulit_select', (dom, action, params) => {
@@ -193,7 +249,7 @@ var g_gallery = {
             }
 
 
-            var doms = $('#gallery_list .grid-item .img_selected')
+            var doms = g_gallery.getSelecteImages();
             if (!confirm('是否删除' + doms.length + '张图片?')) return;
             for (var d of doms) {
                 var md5 = $(d).parents('[data-md5]').data('md5');
@@ -210,9 +266,7 @@ var g_gallery = {
             if (dom.tagName != 'IMG') { // 按钮触发删除
                 dom = $('.grid-item[data-md5="' + g_gallery.rmMd5 + '"] img');
             }
-            var doms = $('#gallery_list .grid-item .img_selected')
-            if (!doms.length) doms = [dom]; // 没有多选
-
+            var doms = g_gallery.getSelecteImages();
             if (!confirm('是否删除' + doms.length + '张图片?')) return;
             for (var d of doms) {
                 var item = $(d).parents('[data-md5]');
@@ -282,7 +336,8 @@ var g_gallery = {
             g_gallery.showMenu();
             g_gallery.rmMd5 = $(dom).attr('data-md5');
 
-            var doms = $('#gallery_list .grid-item .img_selected');
+            var doms = g_gallery.getSelecteImages();
+
             var buttons = $('#rm_photo button');
             if (doms.length > 1) {
                 for (var d of buttons) d.hidden = !d.dataset.mulitable;
@@ -351,6 +406,7 @@ var g_gallery = {
 
 
     },
+  
 
     showMenu: (show = true) => {
         delete g_gallery.rmMd5;

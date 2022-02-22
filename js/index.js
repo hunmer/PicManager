@@ -23,10 +23,13 @@ function sendRequest(opts) {
 
 
 var _audio = $('#audio')[0];
-
+var g_back = {};
 
 function back() {
     startVibrate(40);
+    for(var name in g_back){
+        if(g_back[name]() === true) return true;        
+    }
     if (g_mark.isShow()) {
         g_mark.hide();
     } else
@@ -235,12 +238,6 @@ $(function() {
                 }
                 break;
 
-            case 'room':
-                // fun = () => {
-                //     if (g_gallery.grid) g_gallery.grid.isotope('layout')
-                // }
-                break;
-
             default:
                 return;
         }
@@ -249,13 +246,22 @@ $(function() {
 
     g_gallery.switchDetailBar(false);
 
-    // if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
-    //     g_database.loadFolder(g_config.lastOpenFolder);
-    //     return;
-    // }
-    // $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();
-
-    showContent('room');
+    if(_GET['r']){
+        g_room.cache.targetRoom = {
+            room: _GET['r'],
+            password: _GET['p'],
+        }
+        toastPAlert('正在加入房间中...请稍等', 'alert-primary');
+        window.history.pushState(null, null, "index.html"); // 去除url参数
+        showContent('room');
+    }else{
+          if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
+            g_database.loadFolder(g_config.lastOpenFolder);
+            return;
+        }
+        $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
+    }
+    // showContent('room');
 
 });
 
@@ -315,14 +321,12 @@ function showContent(id) {
     if(id != g_cache.showing){ // 更新视图
      $('.navbar-fixed-bottom').html('').hide();
     }
-     var d = g_cache.contents[id] || {};
-    if(d){
-        d.onShow && d.onShow();
-        d.initNavBottom && d.initNavBottom();
-    }
-    $('.content-wrapper').css('overflowY', d.overflowY ? 'hidden' : 'auto'); // 自定义滚动内容
+     
+    $('.content-wrapper').css('overflowY', 'auto'); // 自定义滚动内容
+    //$('.content-wrapper').css('overflowY', d.overflowY ? 'hidden' : 'auto'); // 自定义滚动内容
     switch (id) {
         case 'gallery':
+            window.history.pushState(null, null, "?gallery");
             g_menu.toggleMenu('#menu_main', false);
             if (!g_cd.getOpts('image')) {
                 _r(g_cache, 'timer_autoStart', 'timeout');
@@ -334,7 +338,7 @@ function showContent(id) {
         case 'detail':
             if (!_viewer) return; // 未加载过图片
             g_menu.toggleMenu('#menu_main', true);
-            window.history.pushState(null, null, "?gallery");
+            window.history.pushState(null, null, "?detail");
             $('#dropdown_more').show();
             break;
 
@@ -346,7 +350,18 @@ function showContent(id) {
         case 'search':
             break;
 
+        case 'room':
+            g_room.init();
+            window.history.pushState(null, null, "?room");
+            break;
+
     }
+    var d = g_cache.contents[id] || {};
+    if(d){
+        d.onShow && d.onShow();
+        d.initNavBottom && d.initNavBottom();
+    }
+
     $('[data-action="history_newNote"]').toggleClass('hide', id=='room');
 
     g_cache.showing = id;

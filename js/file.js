@@ -5,14 +5,14 @@ var g_file = {
             lrz: { quality: 0.7 },
             cropper: false,
         }, opts);
-        if(opts.callback){
+        if (opts.callback) {
             g_file.callbacks[type] = opts;
         }
 
         $('#input_img').prop('multiple', multiple).attr({
-                    'data-type': type,
-                    'data-config': JSON.stringify(opts.lrz)
-                }).click();
+            'data-type': type,
+            'data-config': JSON.stringify(opts.lrz)
+        }).click();
     },
     init: () => {
         $(function() {
@@ -36,20 +36,39 @@ var g_file = {
                     w: $(target).width(),
                     h: $(target).height(),
                 }
-                console.log(point, area);
 
                 return point.x > area.l && point.x < area.l + area.w && point.y > area.t && point.y < area.t + area.h;
             }
 
+            //    const getTarget = (paths) => {
+            //     for (var path of paths) {
+            //         if (path.id == 'msg_list') {
+            //             return [path.id, '上传到消息'];
+            //         }
+            //         if (path.id == 'room_subContent_gallery') {
+            //             return [path.id, '上传到房间画廊'];
+            //         } else
+            //         if (path.id == 'room_subContent_photo') {
+            //             return [path.id, '上传到房间照片'];
+            //         } else {
+            //             continue;
+            //         }
+            //         break;
+            //     }
+            // }
+
             const fileDragHover = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+              //  console.log(getTarget(e.originalEvent.path))
                 $('#file-drop').toggleClass('drop_active', inArea(e, '.content-wrapper'));
             }
+
             $('#file-drop').on('dragleave', e => fileDragHover(e));
             $('.content-wrapper').on('dragover', e => fileDragHover(e))
                 .on('drop', function(e) {
                     e = e.originalEvent;
+
                     var files = e.target.files || e.dataTransfer.files;
                     g_file.parseFiles(files, 'images');
                     $('#file-drop').toggleClass('drop_active', false);
@@ -58,18 +77,20 @@ var g_file = {
                 });
 
             $('.sidebar').on('dragover', e => {
-                var target = e.target;
+                var text = '保存到素材库';
+                var target = $(e.target);
                 if (target.hasClass('.folder-name')) {
                     // 目录
                     var folder = $(target).parents('[data-folder]').data('folder');
+                    text = '保存到目录 : ' + folder;
                 } else
                 if (true) {
                     // 过滤器
                 }
-                console.log(e);
+                // console.log(e);
                 e.stopPropagation();
                 e.preventDefault();
-                // $('#file-drop').toggleClass('hover', inArea(e, '.content-wrapper'));
+                $('#file-drop').find('h2').html(text);
             }).on('dragleave', e => {
                 // console.log('leave');
                 // e.stopPropagation();
@@ -100,10 +121,6 @@ var g_file = {
                 var base64 = obj.result || obj.base64;
                 switch (type) {
                     case 'room_sendImage': // 发送照片到聊天
-                        g_room.sendMsg({
-                            img: base64
-                        });
-                        break;
                     case 'room_addImgs,gallery': // 上传图片到房间画廊
                     case 'room_addImgs,photo': // 上传图片到房间照片
                         temp_arr.push(base64);
@@ -112,7 +129,7 @@ var g_file = {
                     case 'icon':
                         // 裁剪
                         cropImage(base64, {}, () => {
-                            $('#user_icon').attr('src', _cropper.getCroppedCanvas({width: 50, height: 50}).toDataURL('image/webp'));
+                            $('#user_icon').attr('src', _cropper.getCroppedCanvas({ width: 50, height: 50 }).toDataURL('image/webp'));
                         });
                         break;
                     case 'images':
@@ -135,15 +152,15 @@ var g_file = {
                         break;
 
                     default: // 自定义
-                        if(g_file.callbacks[type]){
+                        if (g_file.callbacks[type]) {
                             var opts = g_file.callbacks[type];
-                            if(opts.cropper){
+                            if (opts.cropper) {
                                 cropImage(base64, opts.cropper, opts.callback);
-                            }else{
+                            } else {
                                 opts.callback(base64);
                             }
                         }
-                            
+
                         break;
                 }
 
@@ -197,21 +214,21 @@ var g_file = {
             }
             if (!f.type.startsWith('image/')) continue;
 
-            if (['camera'].indexOf(type) == -1) {
-                // todo 可定义是否启用
-                // todo 自定义大小
-                if (f.size > 2 * 1024 * 1024) {
-                    if (files.length == 1) {
-                        if (confirm('此照片过大,是否压缩?')) {
-                            resizeImage(f, config, rst => callback(rst));
-                            continue;
-                        }
-                    }
-                    // todo 多文件处理
-                }
-                toBase64(f);
-                continue
-            }
+            // if (['camera'].indexOf(type) == -1) {
+            //     // todo 可定义是否启用
+            //     // todo 自定义大小
+            //     if (f.size > 2 * 1024 * 1024) {
+            //         if (files.length == 1) {
+            //             if (confirm('此照片过大,是否压缩?')) {
+            //                 resizeImage(f, config, rst => callback(rst));
+            //                 continue;
+            //             }
+            //         }
+            //         // todo 多文件处理
+            //     }
+            //     toBase64(f);
+            //     continue
+            // }
             resizeImage(f, config, rst => callback(rst));
         }
         if (paths.length) {
@@ -221,35 +238,35 @@ var g_file = {
 
 }
 
-function cropImage(src, opts, callback){
+function cropImage(src, opts, callback) {
 
     modalOpen({
-            id: 'modal-custom-1',
-            fullScreen: true,
-            type: 'user',
-            width: '80%',
-            title: _l('crop_裁剪图片'),
-            canClose: true,
-            html: `
+        id: 'modal-custom-1',
+        fullScreen: true,
+        type: 'user',
+        width: '80%',
+        title: _l('crop_裁剪图片'),
+        canClose: true,
+        html: `
                       <img id="cropImage" class="w-full" src="${src}">
                       <button class="btn btn-primary mt-10 btn-block" onclick="if(!_cropper || _cropper._callback() !== false) halfmoon.toggleModal('modal-custom-1'); _cropper.destroy(); delete _cropper;">` + _l('crop_保存') + `</button>
                         `,
-            onShow: () => {
-                loadRes([
-                    {url: 'js/cropper.min.js', type: 'js'},
-                    {url: 'css/cropper.min.css', type: 'css'},
-                    ], () => {
-                        _cropper = new Cropper($('#cropImage')[0], Object.assign({
-                            aspectRatio: 1 / 1, 
-                            viewMode : 3,
-                        }, opts));
-                        _cropper._callback = callback;
-                   })
-            },
-            onClose: () => {
-                return true;
-            }
-        });
+        onShow: () => {
+            loadRes([
+                { url: 'js/cropper.min.js', type: 'js' },
+                { url: 'css/cropper.min.css', type: 'css' },
+            ], () => {
+                _cropper = new Cropper($('#cropImage')[0], Object.assign({
+                    aspectRatio: 1 / 1,
+                    viewMode: 3,
+                }, opts));
+                _cropper._callback = callback;
+            })
+        },
+        onClose: () => {
+            return true;
+        }
+    });
 }
 var _cropper;
 g_file.init();

@@ -253,7 +253,6 @@
     background-color: rgba(144, 147, 153, .3);
 }
 
-
 :root {
     /* 不知为啥electron显示的异常的大 todo electron 判别 */
     /*--base-html-font-size: 50%;*/
@@ -282,9 +281,7 @@
 
 .dark-mode .theme {
     background-color: var(--dm-base-body-bg-color) !important;
-
 }
-
 
 .dark-mode .placeholder {
     color: rgba(255, 255, 255, .4) !important;
@@ -484,15 +481,16 @@ div.grid .photo,
 }
 /* 手机或以下  */
 @media only screen and (max-width: 375px) {
-    #bottom_room {
-        max-width: 100% !important;
-    }
+    
 }
 
 /* 平板电脑以下  */
 @media only screen and (max-width: 768px) {
     #dialog_tag_img{
             max-width: 300px;
+    }
+    #bottom_room {
+        max-width: 100% !important;
     }
 }
 

@@ -76,6 +76,17 @@ function _get(a){
     return typeof(a) == 'function' ? a() : a;
 }
 
+function inputCopy(text){
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.setAttribute('value', text);
+    input.select();
+    if (document.execCommand('copy')) {
+        document.execCommand('copy');
+    }
+    document.body.removeChild(input);
+}
+
  function gridProgress(grid, key){
     grid.imagesLoaded()
         .progress(function(instance, image) {
@@ -870,3 +881,10 @@ function initViewer(img, opts, prop){
     return prop.viewer;
 }
 
+  // 获取父dom的data
+    function getParentData(d, k = 'md5'){
+        d = $(d);
+        var r = d.data(k);
+        if(r) return r;
+        return d.parents('[data-'+k+']').data(k)
+    }
