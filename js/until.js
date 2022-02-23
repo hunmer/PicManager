@@ -14,7 +14,6 @@ var g_cache = {
 var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
 
 function getSystemLang(){
-    return 'jp';
     var lang = navigator.language.substr(0, 2).toLowerCase();
     return ['zh', 'jp', 'en'].includes(lang) ? lang : 'zh';
 }
