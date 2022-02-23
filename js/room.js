@@ -281,7 +281,7 @@ var g_room = {
     },
     connect: function(url) {
         var self = this;
-        if (!url) url = (self.host.indexOf(':') ? 'ws:' : 'wss:') + self.host;
+        if (!url) url = (self.host.indexOf('glitch.me') ? 'wss:' : 'ws:') + self.host;
         if (self.connection) self.connection.close();
 
         var socket = self.connection = new WebSocket(url);
