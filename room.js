@@ -143,8 +143,7 @@ function startGame(room, game, data) {
             startTime: new Date().getTime(),
             time: time,
             increase: increase,
-        }
-        g_cache.timer[room].task = setInterval(() => {
+            task: setInterval(() => {
             var t = increase ? ++g_cache.timer[room].time : --g_cache.timer[room].time;
             if (!increase && t <= 0) {
                 overGame(room);
@@ -154,6 +153,7 @@ function startGame(room, game, data) {
                 broadcast(room, 'syncTime', t);
             }
         }, 1000);
+        }
         roomData.game = game;
         roomData.data = data;
         broadcast(room, 'startGame', {
@@ -717,6 +717,7 @@ var _room = {
     removeRoom: function(room) {
         var d = this.getRoom(room);
         if (d) {
+            overGame(d.room);;
             this.sendBroadcast(d.room, {
                 type: 'on-room-close',
                 roomTitle: d.title
@@ -728,8 +729,7 @@ var _room = {
     },
     getRoomPlayers: function(room) {
         var d = this.getRoom(room);
-        var r = d ? d.players : [];
-        return Object.values(r);
+        return d ? Object.values(d.players) : [];
     },
     sendBroadcast: function(room, data) {
         data = getData(data);
