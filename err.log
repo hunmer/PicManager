@@ -1,0 +1,25 @@
+node:events:353
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::8000
+    at Server.setupListenHandle [as _listen2] (node:net:1295:16)
+    at listenInCluster (node:net:1343:12)
+    at Server.listen (node:net:1429:7)
+    at Object.<anonymous> (F:\AppServ\www\PicManager\room.js:824:8)
+    at Module._compile (node:internal/modules/cjs/loader:1108:14)
+    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1137:10)
+    at Module.load (node:internal/modules/cjs/loader:973:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:813:14)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:76:12)
+    at node:internal/main/run_main_module:17:47
+Emitted 'error' event on WebSocketServer instance at:
+    at Server.emit (node:events:376:20)
+    at emitErrorNT (node:net:1322:8)
+    at processTicksAndRejections (node:internal/process/task_queues:80:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 8000
+}

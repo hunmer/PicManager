@@ -38,7 +38,7 @@
         <link rel="stylesheet" href="css/emoji.css">
         <title>PicManager</title>
     </head>
-    <body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars">
+    <body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars animated fadeIn" animated='fadeIn'>
         <div style="-webkit-app-region: drag;pointer-events: none !important;position:fixed;top: 0;left:0;width: 100%;height: 15px;z-index: 99999;"></div>
         
         <div id="mobi_div" hidden></div>
@@ -218,7 +218,7 @@
                                 <button class="btn btn-block btn-secondary mt-10" type="button" data-action="downloadData">下载配置</button>
                                 <button class="btn btn-block btn-danger mt-10" type="button" data-action="resetData">清除緩存</button>
                                 <button class="btn btn-block btn-success mt-10" type="button" data-action="checkUpdate">检测更新</button>
-                                <button class="btn btn-block mt-10" type="button" data-action="setting">设置</button>
+                                <button class="btn btn-block mt-10" type="button" data-action="setting">头像设置</button>
                                 <div class="custom-switch mt-10">
                                     <input type="checkbox" id="checkbox-darkMode" value="" data-checkbox="darkMode">
                                     <label for="checkbox-darkMode">夜间</label>
@@ -320,7 +320,7 @@
                     </div>
                 </div>
             </div>
-            <nav class="navbar navbar-fixed-bottom" style="display: none;">
+            <nav class="navbar navbar-fixed-bottom">
             </nav>
         </div>
         <script src="js/jquery.min.js"></script>

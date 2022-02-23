@@ -14,6 +14,7 @@ var g_cache = {
 var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
 
 function getSystemLang(){
+    return 'jp';
     var lang = navigator.language.substr(0, 2).toLowerCase();
     return ['zh', 'jp', 'en'].includes(lang) ? lang : 'zh';
 }
@@ -556,6 +557,15 @@ function registerAction(name, callback) {
     g_actions[name] = callback;
 }
 
+var g_actions_list = {};
+function registerActionList(name, actions) {
+    if(!g_actions_list[name]) g_actions_list[name] = [];
+    for(var action in actions){
+        g_actions_list[name].push(action);
+        registerAction(action, actions[action]);
+    }
+}
+
 
 function cutStrings(s_text, s_start, filter = false) {
     var res = [];
@@ -677,8 +687,16 @@ function checkInputValue(doms) {
     return values;
 }
 
+ function selfDestroyFun(obj, key, before, callback) {
+        if (obj[key])
+            before(obj[key]);
+        obj[key] = {
+            val: callback(obj, key)
+        }
+    }
+    
 
-function loadRes(files, callback) {
+function loadRes(files, callback, cache = true) {
     var i = 0;
     const onProgress = () => {
         if (++i == files.length) {
@@ -687,15 +705,16 @@ function loadRes(files, callback) {
     }
     for (var file of files) {
         if (file.type == "js") {
-            if ($('script[src="' + file.url + '"]').length) { // js已加载
+            if (cache && $('script[src="' + file.url + '"]').length) { // js已加载
                 onProgress();
+                console.log(cache, 'cache');
                 continue;
             }
             var fileref = document.createElement('script');
             fileref.setAttribute("type", "text/javascript");
             fileref.setAttribute("src", file.url)
         } else if (file.type == "css" || file.type == "cssText") {
-            if ($('link[href="' + file.url + '"]').length) { // css已加载
+            if (cache && $('link[href="' + file.url + '"]').length) { // css已加载
                 onProgress();
                 continue;
             }

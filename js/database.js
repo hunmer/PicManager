@@ -185,28 +185,33 @@ var g_database = {
 
         registerContextMenu('.sidebar-link[data-action="loadFolder"]', (dom, event) => {
             var d = $(dom);
-            var dialog = mobiscroll_($('#mobi_div').html(`
-                <div id="widget">
-                    <div class="md-dialog">
-                        <h4 data-action="folder_rename" class="hover" ><i class="fa fa-pencil mr-10"aria-hidden="true"></i>
-                        重命名</h4>
-                        <h4 data-action="folder_setGroup" class="hover" ><i class="fa fa-inbox mr-10"aria-hidden="true"></i>
-                            <span>设置分组</span><span class="badge badge-pill badge-primary ml-10">0</span></h4>
-                        <h4  data-action="folder_delete" class="text-danger hover"><i class="fa fa-trash-o mr-10" aria-hidden="true"></i>
-                            删除</h4>
-                    </div>
-                </div>
-                `), 'widget', {
-                closeOnOverlayTap: true,
-                headerText: d.find('.folder-name').html(),
-                buttons: [],
+            var dialog = mobiscrollHelper.widget_actionWithIcon({
+                data: [{
+                        action: 'room_deleteImage',
+                        icon: 'fa-trash-o',
+                        text: '设置分组<span class="badge badge-pill badge-primary ml-10">0</span>'
+                    },
+                    {
+                        action: 'folder_setGroup',
+                        icon: 'fa-inbox',
+                        text: '重命名'
+                    }, {
+                        action: 'folder_delete',
+                         icon: 'text-danger fa-trash-o',
+                        text: '删除'
+                    }
+                ],
+                opts: {
+                    headerText: d.find('.folder-name').html(),
+                }
             });
+
             g_database.folder_rm = {
                 folder: d.data('folder'),
                 dialog: dialog,
             }
         });
-       
+
 
         registerAction('newFolder', (dom, action, params) => {
             prompt1('创建新目录', (folder) => {
@@ -243,40 +248,40 @@ var g_database = {
         var selected = [];
         var list = {}
         var folders = g_database.getFolders();
-        for(folder in folders){
+        for (folder in folders) {
             var d = folders[folder];
             list[folder] = d.name;
-            if(keys.length == 1 && d.imgs.includes(keys[0])){ // 一张图片显示默认选中
+            if (keys.length == 1 && d.imgs.includes(keys[0])) { // 一张图片显示默认选中
                 selected.push(folder);
             }
         }
-            var h = $(mobiscrollHelper.buildMulitSelect({
-                id: 'mulitselect-demo',
-                title: keys.length+'张图片',
-                data: list,
-                selected: selected
-            })).prepend('body');
-            var dialog = mobiscroll_(h, 'select', {
-                minWidth: 200,
-                closeOnOverlayTap: true,
-                headerText: '设置保存目录',
-                buttons: [{
-                    text: _l('确定'),
-                    handler: function(event, instance) {
-                        var folders = instance.getArrayVal();
-                        g_database.importImages(data, (i) => {
-                            toastPAlert('成功导入'+i+'张图片!');
-                            if(folders.length){
-                                g_database.saveToFolder(folders, keys);
-                            }
-                        });
-                        instance.hide();
-                    }
-                }, {
-                    text: _l('取消'),
-                    handler: 'cancel'
-                }],
-            });
+        var h = $(mobiscrollHelper.buildMulitSelect({
+            id: 'mulitselect-demo',
+            title: keys.length + '张图片',
+            data: list,
+            selected: selected
+        })).prepend('body');
+        var dialog = mobiscroll_(h, 'select', {
+            minWidth: 200,
+            closeOnOverlayTap: true,
+            headerText: '设置保存目录',
+            buttons: [{
+                text: _l('确定'),
+                handler: function(event, instance) {
+                    var folders = instance.getArrayVal();
+                    g_database.importImages(data, (i) => {
+                        toastPAlert('成功导入' + i + '张图片!');
+                        if (folders.length) {
+                            g_database.saveToFolder(folders, keys);
+                        }
+                    });
+                    instance.hide();
+                }
+            }, {
+                text: _l('取消'),
+                handler: 'cancel'
+            }],
+        });
     },
 
     // 获取目录分组
@@ -322,8 +327,8 @@ var g_database = {
         var now = new Date().getTime();
         for (var key in datas) {
             var d = datas[key];
-            if(isEmpty(d.i)) continue;
-            if(typeof(key) != 'string' || key.length != 32){
+            if (isEmpty(d.i)) continue;
+            if (typeof(key) != 'string' || key.length != 32) {
                 // 可能是数组可能是没有设置md5
                 key = getMD5(d.i); // 获取图片md5
             }
@@ -335,7 +340,7 @@ var g_database = {
         if (i > 100) return location.reload();
 
         // 如果这些图片满足现在所展示的过滤界面则实时更新界面
-        if(['detail', 'gallery'].includes(g_cache.showing)){
+        if (['detail', 'gallery'].includes(g_cache.showing)) {
             (async () => {
                 // todo 导入的图片超出一定数量 只展示部分或者刷新？
                 if (JSON.stringify(filter) == JSON.stringify(g_config.filter)) {
@@ -420,9 +425,9 @@ var g_database = {
 
     // 保存图片到目录
     saveToFolder: (folders, keys) => {
-        if(!Array.isArray(folders)) folders = [folders];
+        if (!Array.isArray(folders)) folders = [folders];
         var i = 0;
-        for(var folder of folders){
+        for (var folder of folders) {
             for (var key of keys) {
                 if (g_folders[folder].imgs.indexOf(key) == -1) {
                     i++;
@@ -430,7 +435,7 @@ var g_database = {
                 }
             }
         }
-        
+
         if (i) {
             local_saveJson('folders', g_folders);
             g_database.initFolders();

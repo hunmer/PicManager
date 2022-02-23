@@ -10,7 +10,7 @@ function walkSync(currentDirPath, callback) {
         if (stat.isFile()) {
                 callback(filePath, stat);
         } else if (stat.isDirectory()) {
-            if(['node_modules', 'test', 'api', 'imgs', 'savePics', 'savePics1', 'dist', '.git'].indexOf(filePath) == -1){
+            if(['node_modules', 'test', 'api', 'imgs', 'savePics', 'savePics1', '.git', 'a'].indexOf(filePath) == -1){
                 walkSync(filePath, callback);
             }
         }

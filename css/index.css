@@ -2,14 +2,20 @@
 
 
  .textScroll {
-    width: 100px;
+    width: 100%;
     overflow: hidden;
 }
 
-.textScroll span {
+.textScroll .text {
     display: inline-block;
     white-space: nowrap;
     animation: 15s wordsLoop linear infinite normal;
+}
+
+.textScroll div {
+    display: inline-block;
+    white-space: nowrap;
+    animation: 5s wordsLoop linear infinite normal;
 }
 
 @keyframes wordsLoop {

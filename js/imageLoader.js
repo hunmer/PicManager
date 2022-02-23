@@ -10,11 +10,11 @@ function getImageBlob(url, success, error) {
         if (this.status == 200) {
             success(this.response);
         } else {
-            error();
+            error && error();
         }
     }
     xhr.onerror = function() {
-        showImage(url)
+        error && error();
     }
     xhr.send();
 }
@@ -34,7 +34,7 @@ async function loadImage(url) {
         //     console.log(reader.result)
         // }
     }, () => {
-        alert('获取图片失败!');
+        showImage(url);
     });
 }
 

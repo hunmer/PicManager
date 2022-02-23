@@ -1,11 +1,22 @@
-const ERR_ROOM_NOT_EXISTS = 2;
 const SUCC_ROOM_SETTING_APPLY = 1;
+const ERR_ROOM_NOT_EXISTS = 2;
 const SUCC_CREATE_ROOM = 3;
 const CONFIRM_CREATE_ROOM = 4;
-
+const ERR_NOT_PERMISSIOM = 5;
+const KICK_BY_OWNER = 6;
+const KICK_BY_SYSTEM = 7;
+const ERR_CANT_KICK_YOURSELF = 8;
+const SUCCESS_KICKED = 9;
+const ERR_IN_BLOCK_LIST = 11;
+const SUCC_IMAGE_DELETED = 10;
+const ERR_FILE_NOT_EXISTS = 12;
+const WARNING_IMAGE_EXISTSED = 13;
+const ERR_ACCOUNT_PROTECT = 14;
+const ERR_WRONG_PASSWORD = 15;
+const ERR_NAME_ALREADY_EXISTSED = 16;
 var g_room = {
     host: '//picmanager-room.glitch.me',
-    // host: '//192.168.31.77:41593',
+    // host: '//192.168.31.77:8000',
     unread: 0,
     currentRoom: undefined,
     editingRoom: undefined,
@@ -26,8 +37,10 @@ var g_room = {
                 </div>
 
                 <div id="room_chat" class="ml-10" style="position: fixed;bottom:45px;z-index: 9999;min-width: 250px;max-width: 75%;">
-                        
-                        <div id="msg_list" style="max-width: 300px;height: 300px;overflow-y: scroll;overflow-x: hidden; color: #ffffff;background-color: rgba(0, 0, 0, .25)">
+                        <div id="room_event_tip" style="max-width: 300px;display: flex;align-items: center;" class="p-10">
+                            <div></div>
+                        </div>
+                        <div id="msg_list" class="animated fadeIn" animated='fadeIn' style="padding-bottom: 50px;max-width: 300px;height: 300px;overflow-y: scroll;overflow-x: hidden; color: #ffffff;background-color: rgba(0, 0, 0, .25)">
                         </div>
                         <div class="d-flex">
                           <div class="mr-auto">
@@ -43,31 +56,31 @@ var g_room = {
                         </div>
                     </div>
 
-                <div id="room_list" class="row">
+                <div id="room_list" class="row animated bounceIn" animated='bounceIn'>
                     
                 </div>
 
-                <div id="room_main" style="width: 100%;display: none;">
+                <div id="room_main" class="animated fadeIn" animated='fadeIn' style="width: 100%;display: none;">
 
                      <div class="btn-toolbar rounded" role="toolbar"> 
                       <div class="btn-group mx-auto w-full">
-                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="gallery">画廊</button>
-                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="photo">照片</button>
-                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="game">游戏</button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="gallery">${_l('画廊')}</button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="photo">${_l('照片')}</button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="game">${_l('游戏')}</button>
                       </div>
                     </div>
 
                     <div id="room_content" class="overflow-x-hidden overflow-y-scroll w-full overflow-h" style="padding-bottom: 200px;">
-                          <div id="room_subContent_gallery" class="room_subContent hide">
+                          <div id="room_subContent_gallery" class="room_subContent hide animated fadeIn" animated='fadeIn'>
                             <div id="room_gallery">
                                 
                             </div>
                           </div>
-                          <div id="room_subContent_photo" class="room_subContent hide">
-                            <div id="room_photos">
+                          <div id="room_subContent_photo" class="room_subContent hide animated fadeIn" animated='fadeIn'>
+                            <div id="room_photo">
                             </div>
                         </div>
-                            <div id="room_subContent_game" class="room_subContent hide">
+                            <div id="room_subContent_game" class="room_subContent hide animated fadeIn" animated='fadeIn'>
                             </div>
                     </div>
                     
@@ -92,11 +105,11 @@ var g_room = {
                 </div>
             </div>`,
             initNavBottom: () => {
-                $('.navbar-fixed-bottom').html(`
+                return `
                     <div id="bottom_room" class="row" style="max-width: 75%;width:100%;margin: 0 auto;border-radius: 20px;display: flex;align-items: center;">
                         <i data-action="show_stricker" class="fa fa-smile-o font-size-18 mr-10" aria-hidden="true"></i>
 
-                        <input type="text" id='msg' class="form-control col-8" placeholder="输入消息..." onclick="if(g_room.viewer){ var val = prompt('文本');if(!isEmpty(val)) g_room.sendMsg(val)}" onkeydown="if(event.keyCode == 13) doAction(null, 'room_sendMsg')" style="background-color: unset;border: unset;padding-right: 35px;" oninput="this.inputed = true;checkStrickerTags(this)" onblur="if(this.inputed == undefined){g_room.toggleChat(true)} delete this.inputed;" onfocus="g_room.toggleChat(false)">
+                        <input type="text" id='msg' class="form-control col-8" placeholder="${_l('输入消息')}" onclick="if(g_room.viewer){ var val = prompt('${_l('输入消息')}');if(!isEmpty(val)) g_room.sendMsg(val)}" onkeydown="if(event.keyCode == 13) doAction(null, 'room_sendMsg')" style="background-color: unset;border: unset;padding-right: 35px;" oninput="this.inputed = true;checkStrickerTags(this)" onblur="if(!g_room.viewer && this.inputed == undefined){g_room.toggleChat(true)} delete this.inputed;" onfocus="g_room.toggleChat(false)">
 
                         <div class="dropdown dropup"  style="transform: translate(-150%,0);">
                             <i data-toggle="dropdown" class="fa fa-comments-o font-size-18 text-left" aria-hidden="true"></i>
@@ -118,8 +131,7 @@ var g_room = {
                         <button class="btn btn-primary col float-right ml-10" type="button" data-action="room_sendMsg" style="max-width: 90%;border-radius: 20px;">
                             <i class="fa fa-paper-plane" aria-hidden="true"></i>
                         </button>
-                </div>
-                `).show();
+                </div>`;
             },
             onShow: () => {
                 g_menu.toggleMenu('#menu_main', true);
@@ -135,48 +147,66 @@ var g_room = {
         this.connection.onclose = () => {}
         if (this.reconnect) clearTimeout(this.reconnect);
     },
+    loadScripts: function(callback) {
+        loadRes([
+            { url: './js/room/onAction.js', type: 'js' },
+            { url: './js/room/onReviceMessage.js', type: 'js' }
+        ], () => {
+            callback && callback();
+        }, false)
+    },
+    setEventMsg: (html) => {
+        $('#room_event_tip').html(html).fadeIn('slow');
+        selfDestroyFun(g_room.cache, 'timer_eventMsg', clearTimeout, (_obj, _key) => {
+            return setTimeout(() => {
+                $('#room_event_tip').fadeOut('slow').html('');
+                delete _obj[_key];
+            }, 5000);
+        })
+    },
     init: function() {
 
-        var self = this;
-        if (self.inited) return;
-        self.inited = true;
-        self.preload();
-        g_room.registerAction();
+        if (this.inited) return;
+        this.inited = true;
+        this.preload();
 
-        g_back['room'] = () => {
-            if (g_room.chatImgviewer) {
-                g_room.chatImgviewer.hide();
-                return true;
-            }
-            if (g_room.viewer) {
-                g_room.viewer.hide();
-                return true;
-            }
-            if (g_cache.showing == 'room') {
-                var room = g_room.getData('room');
-                if (room != undefined) {
-                    if (room == 'chat') {
-                        g_room.disconect();
-                        showContent('gallery');
-                    } else {
-                        getAction('room_exit').click();
-                    }
+
+        g_room.loadScripts(() => {
+            var self = g_room;
+            g_back['room'] = () => {
+                if (g_room.chatImgviewer) {
+                    g_room.chatImgviewer.hide();
                     return true;
                 }
+                if (g_room.viewer) {
+                    g_room.viewer.hide();
+                    return true;
+                }
+                if (g_cache.showing == 'room') {
+                    var room = g_room.getData('room');
+                    if (room != undefined) {
+                        if (room == 'chat') {
+                            g_room.disconect();
+                            showContent('gallery');
+                        } else {
+                            getAction('room_exit').click();
+                        }
+                        return true;
+                    }
+                }
             }
-        }
 
-        $(document)
-            .on('wheel', '.hideScroll', function(e) {
-                e.currentTarget.scrollBy(e.originalEvent.deltaY / 2, 0);
-            })
-        $(`
+            $(document)
+                .on('wheel', '.hideScroll', function(e) {
+                    e.currentTarget.scrollBy(e.originalEvent.deltaY / 2, 0);
+                })
+            $(`
             <div class="toolbar text-center hide" id="toolbar_room">
                 <div class="row w-full" style="align-items: center;">
                     <div id="room_title" class="col-3 text-left textScroll">
-                        <span></span>
+                        <span class="text"></span>
                     </div>
-                   <div id="room_players" class="col pl-10 pr-10 hideScroll w-full" style="display: inline-flex;height: 40px;overflow-y: hidden;overflow-x: scroll;align-items: center;">
+                   <div id="room_players" data-action="room_playerList" class="col pl-10 pr-10 hideScroll w-full" style="display: inline-flex;height: 40px;overflow-y: hidden;overflow-x: scroll;align-items: center;">
                     </div>
                     <div id="room_time" class="col-2">
                         <span class="badge badge-pill">00:00</span>
@@ -187,9 +217,11 @@ var g_room = {
                 </div>
             </div>
             `).appendTo('#navbar-content')
-        self.setRoomList();
-        self.toggleChat(true);
-        self.connect();
+            self.setRoomList();
+            self.toggleChat(true);
+            self.connect();
+        })
+
     },
 
     initMenu: function(type, data) {
@@ -249,7 +281,7 @@ var g_room = {
     },
     connect: function(url) {
         var self = this;
-        if (!url) url = (self.host.indexOf('.com') ? 'wss:' : 'ws:') + self.host;
+        if (!url) url = (self.host.indexOf(':') ? 'ws:' : 'wss:') + self.host;
         if (self.connection) self.connection.close();
 
         var socket = self.connection = new WebSocket(url);
@@ -274,14 +306,11 @@ var g_room = {
             clearTimeout(self.reconnect);
             self.reconnect = setTimeout(() => self.connect(), 1000 * 3);
         }
-        // socket.onerror = (e) => {
-        //     console.log('error')
-        // }
+
         socket.onclose = (e) => {
             g_room.leaveRoom();
             onError();
         }
-        // socket.onclose = onError(event);
     },
 
     isConnected: function() {
@@ -301,6 +330,9 @@ var g_room = {
             g_room.connect();
         }
     },
+    getImage: function(md5) {
+        return $('#room_content .grid-item[data-md5="' + md5 + '"]');
+    },
     getImageUrl: function(url) {
         return url.replace('{host}.', 'http:' + this.host);
     },
@@ -314,6 +346,11 @@ var g_room = {
             return this.roomData[k] || def;
         }
         return def;
+    },
+    setData: function(k, v) {
+        if (this.roomData) {
+            this.roomData[k] = v;
+        }
     },
     initPlayersIcon: function(players) {
         if (!players) players = this.getData('players');
@@ -371,7 +408,7 @@ var g_room = {
         switch (game.type) {
             case 'copy': // 默写
                 if (game.data.src == undefined) { // 自由
-                    toastPAlert('自由模式!随意选择.', 'alert-primary');
+                    toastPAlert(_l('自由模式开始'), 'alert-primary');
                     break;
                 }
                 g_room.openInlineViewer(game.data.src);
@@ -389,9 +426,7 @@ var g_room = {
                     // 新增标记
                     onApplyMark: function() {
                         g_mark.showingData.m[g_mark.dot.attr('data-key')] = g_mark.editingData;
-                        // 标记传给服务器同步， 玩家可以点击其他玩家展示其他玩家的标记。 标记数量显示在图标右下角
                         g_room.updateMark();
-                        // g_database.saveImgData(g_mark.showingKey, g_mark.showingData);
                     },
 
                     // 设置标记模式
@@ -404,7 +439,7 @@ var g_room = {
                     // 点击标记
                     beforeDotClick: (text) => {
                         if (g_room.data.targetPlayer) {
-                            // alert1({ title: '玩家标记', html: text });
+                            toastPAlert(text, 'alert-primary');
                             return false;
                         }
                     }
@@ -421,6 +456,9 @@ var g_room = {
         var span = g_room.setTime('GO!', 'badge-primary').show();
         g_room.cache.timer = setInterval(() => {
             var t = increase ? ++time : --time;
+            if (t % 60 == 0) {
+                addAnimation(span, 'flash');
+            }
             span.html(getTime(t, ':', ':', ''));
             if (!increase && t <= 0) {
                 clearInterval(g_room.cache.timer);
@@ -439,194 +477,7 @@ var g_room = {
         if (!isNaN(t1)) t = getTime(t1, ':', ':', '');
         return $('#room_time').find('span').html(t).attr('class', 'badge badge-pill ' + classes);
     },
-    onRevice: (data) => {
-        console.log(data);
-        if (data.msg) {
-            toastPAlert(data.msg[0], data.msg[1]);
-        }
-        var type = data.type;
-        var d = data.data;
-        switch (type) {
-            case 'bg':
-                g_setting.setBg(g_room.getImageUrl(d));
-                break;
-            case 'requestPassword':
-                mobiscrollHelper.password({ mask: '', closeOnOverlayTap: true }, (password) => {
-                    if (password != '') g_room.requestJoinRoom(d.room, password);
-                })
-                break;
-
-            case 'part':
-                g_room.partSend_next();
-                break;
-
-            case 'syncTime':
-                g_room.setTime(d, 'badge-primary').show();
-                break;
-            case 'overGame':
-                switch (d.reason) {
-                    case 'timeout':
-                        toastPAlert('计时完毕!', 'alert-secondary', 5000);
-                        break;
-                }
-                g_room.setTime('计时结束').show();
-                break;
-            case 'startGame': // 开始游戏
-                g_room.startGame(d.game, d.data);
-                break;
-            case 'voteResult': // 投票结果
-                $('.room_img_vote').addClass('hide'); // 隐藏投票按钮
-                g_room.setTime('投票结束').show();
-                var keys = Object.keys(d);
-                if (keys.length == 0) return toastPAlert('无结果!', 'alert-danger');
-                var i = 0;
-                var h = '';
-                for (var k of keys.slice(0, 3)) {
-                    h += `<div style="position: relative;" class="col-${i == 0 ? '12' : '6'}">
-                            <img class="w-full rounded p-10" src="${g_room.getImageUrl(d[k].value.src)}">
-                            <button class="btn btn-rounded btn-lg btn-success" type="button" style="position: absolute;top: 0;left: 0;">${d[k].cnt}</button>
-                        </div>`;
-                    i++;
-                }
-                modalOpen({
-                    id: 'modal-custom',
-                    type: 'room_voteResult',
-                    fullScreen: true,
-                    height: '100%',
-                    width: '100%',
-                    title: `投票结果<button class="btn btn-primary float-right" onclick="halfmoon.toggleModal('modal-custom')">开冲!</button>`,
-                    canClose: true,
-                    html: '<div class="row">' + h + '</div>',
-                    onClose: () => {
-
-                        return true;
-                    }
-                });
-                break;
-            case 'startVote': // 开始投票
-                $('.room_img_vote').removeClass('hide'); // 显示投票按钮
-                g_room.isotopeResize(); // 调整瀑布流
-
-                // todo 根据投票类型提示更多的信息
-                var time = d.time;
-                var span = g_room.setTime('开始投票', 'badge-danger').show();
-                g_room.voteTimer = setInterval(() => {
-                    span.html(--time);
-                    if (time == 0) {
-                        clearInterval(g_room.voteTimer);
-                    }
-                }, 1000);
-                toastPAlert('开始投票!', 'alert-primary', 5000);
-                break;
-            case 'voteList':
-                // id: [playersNames...],
-                for (var div of $('.room_img_heart')) {
-                    $(div).removeClass('room_img_heart_mine');
-                    $(div).find('i').toggleClass('fa-heart-o', true).toggleClass('fa-heart', false);
-                    $(div).find('span').html('').hide();
-                }
-                for (var md5 in d) {
-                    var div = $('#room_content .grid-item[data-md5="' + md5 + '"]').find('[data-action="room_img_heart"]').addClass('room_img_heart');
-                    if (d[md5].includes(me())) {
-                        div.addClass('room_img_heart_mine'); // 突出自己选择的
-                    }
-                    div.find('i').toggleClass('fa-heart-o', false).toggleClass('fa-heart', true);
-                    div.find('span').html(d[md5].length).show();
-                }
-                break;
-            case 'playerMark':
-                g_room.data.targetPlayerMark = d.mark;
-                g_room.applyPlayerMark(d.target, d.mark);
-                break;
-            case 'markList':
-                for (var pl in d) {
-                    if (g_room.data.targetPlayer == pl && Object.keys(g_room.data.targetPlayerMark).length != d[pl].cnt) {
-                        //console.log('目标玩家更新');
-                        g_room.send({
-                            type: 'getPlayerMark',
-                            data: {
-                                target: pl
-                            }
-                        });
-                    }
-                    var dom = $('[data-action="room_game_playerIcon"][data-user="' + pl + '"]');
-
-                    if (!dom.length) {
-                        $(`<div style="position: relative;" data-action="room_game_playerIcon" data-user="${pl}">
-                            <img src="${g_room.getImageUrl(d[pl].icon)}" class="user-icon-big rounded-circle" >
-                            <span class="badge badge-primary badge-pill" style="padding: 2px;position: absolute;right: -7px;bottom: 5px;">${d[pl].cnt}</span>
-                        </div>`).appendTo('#room_game_playerIconList');
-                    } else {
-                        dom.find('span').html(d[pl].cnt);
-                    }
-                }
-                break;
-            case 'countdown_start':
-
-                break;
-            case 'chatMsg':
-                $(g_room.parseChatMessage(d)).appendTo('#msg_list');
-
-                if (g_room.isHideMessage()) {
-                    $('#room_msg_unread').html(++g_room.unread).show();
-                } else {
-                    if (d.audio && d.player != g_room.getName()) { // 自动播放音频
-                        soundTip(d.audio);
-                    }
-                    setTimeout(() => g_room.msg_toBottom(), 150); // 自动到底部
-
-                }
-                break;
-            case 'listRoom':
-                g_room.setRoomList(d);
-
-                break;
-
-            case 'login':
-                showContent('room');
-                break;
-
-            case 'createRoom':
-                if (isModalOpen('modal-custom', 'room_editRoom')) halfmoon.toggleModal('modal-custom');
-                delete g_room.cache.confirmCreateRoom;
-                g_room.saveRoomKey(d.key);
-                g_room.requestJoinRoom(d.room, d.password);
-                break;
-
-            case 'joinRoom':
-                g_room.joinRoom(data.room, data.data);
-                break;
-
-            case 'msg':
-                g_room.reviceMsg(d);
-                break;
-
-            case 'updateIcon':
-                g_room.initPlayersIcon(data);
-                break;
-
-            case 'on-player-join':
-            case 'on-player-change-icon':
-            case 'on-player-quit':
-                var a = { 'on-player-join': '加入了房间', 'on-player-change-icon': '更换了头像', 'on-player-quit': '退出了房间' }
-                g_room.broadcastMsg({ msg: a[type], icon: g_room.getImageUrl(d.icon), player: d.player });
-                g_room.initPlayersIcon(data.props);
-                break;
-
-            case 'on-room-close':
-                toastPAlert(`房间 ${data.roomTitle} 已被关闭`, 'alert-danger');
-                g_room.leaveRoom();
-                break;
-
-            case 'addImgs':
-                g_room.reviceImgs(data.props.type == 'room_addImgs,gallery' ? 'room_gallery' : 'room_photos', d);
-                break;
-
-            case 'alert':
-                toastPAlert(d.msg, d.class);
-                break;
-        }
-    },
+    // onRevice: (data) => {},
     saveRoomKey: function(key) {
         g_config.roomKey = key;
         local_saveJson('config', g_config);
@@ -635,12 +486,23 @@ var g_room = {
         opts = Object.assign({
             icon: './img/sound.ico',
             msg: '',
-            time: new Date().getTime()
+            time: new Date().getTime(),
+            event: true,
         }, opts);
         g_room.onRevice({
             type: 'chatMsg',
-            data: opts
+            data: opts,
         });
+    },
+
+    removeImage: function(md5) {
+        var dom = this.getImage(md5);
+        if (dom.length) {
+            for (var id in g_room.grid) {
+                g_room.grid[id].isotope('remove', dom[0]);
+            }
+            this.isotopeResize();
+        }
     },
 
     isotopeResize: function(target) {
@@ -651,7 +513,7 @@ var g_room = {
         if (target == null) {
             g_room.grid = [];
             g_page.removeOpts('room_gallery');
-            g_page.removeOpts('room_photos');
+            g_page.removeOpts('room_photo');
         }
     },
 
@@ -700,7 +562,7 @@ var g_room = {
             </div>
             <div class="w-full mt-5">
                 <img class="user-icon-small rounded-circle" src="${g_room.getPlayerIcon(d.player)}">
-                ${d.md5 && g_database.imageExists(d.md5) ? '' : `<a class="btn ${saved ? '' : 'btn-primary'} float-right" data-action="room_saveImg" role="button">${saved ? '已收集' : '收集'}</a>` }
+                ${d.md5 && g_database.imageExists(d.md5) ? '' : `<a class="btn ${saved ? '' : 'btn-primary'} float-right" data-action="room_saveImg" role="button">${saved ? _l('已收集') : _l('收集')}</a>` }
             </div>
         </div>`;
     },
@@ -715,7 +577,19 @@ var g_room = {
         if (d) {
             for (var room in d) {
                 var r = d[room];
-                h += `
+                if (room == 'r15') {
+                    r.title = _l('r15_标题');
+                    r.desc = _l('r15_介绍');
+                } else
+                if (room == 'r18') {
+                    r.title = _l('r18_标题');
+                    r.desc = _l('r18_介绍');
+                } else
+                if (room == 'lobby') {
+                    r.title = _l('默认房间_标题');
+                    r.desc = _l('默认房间_介绍');
+                }
+                    h += `
                     <div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3" data-room="${room}">
                       <div class="card p-0">
                         <img src="${g_room.getImageUrl(r.cover)}" class="w-full h-150 rounded-top"> 
@@ -736,15 +610,15 @@ var g_room = {
                                 </span>
                             </div>
                             ` + (() => {
-                    if (!r.tags) return '';
-                    var s = '<div>';
-                    for (var tag of r.tags) s += `<span class="badge ml-5 mt-5">
+                        if (!r.tags) return '';
+                        var s = '<div>';
+                        for (var tag of r.tags) s += `<span class="badge ml-5 mt-5">
                                     <i class="fa fa-hashtag text-primary mr-5" aria-hidden="true"></i>${tag}
                                 </span>`;
-                    return s + '</div>';
-                })() + `
+                        return s + '</div>';
+                    })() + `
                             <div class="text-right mt-10">
-                                <a data-action="room_joinRoom" class="btn btn-primary">加入</a>
+                                <a data-action="room_joinRoom" class="btn btn-primary">${_l('加入')}</a>
                             </div>
                           </div>
                         </div>
@@ -753,7 +627,7 @@ var g_room = {
                 `;
             }
         } else {
-            h = `<a data-action="room_listRoom" class="btn btn-primary btn-block mt-10">刷新</a>`
+            h = `<a data-action="room_listRoom" class="btn btn-primary btn-block mt-10">${_l('刷新')}</a>`
         }
         $('#room_main').hide();
         $('#room_list').html(h).show();
@@ -766,7 +640,7 @@ var g_room = {
             if (g_room.isConnected()) this.send({ type: 'exit', data: data });
             this.setRoomList();
             delete g_room.roomData;
-            $('#room_gallery, #room_photos, #room_subContent_game').html(`<h2 class="text-center">空空如也...</h2>`);
+            $('#room_gallery, #room_photo, #room_subContent_game').html(`<h2 class="text-center">${_l('什么都没有')}</h2>`);
             $('#room_main').hide();
             g_room.toggleChat(true);
             g_room.isotopeResize(null);
@@ -776,14 +650,18 @@ var g_room = {
             g_room.initMenu('lobby');
             clearInterval(g_room.cache.timer);
         }
-        if (fromUser && g_config.roomKey && g_room.isRoomMaster()) {
-            confirm1('是否关闭房间?', close => {
-                fun({ close: close });
+        if (fromUser) {
+            confirm1(_l('是否退出房间'), sure => {
+                if (sure) {
+                    if (g_room.isRoomMaster()) {
+                        return confirm1(_l('是否关闭房间'), close => fun({ close: close }));
+                    }
+                    fun();
+                }
             })
         } else {
             fun();
         }
-
     },
     parseChatMessage: function(d) {
 
@@ -802,9 +680,9 @@ var g_room = {
             }
         }
         return `
-                    <div class="chat-msg d-flex">
+                    <div class="chat-msg d-flex animated fadeInLeft" animated='fadeInLeft'>
                         <img src="${g_room.getImageUrl(d.icon)}" class="mr-10 rounded-circle user-icon-small"  style="align-self: center;">
-                        <div class="flex-fill">${d.isOwner ? `<span class="badge badge-secondary mr-10">房主</span>` : ''}${content}</div>
+                        <div class="flex-fill">${d.isOwner ? `<span class="badge badge-secondary mr-10">${_l('房主')}</span>` : ''}${content}</div>
                         <span class="flex-fill text-right" style="align-self: flex-end;">${getFormatedTime(0, d.time)}</span>
                     </div>`;
     },
@@ -813,17 +691,16 @@ var g_room = {
         this.currentRoom = room;
         this.roomData = d;
 
-        var h = '';
         // 初始化聊天记录
+        var h = '';
         for (var msg of d.msgs) {
             h += this.parseChatMessage(msg);
         }
         $('#msg_list').html(h);
+
         var inLobby = room == 'chat';
-        g_room.toggleChat(inLobby);
+        g_room.toggleChat(inLobby || h == '');
         if (inLobby) {
-
-
             // 如果玩家在大厅待了一段时间 自动断开链接
             g_room.cache.disconectTimer = setTimeout(() => {
                 g_room.disconect();
@@ -854,7 +731,7 @@ var g_room = {
         $('#room_main').show();
 
         g_room.reviceImgs('room_gallery', d.imgs);
-        g_room.reviceImgs('room_photos', d.photos);
+        g_room.reviceImgs('room_photo', d.photos);
         if (d.game) {
             g_room.startGame(d.game, d.data)
         }
@@ -874,11 +751,7 @@ var g_room = {
                 timeout: 3000,
                 element: '#room_content', // 绑定元素
                 datas: id == 'room_gallery' ? () => g_room.roomData['imgs'] : () => g_room.roomData['photos'],
-                bottomHtml: `
-                    <div class="grid-item w-full">
-                        <h4 class="text-center mt-20">到底啦...</h4>
-                    </div>
-                `,
+                bottomHtml: ``,
                 parseItem: function(index, key, data) {
                     return g_room.getImageHtml(data, index, key);
                 },
@@ -895,30 +768,50 @@ var g_room = {
         console.log(d);
         var r;
         switch (d.code) {
-            case ERR_ROOM_NOT_EXISTS:
-                r = {
-                    msg: '房间不存在',
-                    class: 'alert-danger'
-                }
-                break;
 
+            case ERR_WRONG_PASSWORD:
+                r = [_l('密码错误'), 'alert-danger']
+                break;
+            case ERR_NAME_ALREADY_EXISTSED:
+                r = [_l('名称已被使用'), 'alert-danger']
+                break;
+            case WARNING_IMAGE_EXISTSED:
+                r = [_l('图片已被上传'), 'alert-danger']
+                break;
+            case ERR_ACCOUNT_PROTECT:
+                r = [_l('房主的账号受到特殊保护'), 'alert-danger']
+                break;
+            case SUCC_IMAGE_DELETED:
+                r = [_l('成功删除'), 'alert-success']
+                break;
+            case ERR_FILE_NOT_EXISTS:
+                r = [_l('对象不存在'), 'alert-danger']
+                break;
+            case ERR_IN_BLOCK_LIST:
+                r = [_l('你被禁止加入'), 'alert-danger']
+                break;
+            case SUCCESS_KICKED:
+                r = [_l('成功踢除', d.params), 'alert-success'];
+                break;
+            case ERR_CANT_KICK_YOURSELF:
+                r = [_l('对象不能是自己'), 'alert-danger'];
+                break;
+            case KICK_BY_OWNER:
+                r = [_l('你被房主请出了房间'), 'alert-danger']
+                g_room.leaveRoom();
+                break;
+            case ERR_ROOM_NOT_EXISTS:
+                r = [_l('对象不存在'), 'alert-danger']
+                break;
             case SUCC_ROOM_SETTING_APPLY:
                 if (isModalOpen('modal-custom', 'room_editRoom')) halfmoon.toggleModal('modal-custom');
-                r = {
-                    msg: '成功修改房间属性',
-                    class: 'alert-success'
-                }
+                r = [_l('成功修改'), 'alert-success']
                 break;
-
             case SUCC_CREATE_ROOM:
-                r = {
-                    msg: _l('成功创建房间 %0', d.params),
-                    class: 'alert-success'
-                }
+                r = [_l('成功创建房间', d.params), 'alert-success']
                 break;
-
             case CONFIRM_CREATE_ROOM:
-                return confirm1(_l('开启新房间将会关闭房间 %0,你确定吗?', d.params), sure => {
+                return confirm1(_l('是否关闭旧房间', d.params), sure => {
                     if (sure) {
                         g_room.cache.confirmCreateRoom = true;
                         doAction(null, 'room_createRoom');
@@ -928,7 +821,7 @@ var g_room = {
             default:
                 return;
         }
-        toastPAlert(r.msg, r.class);
+        toastPAlert(r[0], r[1]);
     },
 
     sendMsg: function(data) {
@@ -957,7 +850,7 @@ var g_room = {
                 break;
 
             case 'photo':
-                g_room.isotopeResize('room_photos');
+                g_room.isotopeResize('room_photo');
                 break;
 
             case 'game':
@@ -1020,417 +913,7 @@ var g_room = {
         }
     },
 
-    registerAction: function() {
 
-        // 打开图像到游戏界面
-        // TODO: 更改图像后不会上传数据到标记列表
-        // registerAction('room_openInlineViewer', (dom, action, params) => {
-        //     var game = g_room.roomData.game;
-        //     if (game && game.type == 'copy' && game.data.src != undefined) {
-        //         confirm1('当前游戏模式不是自由模式,你确定要使用其他的参考图吗?', sure => {
-        //             if (sure) {
-        //                 g_room.openInlineViewer(g_room.viewer.viewer.querySelector('img').src);
-        //                 g_room.viewer.hide();
-        //             }
-        //         })
-        //     }
-        // });
-
-        registerAction('room_share', (dom, action, params) => {
-            var url = location.host + location.pathname + '?r=' + g_room.getData('room');
-            loadRes([{ url: 'js/qrcode.min.js', type: 'js' }], () => {
-                var modal = modalOpen({
-                    id: 'modal-custom-1',
-                    type: 'dialog_uploadImagefromNetwork',
-                    width: '80%',
-                    title: '分享',
-                    html: `
-                        <div class="text-center">
-                            <div id="qrcode" class="mx-auto" style="width: 128px; height: 128px;" ></div>
-                            <textarea class="form-control mt-10" id="room_input_share" rows="3" readOnly>${url}</textarea>
-                        </div>
-
-                         <div class="text-right mt-10">
-                            <a class="btn btn-primary" role="button" onclick="$('#room_input_share')[0].select();document.execCommand('copy'); alert('复制成功')">复制</a>
-                        </div>
-                            `,
-                    onShow: () => {
-                        new QRCode("qrcode", {
-                            text: url,
-                            width: 128,
-                            height: 128,
-                            colorDark: "#000000",
-                            colorLight: "#ffffff",
-                            correctLevel: QRCode.CorrectLevel.H
-                        });
-                    },
-                    onClose: () => {
-                        return true;
-                    }
-                })
-            });
-        });
-
-        registerAction('room_exit', (dom, action, params) => {
-            window.history.pushState(null, null, "?room");
-            g_room.leaveRoom(true);
-        });
-        registerAction('room_img_heart', (dom, action, params) => {
-            if ($(dom).hasClass('room_img_heart_mine')) { // 禁止重复选择
-                return;
-            }
-            g_room.send({
-                type: 'heart',
-                data: {
-                    id: $(dom).parents('[data-md5]').data('md5')
-                }
-            });
-        });
-        // 点击头像获取标记
-
-        registerAction('room_game_playerIcon', (dom, action, params) => {
-            var pl = $(dom).data('user');
-            if ($(dom).hasClass('selected_player') || pl == me()) {
-                // 解锁
-                return g_room.applyPlayerMark(me(), g_mark.showingData.m);
-            }
-            g_room.send({
-                type: 'getPlayerMark',
-                data: {
-                    target: pl
-                }
-            });
-        });
-        registerAction('room_countdown', (dom, action, params) => {
-            // if (g_room.isRoomMaster()) {
-            var imgs = g_room.roomData.imgs;
-            var keys = Object.keys(imgs);
-            if (!keys.length) return toastPAlert('请先上传图片!');
-
-            const onSelcted = (val) => {
-                g_room.data.min = $('#range_room_time input').mobiscroll('getVal') * 60; // 游戏时间
-                switch (val) {
-                    case 0:
-                        g_room.send({
-                            type: 'startVote',
-                            data: {
-                                time: g_room.data.min
-                            }
-                        });
-                        break;
-
-                    case 1:
-                        const fun = () => {
-                            var random = imgs[arrayRandom(keys)];
-                            confirm1({
-                                title: '是否选择这张图?',
-                                html: `<img src="${g_room.getImageUrl(random.src)}" class="w-full">`,
-                                buttons: ['set', {
-                                    text: '再抽',
-                                    handler: () => {
-                                        fun();
-                                    }
-                                }, 'cancel']
-                            }, sure => {
-                                if (!sure) return;
-                                g_room.send({
-                                    type: 'startGame',
-                                    data: {
-                                        game: {
-                                            type: 'copy',
-                                            data: random,
-                                            time: g_room.data.min
-                                        },
-                                    }
-                                });
-                            })
-                        }
-                        fun();
-
-                        break;
-
-                    case 2:
-                        g_room.send({
-                            type: 'startGame',
-                            data: {
-                                game: {
-                                    type: 'copy',
-                                    data: {},
-                                    time: g_room.data.min
-                                },
-                            }
-                        });
-                        break;
-                }
-            }
-
-
-            var submit = true; // 取消会变成false
-            var dialog = mobiscrollHelper.select({
-                data: ['投票', '随机', '自由'],
-                title: '',
-                selected: 1,
-                callback: (result, instance) => {
-                    submit = result;
-                    instance.cancel();
-                },
-                opts: { // 最外层的widget
-                    headerText: '选择计时方式',
-                    showOnClick: false,
-                    onClose: function(event, inst) {
-                        if (submit) onSelcted(parseInt(inst.getVal())); // 除取消外
-                    },
-                    onShow: function(event, inst) {
-                        $(`<div id="range_room_time" class="${g_config.darkMode ? 'bg-dark text-light' : ''}" mbsc-enhance>
-                                <input  type="range" value="45" min="0" max="90" step="15" data-tooltip="true" data-step-labels="[0, 30, 45, 60, 90]">
-                            </div>`).appendTo(event.target.querySelector('.mbsc-fr-c')).trigger('mbsc-enhance');
-                    }
-                },
-            });
-            // }
-        });
-
-        registerAction('room_chat_img_click', (dom, action, params) => {
-            g_room.chatImgviewer = new Viewer(dom, {
-                title: 0,
-                ready() {
-                    $('.navbar-fixed-bottom').css('zIndex', 2);
-                    $('#room_chat').css('zIndex', 0);
-                },
-                hide() {
-                    $('#room_chat').css('zIndex', 9999);
-                    g_room.chatImgviewer.destroy();
-                    delete g_room.chatImgviewer;
-
-                },
-
-                url(image) {
-                    if (image.dataset.origin) return g_room.getImageUrl(image.dataset.origin);
-                },
-            });
-            g_room.chatImgviewer.show();
-        });
-
-        registerAction('room_subContent', (dom, action, params) => {
-            g_room.showSubContent($(dom).data('value'));
-        });
-        registerAction('room_toggleChatUI', (dom, action, params) => {
-            // if($('#msg_list').html() == '') return;
-            g_room.msg_toBottom();
-            g_room.toggleChat();
-        });
-        registerAction('room_msg_playAudio', (dom, action, params) => {
-            soundTip(dom.dataset.url);
-        });
-        registerAction('qm', (dom, action, params) => {
-            halfmoon.deactivateAllDropdownToggles();
-            g_room.sendMsg({
-                msg: $(dom).html(),
-            });
-        });
-        registerAction('room_sendMsg', (dom, action, params) => {
-            var msg = $('#msg').val();
-            if (!isEmpty(msg)) {
-
-                if (msg.length > 100) return toastPAlert('最多100个字符', 'alert-danger');
-                g_room.sendMsg({
-                    msg: msg,
-                });
-            }
-
-        });
-        registerAction('room_listRoom', (dom, action, params) => {
-            g_room.send({
-                type: 'listRoom',
-            })
-        });
-
-        registerAction('room_editRoom', (dom, action, params) => {
-            var d = g_room.getData();
-            if (!d || !d.isOwner) {
-                d = {
-                    title: me() + '的房间',
-                    desc: '',
-                    cover: 'res/cover.jpg',
-                    password: '',
-                    maxPlayers: 10,
-                    tags: ['新人', 'R15'],
-                }
-            }
-
-            modalOpen({
-                id: 'modal-custom',
-                type: 'room_editRoom',
-                width: '80%',
-                title: '房间设置',
-                canClose: true,
-                html: `
-                <div class="text-center">
-                    <img data-action="room_setCover" id="input_room_cover" src="${d.cover}" class="img-fluid rounded-top h-150"> 
-                    <div class="input-group mt-10">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">名字</span>
-                      </div>
-                      <input id="input_room_name" type="text" class="form-control" placeholder="房间名称" value="${d.title}">
-                    </div>
-
-                    <div class="input-group mt-10">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">标签</span>
-                      </div>
-                      <input id="input_room_tag" type="text" class="form-control" placeholder="用逗号分开,最多5个标签" value="${d.tags.join(',')}">
-                    </div>
-
-                    <div class="input-group mt-10">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">最大人数</span>
-                      </div>
-                      <input id="input_room_maxPlayers" type="number" class="form-control" placeholder="0=不限制" value="${d.maxPlayers}">
-                    </div>
-
-                    <div class="input-group mt-10">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">四位密码</span>
-                      </div>
-                      <input id="input_room_password" type="number" class="form-control" onchange="this.value = this.value.substr(0, 4)" placeholder="不填不设置" value="${d.password}">
-                    </div>
-
-                    <div class="input-group mt-10">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">介绍</span>
-                      </div>
-                      <textarea id="input_room_desc" class="form-control" placeholder="...">${d.desc}</textarea>
-                    </div>
-                    
-                     ${action[1] ? `
-                        <div class="row mt-10">
-                            <img id="input_room_bg" class="w-full col-6 p-5" src="./a/2.jpg">
-                            <select class="form-control form-control-lg col-6 h-auto" id="select-room-bg" oninput="g_room.optionSelected(this);" size="8">
-                              <option value="" selected disabled>背景图片</option>
-                              <option value="custom">自定义</option>
-                              <option value="./res/1.jpg">1</option>
-                              <option value="./res/2.jpg">2</option>
-                              <option value="./res/3.jpg">3</option>
-                              <option value="./res/4.jpg">4</option>
-                              <option value="./res/5.jpg">5</option>
-                              <option value="./res/6.jpg">6</option>
-                              <option value="./res/7.jpg">7</option>
-                              <option value="./res/8.jpg">8</option>
-                              <option value="./res/9.jpg">9</option>
-                            </select>
-                        </div>
-                    ` : ''}
-                    <div class="text-right mt-10">
-                   
-                        <a class="btn btn-primary" role="button" data-action="room_createRoom">${action[1] ? '保存' : '新建'}</a>
-                      </div>
-                </div>
-                        `,
-                // todo 常用背景图
-                onClose: () => {
-                    return true;
-                }
-            });
-        });
-
-        registerAction('room_img_click', (dom, action, params) => {
-            var p = $(dom).parents('.grid-item');
-            g_room.viewer = new Viewer($('#room_gallery')[0], {
-                backdrop: 'static',
-                title: 0,
-                toggleOnDblclick: true,
-                initialViewIndex: p.index(), // 设置默认打开当前图片
-                ready() {
-                    if (!g_room.isHideMessage()) {
-                        getAction('room_toggleChatUI').click();
-                    }
-                    g_room.initMenu('viewer');
-                },
-                viewed() {
-                    $('.navbar-fixed-bottom').css('zIndex', 2);
-                    $('#room_chat').addClass('withViewer');
-                },
-                hide() {
-                    $('#room_chat').removeClass('withViewer');
-                    g_room.viewer.destroy();
-                    delete g_room.viewer;
-                    g_room.initMenu(g_room.currentContent);
-
-                },
-                filter(image) {
-                    return image.dataset.origin;
-                },
-                url(image) {
-                    return g_room.getImageUrl(image.dataset.origin);
-                },
-            });
-            g_room.viewer.targetImg = {
-                md5: p.data('md5'),
-                img: p.find('img').data('origin')
-            };
-            g_room.viewer.show();
-        });
-        registerAction('room_saveImg', (dom, action, params) => {
-            const openDialog = (url, md5) => {
-                var r = {};
-                r[md5] = {
-                    i: url,
-                    t: ['房间']
-                }
-                g_database.showSaveDialog(r);
-                $(dom).removeClass('btn-primary').html('已收集');
-            }
-            var data = g_room.getCuttentImage(dom);
-            if (data.url.startsWith('{host}')) { // 可以下载数据
-                getImgToBase64(g_room.getImageUrl(data.url), base64 => {
-                    openDialog(base64, data.md5);
-                    // getMD5(dataURLtoFile(base64, 'file.jpg'), (md5) => {});
-                });
-            } else {
-                openDialog(data.url, data.md5);
-            }
-        });
-        registerAction('room_setCover', (dom, action, params) => {
-            g_file.openDialog('room_setCover', false, {
-                cropper: { aspectRatio: 16 / 9 },
-                callback: () => {
-                    $('#input_room_cover').attr('src', _cropper.getCroppedCanvas({ width: 200, height: 120 }).toDataURL('image/webp'));
-                },
-            });
-        });
-        registerAction('room_createRoom', (dom, action, params) => {
-            var vals = checkInputValue(['#input_room_name', '#input_room_maxPlayers']);
-            if (!vals) return;
-            var password = $('#input_room_password').val();
-            if (password != '' && password.length != 4) {
-                return toastPAlert('密码不填或者需要四位数!', 'alert-danger');
-            }
-            var data = {
-                title: vals[0],
-                cover: $('#input_room_cover').attr('src'),
-                bg: $('#input_room_bg').attr('src'),
-                maxPlayers: parseInt(vals[1]),
-                password: password,
-                tags: $('#input_room_tag').val().replaceAll1('，', ',').split(','),
-                desc: $('#input_room_desc').val(),
-                confirm: g_room.cache.confirmCreateRoom
-            }
-            g_room.send({
-                type: 'createRoom',
-                data: data
-            })
-        });
-        registerAction('room_joinRoom', (dom, action, params) => {
-            var room = $(dom).parents('[data-room]').data('room');
-            g_room.requestJoinRoom(room);
-        });
-        registerAction('room_addImgs', (dom, action, params) => {
-            g_file.openDialog(action.join(','), true);
-        });
-        registerAction('room_sendImage', (dom, action, params) => {
-            g_file.openDialog('room_sendImage', true);
-        });
-    },
     addImages: function(data, type, done) {
 
         g_room.partSend(data, res => {
@@ -1449,7 +932,7 @@ var g_room = {
         this.cache.partSend_finshed = [];
         this.cache.partSend_callback = callback;
         this.cache.partSend_done_callback = done;
-        g_autojs.showImportProgress(len, '传送中...');
+        g_autojs.showImportProgress(len, _l('上传中'));
         this.partSend_next();
     },
     partSend_next: function(callback) {

@@ -1,3 +1,20 @@
+const SUCC_ROOM_SETTING_APPLY = 1;
+const ERR_ROOM_NOT_EXISTS = 2;
+const SUCC_CREATE_ROOM = 3;
+const CONFIRM_CREATE_ROOM = 4;
+const ERR_NOT_PERMISSIOM = 5;
+const KICK_BY_OWNER = 6;
+const KICK_BY_SYSTEM = 7;
+const ERR_CANT_KICK_YOURSELF = 8;
+const SUCCESS_KICKED = 9;
+const ERR_IN_BLOCK_LIST = 11;
+const SUCC_IMAGE_DELETED = 10;
+const ERR_FILE_NOT_EXISTS = 12;
+const WARNING_IMAGE_EXISTSED = 13;
+const ERR_ACCOUNT_PROTECT = 14;
+const ERR_WRONG_PASSWORD = 15;
+const ERR_NAME_ALREADY_EXISTSED = 16;
+
 var express = require('express');
 var http = require('http');
 var WebSocket = require('ws');
@@ -7,10 +24,10 @@ var crypto = require('crypto');
 var request = require('request');
 var images = require("images");
 
-if (fs.existsSync('./saves/')) {
-    fs.rmdirSync('./saves/', { recursive: true, force: true });
+// if (fs.existsSync('./saves/')) {
+//     fs.rmdirSync('./saves/', { recursive: true, force: true });
 
-}
+// }
 var app = express();
 app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
@@ -31,6 +48,7 @@ var g_cache = {
     timer: {},
     timeout: {},
     closeRoom: {},
+    uploaded: {},
 }
 var server = http.createServer(app);
 var wss = new WebSocket.Server({ server });
@@ -147,7 +165,6 @@ function startGame(room, game, data) {
 }
 
 
-
 function onMessage(msg, ws) {
     var r;
     try {
@@ -161,19 +178,25 @@ function onMessage(msg, ws) {
     var d = r.data;
     // 
     var roomData;
-    if (['getPlayerMark', 'updateMark', 'heart', 'startVote', 'exit', 'updateIcon', 'startGame'].includes(r.type)) {
+    if (['getPlayerMark', 'updateMark', 'heart', 'startVote', 'exit', 'updateIcon', 'startGame', 'kickPlayer', 'deleteImage'].includes(r.type)) {
         var roomData = _room.getRoom(ws._room);
         if (!roomData) return;
 
-
-        if (['startVote', 'startGame'].includes(r.type)) { // 需要房主权限
-            if (_room.getPlayerByName(roomData.owner, ws._room) && roomData.key != r.key) {
-                return sendData(ws, { type: 'alert', data: { msg: '你没有权限操作', class: 'alert-danger' } })
+        var isOwner = roomData.key == r.key;
+        if (['startVote', 'startGame', 'kickPlayer'].includes(r.type)) { // 需要权限
+            if (_room.getPlayerByName(roomData.owner, ws._room) && !isOwner) {
+                return sendMsg(ws, ERR_NOT_PERMISSIOM);
             }
         }
     }
 
     switch (r.type) {
+        case 'kickPlayer':
+            if (!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
+            if (d.target == ws._username) return sendMsg(ws, ERR_CANT_KICK_YOURSELF);
+            _room.removePlayer(d.target, ws._room, KICK_BY_OWNER);
+            sendMsg(ws, SUCCESS_KICKED, [d.target]);
+            break;
         case 'startGame':
             startGame(ws._room, d.game, {});
             break;
@@ -243,6 +266,23 @@ function onMessage(msg, ws) {
             broadcast(ws._room, 'markList', getGameData(roomData));
             break;
 
+        case 'deleteImage':
+            if(!d.id) return;
+            if(!g_cache.uploaded[ws._room]) return;
+            var img = g_cache.uploaded[ws._room][d.id];
+            if(!img){
+
+                return sendMsg(ws, ERR_FILE_NOT_EXISTS);
+            }
+            if(img != ws._uuid && !isOwner){
+                return sendMsg(ws, ERR_NOT_PERMISSIOM);
+            }
+            delete g_cache.uploaded[ws._room][d.id];
+            sendMsg(ws, SUCC_IMAGE_DELETED);
+            broadcast(ws._room, 'deleteImage', d.id);
+
+            break;
+
         case 'room_addImgs,gallery':
         case 'room_addImgs,photo':
             var res = {};
@@ -257,9 +297,12 @@ function onMessage(msg, ws) {
                     }
                     res[md5] = img;
                     uploaded[md5] = img;
+
+                    if(!g_cache.uploaded[ws._room]) g_cache.uploaded[ws._room] = [];
+                    g_cache.uploaded[ws._room][md5] = ws._uuid; // 记录是谁上传的
                 }
                 if (++c == d.length) {
-                    if (exists) sendData(ws, { type: 'alert', data: { msg: exists + '张图片已经被上传过了!', class: 'alert-danger' } });
+                    if (exists) sendMsg(ws, WARNING_IMAGE_EXISTSED, [exists]);
                     broadcast(ws._room, 'addImgs', res, { type: r.type });
                 }
             }
@@ -434,10 +477,7 @@ TODO:
 
 */
 
-const ERR_ROOM_NOT_EXISTS = 2;
-const SUCC_ROOM_SETTING_APPLY = 1;
-const SUCC_CREATE_ROOM = 3;
-const CONFIRM_CREATE_ROOM = 4;
+
 // game: {
 //     type: 'copy',
 //     data: {
@@ -447,66 +487,27 @@ const CONFIRM_CREATE_ROOM = 4;
 // },
 
 var _room = {
-    list: {
-        chat: {
-            room: 'chat',
-            msgs: [],
-            players: {},
-        },
-        lobby: {
-            room: 'lobby',
-            owner: '',
-            title: '默认房间',
-            desc: '欢迎欢迎',
+    init: function() {
+        this.list = {
+            chat: {
+                room: 'chat',
+                msgs: [],
+                players: {},
+                blockIps: []
+            }
+        }
+        this.setRoomProps('lobby', {
             cover: './img/cover.jpg',
-            bg: '',
-            maxPlayers: 0,
-            msgs: [],
-            data: {},
-            vote: {},
-            createAt: new Date().getTime(),
-            players: {},
-            imgs: {},
-            photos: {},
-            // imgs: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/10.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/11.jpg', player: 'maki' } },
-            // photos: { '4124bc0a9335c27f086f24ba207a4912': { src: '{host}./a/1.jpg', player: 'maki' }, 'e62595ee98b585153dac87ce1ab69c3c': { src: '{host}./a/2.jpg', player: 'maki' } },
-            tags: ["全年龄", "迎新"],
-        },
-        r15: {
-            // password: '4444',
-            room: 'r15', // 还是加个主键名会比较方便
-            owner: '',
-            title: '限制级-R15',
-            desc: '限制级（R-15）：未满15岁少年，一律禁止其入场与收看（有虐待描写）。',
+            tags: ["全年龄"],
+        },true)
+        this.setRoomProps('r15', {
             cover: './img/r15.jpg',
-            bg: '',
-            maxPlayers: 0,
-            msgs: [],
-            data: {},
-            vote: {},
-            createAt: new Date().getTime(),
-            players: {}, // clients
-            imgs: {},
-            photos: {},
             tags: ["R15", "限制级"],
-        },
-        r18: {
-            room: 'r18',
-            owner: '',
-            title: '成人级-R18',
-            desc: '未满18岁一律禁止入场与收看（有强烈的性、暴力、反社会行为；或美化吸毒之描写）。',
+        },true)
+        this.setRoomProps('r18', {
             cover: './img/r18.jpg',
-            bg: '',
-            maxPlayers: 0,
-            msgs: [],
-            data: {},
-            vote: {},
-            createAt: new Date().getTime(),
-            players: {}, // clients
-            imgs: {},
-            photos: {},
             tags: ["R18", "成人级"],
-        },
+        },true);
     },
     uuids: [],
     uuid: function() {
@@ -531,8 +532,28 @@ var _room = {
         var d = this.getRoom(room);
         return d && d.key == key;
     },
-
-    setRoomProps: function(room, data) {
+    setRoomProps: function(room, data, create = false) {
+        if (create) {
+            this.list[room] = Object.assign({
+                room: room,
+                owner: '',
+                title: '',
+                desc: '',
+                cover: '',
+                bg: '',
+                maxPlayers: 0,
+                msgs: [],
+                data: {},
+                vote: {},
+                createAt: new Date().getTime(),
+                players: {}, // clients
+                imgs: {},
+                photos: {},
+                tags: [],
+                blockIps: [],
+            }, data);
+            return;
+        }
         var d = this.getRoom(room, false);
         if (!d) return;
         for (var k of ['title', 'maxPlayers', 'password', 'desc', 'cover', 'bg', 'tags']) {
@@ -568,8 +589,6 @@ var _room = {
                 // 修改房间属性
                 this.setRoomProps(ws._room, data);
                 sendMsg(ws, SUCC_ROOM_SETTING_APPLY, [data.title]);
-            } else {
-                // todo
             }
             return;
         }
@@ -588,27 +607,18 @@ var _room = {
 
         var room = this.uuid(),
             key = this.uuid();
-        this.list[room] = {
-            room: room,
+        this.setRoomProps(room, {
             owner: ws._username,
             title: data.title.toString(),
             desc: data.desc.toString(),
             password: data.password.toString(),
             cover: data.cover.toString() || './res/cover.jpg',
             maxPlayers: parseInt(data.maxPlayers),
-            createAt: new Date().getTime(),
-            bg: './res/bg.jpg',
-            msgs: [],
-            data: {},
-            vote: {},
-            players: {},
-            imgs: {},
             tags: data.tags.toString().split(',').splice(0, 5),
-
             ip: ws._socket.remoteAddress,
             ownerUuid: ws._uuid,
             key: key, // 房主密钥
-        }
+        }, true)
         ws._key = key;
 
         sendData(ws, {
@@ -644,13 +654,17 @@ var _room = {
         }
 
         var isOwner = ws._uuid == d.ownerUuid;
+        if(d.blockIps.includes(ws._socket.remoteAddress) && !isOwner){ // 把我网络封了咋进呢
+            return sendMsg(ws, ERR_IN_BLOCK_LIST);
+        }
+
         if (ws._username == d.owner && !isOwner) {
-            return sendData(ws, { type: 'alert', data: { msg: '房主的账号受到特殊保护', class: 'alert-danger' } });
+            return sendMsg(ws, ERR_ACCOUNT_PROTECT);
         }
         var another = d.players[ws._username];
         if (another) {
             if (ws._uuid != another._uuid) {
-                return sendData(ws, { type: 'alert', data: { msg: '房间内此名称已被使用', class: 'alert-danger' } });
+                return sendMsg(ws, ERR_NAME_ALREADY_EXISTSED, [ws._username]);
             }
             another.close();
         }
@@ -662,7 +676,7 @@ var _room = {
                 return sendData(ws, { type: 'requestPassword', data: { room: room } });
             }
             if (d.password != password) {
-                return sendData(ws, { type: 'alert', data: { msg: '密码错误', class: 'alert-danger' } });
+                return sendMsg(ws, ERR_WRONG_PASSWORD);
             }
         }
 
@@ -712,15 +726,6 @@ var _room = {
 
         }
     },
-    // xxx: function(){
-    //     var pls = [];
-    //     for(var ws of wss.clients){
-    //         if(ws._username && !ws._room){
-    //             pls.push(ws);
-    //         }
-    //     }
-    //     return pls;
-    // },
     getRoomPlayers: function(room) {
         var d = this.getRoom(room);
         var r = d ? d.players : [];
@@ -761,7 +766,7 @@ var _room = {
         var list = {};
         for (var name in players) {
             list[name] = {
-                icon: getFilePath(getMd5(players[name]._uuid))
+                icon: getFilePath(getMd5(players[name]._uuid)),
             };
         }
         return list;
@@ -772,13 +777,19 @@ var _room = {
             return d.players[name];
         }
     },
-    removePlayer: function(name, room) {
+    removePlayer: function(name, room, code = KICK_BY_SYSTEM) {
         var d = this.getRoom(room, false);
         if (d) {
             if (d.players[name]) {
-                var detail = getPlayerDetail(d.players[name]);
+                var client = d.players[name];
+                sendMsg(client, code);
+                if (code == KICK_BY_OWNER) { // 房主踢的
+                    // 加入黑名单
+                    d.blockIps.push(client._socket.remoteAddress);
+                }
+
                 delete d.players[name];
-                this.playerEvent(d.room, 'on-player-quit', detail);
+                this.playerEvent(d.room, 'on-player-quit', getPlayerDetail(client));
                 if (Object.keys(d.players).length == 0 && !isSystemRoom(d.room)) {
                     g_cache.closeRoom[room] = setTimeout(() => {
                         _room.removeRoom(room);
@@ -802,12 +813,14 @@ var _room = {
 
 }
 
+_room.init();
+
 function getData(data) {
     return typeof(data) == 'object' ? JSON.stringify(data) : data;
 }
 
 function sendData(ws, data, close = false) {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
         var data = getData(data);
         // console.log('send -> ' + ws._username + ' -> ' + data);
         ws.send(data);
@@ -821,6 +834,6 @@ wss.on('close', function close() {
     console.log('server closed!');
 });
 
-server.listen(41593, function listening() {
-    console.log('server start at port: 41593');
+server.listen(8000, function listening() {
+    console.log('server start at port: 8000');
 });

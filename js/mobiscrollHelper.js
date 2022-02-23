@@ -4,31 +4,31 @@ var mobiscrollHelper = {
 
     },
     test: () => {
-        $(function() {
+        // $(function() {
 
-            // var groups = ['a', 'b', 'c', 'd'];
-            // var h = $(mobiscrollHelper.buildMulitSelect({
-            //     id: 'mulitselect-demo',
-            //     name: '分类',
-            //     data: groups,
-            //     selected: []
-            // })).prepend('body');
-            // var dialog = mobiscroll_(h, 'select', {
-            //     minWidth: 200,
-            //     preset: "select",
-            //     closeOnOverlayTap: false,
-            //     headerText: '为目录设置分类',
-            //     buttons: [{
-            //         text: _l('确定'),
-            //         handler: function(event, instance) {
-            //             instance.getVal()
-            //         }
-            //     }, {
-            //         text: _l('取消'),
-            //         handler: 'cancel'
-            //     }],
-            // });
-        });
+        //     var groups = ['a', 'b', 'c', 'd'];
+        //     var h = $(mobiscrollHelper.buildMulitSelect({
+        //         id: 'mulitselect-demo',
+        //         name: '分类',
+        //         data: groups,
+        //         selected: []
+        //     })).prepend('body');
+        //     var dialog = mobiscroll_(h, 'select', {
+        //         minWidth: 200,
+        //         preset: "select",
+        //         closeOnOverlayTap: false,
+        //         headerText: '为目录设置分类',
+        //         buttons: [{
+        //             text: _l('确定'),
+        //             handler: function(event, instance) {
+        //                 instance.getVal()
+        //             }
+        //         }, {
+        //             text: _l('取消'),
+        //             handler: 'cancel'
+        //         }],
+        //     });
+        // });
     },
     buildGroupSelect: (opts) => {
         opts = Object.assign({ id: 'selectGroupselect', data: {} }, opts);
@@ -50,10 +50,23 @@ var mobiscrollHelper = {
         }
         return h + '</select>';
     },
+    buildSelect_withImage: (opts) => {
+        opts = Object.assign({ data: {} }, opts);
+        var h = '<ul>';
+        for (var key in opts.data) {
+            var item = opts.data[key];
+            h += `
+            <li data-val="${key}">
+                <img class="${opts.imgClass}" src="${item.icon}" />
+                <p>${item.text}</p>
+            </li>
+            `;
+        }
+        return h + '</ul>';
+    },
 
     buildMulitSelect: (opts) => {
-        opts = Object.assign({ id: 'mulitselect-demo', data: {} ,selected: []}, opts);
-        console.log(opts);
+        opts = Object.assign({ id: 'mulitselect-demo', data: {}, selected: [] }, opts);
         var h = '<select name="' + opts.title + '" id="' + opts.id + '" multiple>';
         for (var key in opts.data) {
             h += '<option value="' + key + '"' + (opts.selected.indexOf(key) != -1 ? ' selected' : '') + '>' + opts.data[key] + '</option>';
@@ -83,7 +96,7 @@ var mobiscrollHelper = {
         });
         opts.dialog = dialog;
         opts.setProgress = function(num) {
-            var progress = parseInt(num / this.max * 100); 
+            var progress = parseInt(num / this.max * 100);
             if (progress > 100) progress = 100;
             if (progress < 0) progress = 0;
             if (progress != this.progress) {
@@ -100,33 +113,60 @@ var mobiscrollHelper = {
         }
         return opts;
     },
-    select: function(opts){
-       var h = $(mobiscrollHelper[opts.isMulti ? 'buildMulitSelect' : 'buildSelect'](Object.assign({
-                data: [],
-            }, opts))).prepend('body');
-            var dialog = mobiscroll_(h, 'select', Object.assign({
-                minWidth: 200,
-                closeOnOverlayTap: false,
-                headerText: '',
-                buttons: [{
-                    text: _l('确定'),
-                    handler: function(event, instance) {
-                        opts.callback && opts.callback(true, instance);
-                    }
-                }, {
-                    text: _l('取消'),
-                     handler: function(event, instance) {
-                        opts.callback && opts.callback(false, instance); // 不知道啥原因点击项目就关闭窗口了，只能检测是不是点击了取消
-                    }
-                }],
-            }, opts.opts));
-            return dialog;
+    select_textAndImage: function(opts) {
+        var h = $(mobiscrollHelper.buildSelect_withImage(Object.assign({
+            data: [],
+
+
+        }, opts))).prepend('body');
+        var dialog = mobiscroll_(h, 'image', Object.assign({
+            minWidth: 200,
+            // defaultValue: [],
+            closeOnOverlayTap: true,
+            showLabel: false,
+            // labels: [''], // 标题
+            enhance: true, // 显示文字 
+            buttons: [{
+                text: _l('确定'),
+                handler: function(event, instance) {
+                    opts.callback && opts.callback(true, instance);
+                }
+            }, {
+                text: _l('取消'),
+                handler: function(event, instance) {
+                    opts.callback && opts.callback(false, instance);
+                }
+            }],
+        }, opts.opts));
+        return dialog;
+    },
+    select: function(opts) {
+        var h = $(mobiscrollHelper[opts.isMulti ? 'buildMulitSelect' : 'buildSelect'](Object.assign({
+            data: [],
+        }, opts))).prepend('body');
+        var dialog = mobiscroll_(h, 'select', Object.assign({
+            minWidth: 200,
+            closeOnOverlayTap: false,
+            headerText: '',
+            buttons: [{
+                text: _l('确定'),
+                handler: function(event, instance) {
+                    opts.callback && opts.callback(true, instance);
+                }
+            }, {
+                text: _l('取消'),
+                handler: function(event, instance) {
+                    opts.callback && opts.callback(false, instance); // 不知道啥原因点击项目就关闭窗口了，只能检测是不是点击了取消
+                }
+            }],
+        }, opts.opts));
+        return dialog;
     },
     // 给默认的按钮加上回调
-    initButtonFun: function(opts, callback){
-        for(var i in opts.buttons){
+    initButtonFun: function(opts, callback) {
+        for (var i in opts.buttons) {
             var btn = opts.buttons[i];
-            if(btn == 'set'){
+            if (btn == 'set') {
                 opts.buttons[i] = {
                     text: _l('确定'),
                     handler: function(event, instance) {
@@ -134,8 +174,8 @@ var mobiscrollHelper = {
                         instance.hide();
                     }
                 }
-            }else
-            if(btn == 'cancel'){
+            } else
+            if (btn == 'cancel') {
                 opts.buttons[i] = {
                     text: _l('取消'),
                     handler: function(event, instance) {
@@ -146,7 +186,7 @@ var mobiscrollHelper = {
             }
         }
     },
-    password: function(opts, callback){
+    password: function(opts, callback) {
         var dialog = mobiscroll_('<div id="pin"></div>', 'numpad', Object.assign({
             headerText: _l('输入密码_标题'),
             template: 'dddd',
@@ -160,7 +200,29 @@ var mobiscrollHelper = {
             }
         }, opts));
         return dialog;
-       
+
+    },
+    
+    widget_actionWithIcon: function(opts) {
+        var h = '';
+        for (var item of opts.data) {
+            h += `
+            <h4 data-action="${item.action}" class="hover" >
+                <i class="fa ${item.icon} mr-10"aria-hidden="true"></i>
+            ${item.text}</h4>`;
+        }
+        var dialog = mobiscroll_($('#mobi_div').html(`
+            <div id="widget">
+                <div class="md-dialog">
+                ${h}
+                </div>
+            </div>
+         `), 'widget', Object.assign({
+            closeOnOverlayTap: true,
+            headerText: _l('请选择'),
+            buttons: [],
+        }, opts.opts));
+        return dialog;
     }
 }
 
@@ -168,7 +230,7 @@ var mobiscrollHelper = {
 window.alert1 = function(opts) {
     if (typeof(opts) != 'object') opts = { html: opts }
     opts = Object.assign({
-        title: '提示',
+        title: _l('提示'),
         html: '',
         buttons: ['set'],
 
@@ -177,25 +239,14 @@ window.alert1 = function(opts) {
     return buildDialog(opts);
 }
 
-
-// alert({
-//     html: 'aa',
-//     buttons: [{
-//         text: _l('确定'),
-//         handler: function(event){
-//             alert('ok');
-//         }
-//     }]
-// });
-
 // todo 监测按钮事件在进行回调？
 window.confirm1 = function(opts, callback) {
     var b = typeof(opts) == 'object';
     if (!b) opts = { html: opts };
     opts = Object.assign({
-        title: '请选择',
+        title: _l('请选择'),
         buttons: ['set', 'cancel'],
-         onEnterKey: () => {
+        onEnterKey: () => {
             $('.mbsc-fr-btn0').click();
         }
     }, opts);
@@ -204,30 +255,12 @@ window.confirm1 = function(opts, callback) {
     return buildDialog(opts);
 }
 
-// confirm('aa', (value) => {
-//     alert(value);
-// })
-
-// confirm({
-//     html: 'aa',
-//     buttons: [{
-//         text: _l('确定'),
-//         handler: function(event){
-//            alert('ok');
-//         }
-//     }, {
-//         text: _l('取消'),
-//         handler: function(event){
-//            alert('cancel');
-//         }
-//     }],
-// });
 window.prompt1 = function(opts, callback) {
     if (typeof(opts) != 'object' && typeof(callback) != 'function') {
         opts = { title: opts, html: callback };
     }
     opts = Object.assign({
-        title: '请输入',
+        title: _l('请输入'),
         html: '',
         buttons: [{
             text: _l('确定'),
@@ -287,9 +320,3 @@ function buildDialog(opts) {
 mobiscrollHelper.init();
 mobiscrollHelper.test();
 
-$(document).ready(function() {
-
-
-    return;
-
-});

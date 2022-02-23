@@ -174,7 +174,10 @@ $(function() {
             }
         })
         .on('click', '[data-action]', function(event) {
-            doAction(this, $(this).attr('data-action'));
+            doAction(this, this.dataset.action);
+            if(['button', 'a'].includes(this.nodeName.toLowerCase())){
+             addAnimation($(this), 'rubberBand');
+            }
         })
         .on('change', '[data-checkbox]', function(event) {
             var key = $(this).attr('data-checkbox');
@@ -246,13 +249,18 @@ $(function() {
 
     g_gallery.switchDetailBar(false);
 
+    if(!g_config.firstLogin){
+        g_config.firstLogin = new Date().getTime();
+        local_saveJson('config', g_config);
+        doAction(null, 'setting');
+    }
+    
     if(_GET['r']){
         g_room.cache.targetRoom = {
             room: _GET['r'],
             password: _GET['p'],
         }
         toastPAlert('正在加入房间中...请稍等', 'alert-primary');
-        window.history.pushState(null, null, "index.html"); // 去除url参数
         showContent('room');
     }else{
           if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
@@ -318,10 +326,8 @@ function registerContent(opts){
 }
 
 function showContent(id) {
-    if(id != g_cache.showing){ // 更新视图
-     $('.navbar-fixed-bottom').html('').hide();
-    }
-     
+   
+
     $('.content-wrapper').css('overflowY', 'auto'); // 自定义滚动内容
     //$('.content-wrapper').css('overflowY', d.overflowY ? 'hidden' : 'auto'); // 自定义滚动内容
     switch (id) {
@@ -356,10 +362,18 @@ function showContent(id) {
             break;
 
     }
+
     var d = g_cache.contents[id] || {};
+    var bottom = '';
     if(d){
         d.onShow && d.onShow();
-        d.initNavBottom && d.initNavBottom();
+        if(d.initNavBottom){
+            bottom = d.initNavBottom();
+        }
+    }
+    if(id != g_cache.showing){ // 更新视图
+     $('.navbar-fixed-bottom').html(bottom).toggleClass('hide', bottom == '');
+     $('#page-wrapper').toggleClass('with-navbar-fixed-bottom', bottom != '');
     }
 
     $('[data-action="history_newNote"]').toggleClass('hide', id=='room');
@@ -420,11 +434,13 @@ function mobiscroll_(selector, type, opts, show = true) {
     var dom = selector.mobiscroll()[type](Object.assign({
         display: 'center',
         animate: 'fade',
-       
     }, opts));
+
     if (show) dom.mobiscroll('show')[0];
     setTimeout(() => {
-        $('.mbsc-fr-w').addClass('p-10 ' + (g_config.darkMode ? 'bg-dark' : 'bg-white'));
+        var con = $('.mbsc-fr-w');
+        con.addClass('p-10 ' + (g_config.darkMode ? 'bg-dark' : 'bg-white'));
+        if(opts.id) con.attr('id', opts.id);
     }, 50);
     // bootstarp 
     return dom;
