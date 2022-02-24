@@ -1,7 +1,7 @@
 {
-  "name": "electron-quick-start",
+  "name": "picManager",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "",
   "main": "main.js",
   "scripts": {
     "start": "chcp 65001 && electron .",
@@ -9,11 +9,11 @@
     "dev": "concurrently \"npm run server\" \"npm run start\"",
     "build": "electron-builder"
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://hunmer.github.io/PicManager",
   "keywords": [
     "Electron"
   ],
-  "author": "GitHub",
+  "author": "hunmer",
   "license": "CC0-1.0",
   "devDependencies": {
     "electron-builder": "^22.10.5"
@@ -29,14 +29,26 @@
     "ws": "^8.4.2"
   },
   "build": {
-    "productName": "daily",
-    "appId": "com.neysummer2000.daily",
-    "copyright": "neysummer2000",
+    "productName": "picManager",
+    "appId": "com.hunmer.picManager",
+    "copyright": "hunmer",
+    "asar": false,
     "directories": {
       "output": "build"
     },
     "win": {
+      "target": [
+        "nsis"
+      ],
       "icon": "favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "favicon.ico"
     }
   }
 }

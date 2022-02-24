@@ -144,15 +144,15 @@ function startGame(room, game, data) {
             time: time,
             increase: increase,
             task: setInterval(() => {
-            var t = increase ? ++g_cache.timer[room].time : --g_cache.timer[room].time;
-            if (!increase && t <= 0) {
-                overGame(room);
-            } else
-            if (t % 60 == 0) {
-                // 同步
-                broadcast(room, 'syncTime', t);
-            }
-        }, 1000);
+                var t = increase ? ++g_cache.timer[room].time : --g_cache.timer[room].time;
+                if (!increase && t <= 0) {
+                    overGame(room);
+                } else
+                if (t % 60 == 0) {
+                    // 同步
+                    broadcast(room, 'syncTime', t);
+                }
+            }, 1000)
         }
         roomData.game = game;
         roomData.data = data;

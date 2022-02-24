@@ -7,6 +7,14 @@ var g_setting = {
         });
         if(g_cache.isApp){
             $(`
+                <a class="dropdown-item" data-action="localFolder_list">本地文件夹</a>
+                <div class="dropdown-divider"></div>
+            `).prependTo('[aria-labelledby="img_user"]');
+             $(`
+               <button class="btn btn-block btn-primary" type="button" data-action="downloadUnsavedImages">本地化图片</button>
+                <button class="btn btn-block btn-success mt-10" type="button" data-action="checkUpdate">检测更新</button>
+                `).prependTo('[aria-labelledby="img_user"] .dropdown-content');
+            $(`
                 <div class="custom-switch mt-10">
                     <input type="checkbox" id="checkbox-nomedia" value="" data-checkbox="nomedia">
                     <label for="checkbox-nomedia">隐藏图片</label>
@@ -16,11 +24,7 @@ var g_setting = {
                     <label for="checkbox-debug">调试</label>
                 </div>
                 
-                <div class="custom-switch mt-10">
-                    <input type="checkbox" id="checkbox-fullScreen" value="" data-checkbox="fullScreen">
-                    <label for="checkbox-fullScreen">全屏</label>
-                </div>
-                `).appendTo('[aria-labelledby="img_user"]');
+                `).appendTo('[aria-labelledby="img_user"] .dropdown-content');
         }else
         if(g_cache.isWindow){
             

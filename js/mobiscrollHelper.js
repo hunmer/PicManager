@@ -202,6 +202,18 @@ var mobiscrollHelper = {
         return dialog;
 
     },
+    step: function(opts, callback) {
+        var dialog = mobiscroll_('<div id="step"></div>', 'number', Object.assign({
+            headerText: _l('选择数字'),
+            closeOnOverlayTap: false,
+            step: 1,
+            buttons: ['set'],
+            onSet: function(event, inst) {
+                callback(event.valueText);
+            }
+        }, opts));
+        return dialog;
+    },
     
     widget_actionWithIcon: function(opts) {
         var h = '';

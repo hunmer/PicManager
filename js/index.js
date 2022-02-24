@@ -218,6 +218,7 @@ $(function() {
                 case 'fullScreen':
                 case 'nomedia':
                     g_autojs.log('setOption', { key: key, value: this.checked });
+                    if(key == 'fullScreen') toggleFullScreen();
                     break;
             }
             g_config[key] = this.checked;
@@ -364,19 +365,21 @@ function showContent(id) {
     }
 
     var d = g_cache.contents[id] || {};
-    var bottom = '';
+    var bottom, dropdown = '';
     if(d){
         d.onShow && d.onShow();
         if(d.initNavBottom){
             bottom = d.initNavBottom();
         }
+        if(d.dropDownHtml){
+            dropdown = d.dropDownHtml();
+        }
     }
     if(id != g_cache.showing){ // 更新视图
      $('.navbar-fixed-bottom').html(bottom).toggleClass('hide', bottom == '');
      $('#page-wrapper').toggleClass('with-navbar-fixed-bottom', bottom != '');
+    $('#dropdown-top-right').html(dropdown);
     }
-
-    $('[data-action="history_newNote"]').toggleClass('hide', id=='room');
 
     g_cache.showing = id;
     for (var d of $('.toolbar')) {

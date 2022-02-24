@@ -27,6 +27,8 @@ var g_room = {
     grid: {},
     cache: {},
     preload: function() {
+
+
         registerContent({
             id: 'room',
             html: `
@@ -85,14 +87,6 @@ var g_room = {
                     </div>
                     
                 </div>
-                <div class="menu" id="menu_playes" style="right: 0px;
-                display: grid;
-                padding: 0px;
-                top: 60px;
-                opacity: .3;
-                max-height: 40%;
-                height: auto;"></div>
-
                 <div class="menu bottom_right_menu" id="menu_roomMenu" style="right: 20px;
                 z-index: 99999;
                 padding: 0px;
@@ -133,7 +127,25 @@ var g_room = {
                         </button>
                 </div>`;
             },
+            dropDownHtml: () => {
+                return `
+                <div class="dropdown" id="dropdown_room">
+                   <span class="badge-group" role="group" data-toggle="dropdown">
+                      <a data-action="room_time" class="badge badge-primary badge-pill">00:00</a>
+                      <a class="badge badge-secondary badge-pill"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>
+                    </span>
+                    <div class="dropdown-menu dropdown-menu-center pr-10">
+                        <a class="dropdown-item" data-action="">信息</a>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-content">
+                            <button class="btn btn-block btn-danger" data-action="room_exit" type="button"><i class="fa fa-sign-out fa-flip-horizontal mr-10" aria-hidden="true"></i>退出</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            },
             onShow: () => {
+                $('[data-action="history_newNote"]').hide();
                 g_menu.toggleMenu('#menu_main', true);
                 // $('#menu_main').hide();
                 g_room.init();
@@ -206,17 +218,12 @@ var g_room = {
                     <div id="room_title" class="col-3 text-left textScroll">
                         <span class="text"></span>
                     </div>
-                   <div id="room_players" data-action="room_playerList" class="col pl-10 pr-10 hideScroll w-full" style="display: inline-flex;height: 40px;overflow-y: hidden;overflow-x: scroll;align-items: center;">
-                    </div>
-                    <div id="room_time" class="col-2">
-                        <span class="badge badge-pill">00:00</span>
-                    </div>
-                    <div class="col-1">
-                        <i data-action="room_exit" class="fa fa-sign-out fa-flip-horizontal" aria-hidden="true"></i>
+                   <div id="room_players" data-action="room_playerList" class="col-5 pl-10 pr-10 hideScroll w-full" style="display: inline-flex;height: 40px;overflow-y: hidden;overflow-x: scroll;align-items: center;">
                     </div>
                 </div>
             </div>
             `).appendTo('#navbar-content')
+          
             self.setRoomList();
             self.toggleChat(true);
             self.connect();
@@ -281,7 +288,7 @@ var g_room = {
     },
     connect: function(url) {
         var self = this;
-        if (!url) url = (self.host.indexOf('glitch.me') ? 'wss:' : 'ws:') + self.host;
+        if (!url) url = (self.host.indexOf('glitch.me') != -1 ? 'wss:' : 'ws:') + self.host;
         if (self.connection) self.connection.close();
 
         var socket = self.connection = new WebSocket(url);
@@ -475,7 +482,7 @@ var g_room = {
     setTime: (t, classes = '') => {
         var t1 = parseInt(t);
         if (!isNaN(t1)) t = getTime(t1, ':', ':', '');
-        return $('#room_time').find('span').html(t).attr('class', 'badge badge-pill ' + classes);
+        return $('#room_time').html(t).attr('class', 'badge badge-pill ' + classes);
     },
     // onRevice: (data) => {},
     saveRoomKey: function(key) {
@@ -636,6 +643,7 @@ var g_room = {
     },
     leaveRoom: function(fromUser = false) {
         const fun = (data) => {
+            halfmoon.deactivateAllDropdownToggles();
             $('.content-wrapper').css('overflowY', 'auto');
             if (g_room.isConnected()) this.send({ type: 'exit', data: data });
             this.setRoomList();

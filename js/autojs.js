@@ -8,7 +8,7 @@ var g_autojs = {
             msg: msg
         }
         if (typeof(_api) != 'undefined') {
-            _api.method(data);
+            _api.method(data); // ELECTRON
         } else {
             console.log(JSON.stringify(data));
         }

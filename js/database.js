@@ -57,6 +57,39 @@ var g_database = {
         }
         g_database.initFolders();
 
+        $(`
+             <div class="toolbar text-center hide" id="toolbar_gallery">
+                <a data-action="mulit_select" class="btn btn-square rounded-circle" role="button">
+                    <i class="fa fa-check-square-o" aria-hidden="true"></i>
+                </a>
+                <a data-action="errorImages" class="btn btn-square rounded-circle ml-10 hide" style="position: relative;" role="button">
+                    <i class="fa fa-close text-danger"></i>
+                    <span class="badge badge-pill badge-danger d-absolute" style="bottom: -3px;right: -7px;position: absolute;padding: 0px 2px;">0</span>
+                </a>
+                <div class="dropdown with-arrow ml-10">
+                    <a class="btn ml-10 btn-square rounded-circle" data-toggle="dropdown" type="button" id="..." aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-sort " aria-hidden="true"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-center w-300 text-center ml-10" aria-labelledby="...">
+                        <div class="custom-radio d-inline-block mr-10">
+                            <input data-checkbox="sort_random" type="radio" id="radio-random" name="radio-sort">
+                            <label for="radio-random">乱序</label>
+                        </div>
+                        <div class="custom-radio d-inline-block mr-10">
+                            <input data-checkbox="sort_normal" type="radio" id="radio-sortNormal" name="radio-sort" checked>
+                            <label for="radio-sortNormal">正序</label>
+                        </div>
+                        <div class="custom-radio d-inline-block mr-10">
+                            <input data-checkbox="sort_reverse" type="radio" id="radio-sortReverse" name="radio-sort">
+                            <label for="radio-sortReverse">反序</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            `).appendTo('#navbar-content');
+
+
         registerAction('setFilter', (dom, action, params) => {
             // hideSidebar();
             $('.active_text').removeClass('active_text')

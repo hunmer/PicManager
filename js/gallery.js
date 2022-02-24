@@ -17,7 +17,76 @@ var g_gallery = {
         }
         return doms;
     },
+    preload: () => {
+         registerContent({
+            id: 'detail',
+            html: `
+                <div id="subContent_detail" class="subContent">
+                    <div id="imageEdit">
+                        <img src="">
+                    </div>
+                </div>
+            `,
+            initNavBottom: () => {
+                return ``;
+            },
+            dropDownHtml: () => {
+                return `
+                <div class="dropdown dropleft" id="dropdown_more">
+                    <button class="btn" data-toggle="dropdown">
+                        <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item">
+                            <span data-action="timer_start">计时</span>
+                            <span data-action="history_view" class="badge badge-pill badge-primary ml-10 hide">0</span>
+                        </a>
+                        <a class="dropdown-item" data-action="tagImage">标签</a>
+                        <a class="dropdown-item" data-action="markImage">备注</a>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-content">
+                            <button class="btn btn-block btn-danger" data-action="img_delete" type="button">删除</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            },
+            onShow: () => {
+            }
+        });
+        g_gallery.init();
+     },
     init: () => {
+        $(`
+              <div class="toolbar text-right hide" id="toolbar_pic">
+                <i class="fa fa-ellipsis-v" data-action="switchImageTools" aria-hidden="true"></i>
+                <div id="toolbar_pic_items" style="display: none;">
+                    <i class="border-right mr-10 ml-0"></i>
+                    <i class="fa fa-arrows-h" data-action="flipX" aria-hidden="true"></i>
+                    <i class="fa fa-arrows-v" data-action="flipY" aria-hidden="true"></i>
+                    <i class="fa fa-undo" data-action="rotateLeft" aria-hidden="true"></i>
+                    <i class="fa fa-repeat" data-action="rotateRight" aria-hidden="true"></i>
+                    <i class="fa fa-circle-o-notch" data-action="resetViewer" aria-hidden="true"></i>
+                    <i class="border-right mr-10 ml-0"></i>
+                    <i class="fa fa-pencil-square-o" data-action="markImage" aria-hidden="true"></i>
+                    <div class="dropdown text-right">
+                        <i data-toggle="dropdown" class="fa fa-link" aria-hidden="true"></i>
+                        <div class="dropdown-menu dropdown-menu-right  w-300">
+                            <input id="detail_link" type="text" class="form-control" placeholder="url" onkeydown="">
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-content">
+                                <button class="btn btn-block btn-primary" data-action="sell_delete,trick1" type="button">
+                                    <i class="fa fa-external-link" data-action="openLink" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <i class="border-right mr-10 ml-0"></i>
+                    <i class="fa fa-trash-o text-danger" aria-hidden="true"></i>
+                </div>
+            </div>
+            `).appendTo('#navbar-content');
+
 
         g_gallery.rm = $(`
             <div style="position: fixed;top: 0; left: 0;width: 100%;height: 100%;z-index: 99999;display: none;background-color: rgba(0, 0, 0, .5);" onclick="
@@ -326,7 +395,7 @@ var g_gallery = {
             if (isMobile() || $(dom).hasClass('img_selected')) {
                 return g_database.loadImage(md5);
             }
-            $('.img_selected').removeClass('img_selected');
+            $('#gallery_list .img_selected').removeClass('img_selected');
             $(dom).addClass('img_selected');
             g_database.loadImageDetail(md5);
         });
@@ -585,4 +654,4 @@ var g_gallery = {
 
     },
 }
-g_gallery.init();
+g_gallery.preload();

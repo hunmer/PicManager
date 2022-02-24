@@ -699,14 +699,13 @@ function loadRes(files, callback, cache = true) {
     var i = 0;
     const onProgress = () => {
         if (++i == files.length) {
-            callback && callback();
+            callback && callback(i);
         }
     }
     for (var file of files) {
         if (file.type == "js") {
             if (cache && $('script[src="' + file.url + '"]').length) { // js已加载
                 onProgress();
-                console.log(cache, 'cache');
                 continue;
             }
             var fileref = document.createElement('script');

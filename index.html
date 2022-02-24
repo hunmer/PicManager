@@ -90,61 +90,6 @@
                 </div>
                 <a class="navbar-brand ml-10 ml-sm-20"></a>
                 <div class="navbar-content w-full" id="navbar-content">
-                    <div class="toolbar text-center hide" id="toolbar_gallery">
-                        <a data-action="mulit_select" class="btn btn-square rounded-circle" role="button">
-                            <i class="fa fa-check-square-o" aria-hidden="true"></i>
-                        </a>
-                        <a data-action="errorImages" class="btn btn-square rounded-circle ml-10 hide" style="position: relative;" role="button">
-                            <i class="fa fa-close text-danger"></i>
-                            <span class="badge badge-pill badge-danger d-absolute" style="bottom: -3px;right: -7px;position: absolute;padding: 0px 2px;">0</span>
-                        </a>
-                        <div class="dropdown with-arrow ml-10">
-                            <a class="btn ml-10 btn-square rounded-circle" data-toggle="dropdown" type="button" id="..." aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-sort " aria-hidden="true"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-center w-300 text-center ml-10" aria-labelledby="...">
-                                <div class="custom-radio d-inline-block mr-10">
-                                    <input data-checkbox="sort_random" type="radio" id="radio-random" name="radio-sort">
-                                    <label for="radio-random">乱序</label>
-                                </div>
-                                <div class="custom-radio d-inline-block mr-10">
-                                    <input data-checkbox="sort_normal" type="radio" id="radio-sortNormal" name="radio-sort" checked>
-                                    <label for="radio-sortNormal">正序</label>
-                                </div>
-                                <div class="custom-radio d-inline-block mr-10">
-                                    <input data-checkbox="sort_reverse" type="radio" id="radio-sortReverse" name="radio-sort">
-                                    <label for="radio-sortReverse">反序</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="toolbar text-right hide" id="toolbar_pic">
-                        <i class="fa fa-ellipsis-v" data-action="switchImageTools" aria-hidden="true"></i>
-                        <div id="toolbar_pic_items" style="display: none;">
-                            <i class="border-right mr-10 ml-0"></i>
-                            <i class="fa fa-arrows-h" data-action="flipX" aria-hidden="true"></i>
-                            <i class="fa fa-arrows-v" data-action="flipY" aria-hidden="true"></i>
-                            <i class="fa fa-undo" data-action="rotateLeft" aria-hidden="true"></i>
-                            <i class="fa fa-repeat" data-action="rotateRight" aria-hidden="true"></i>
-                            <i class="fa fa-circle-o-notch" data-action="resetViewer" aria-hidden="true"></i>
-                            <i class="border-right mr-10 ml-0"></i>
-                            <i class="fa fa-pencil-square-o" data-action="markImage" aria-hidden="true"></i>
-                            <div class="dropdown text-right">
-                                <i data-toggle="dropdown" class="fa fa-link" aria-hidden="true"></i>
-                                <div class="dropdown-menu dropdown-menu-right  w-300">
-                                    <input id="detail_link" type="text" class="form-control" placeholder="url" onkeydown="">
-                                    <div class="dropdown-divider"></div>
-                                    <div class="dropdown-content">
-                                        <button class="btn btn-block btn-primary" data-action="sell_delete,trick1" type="button">
-                                            <i class="fa fa-external-link" data-action="openLink" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <i class="border-right mr-10 ml-0"></i>
-                            <i class="fa fa-trash-o text-danger" aria-hidden="true"></i>
-                        </div>
-                    </div>
                     <div class="mr-10" id="toolbar_right">
                         <div id="badge_cd" class="mr-10">
                             <span data-action="history_newNote" class="badge badge-primary badge-pill">00:00</span>
@@ -152,23 +97,7 @@
                                 <i class="fa fa-check" aria-hidden="true"></i>
                             </button>
                         </div>
-                        <div class="dropdown dropleft hide" id="dropdown_more">
-                            <button class="btn" data-toggle="dropdown">
-                                <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <a class="dropdown-item">
-                                    <span data-action="timer_start">计时</span>
-                                    <span data-action="history_view" class="badge badge-pill badge-primary ml-10 hide">0</span>
-                                </a>
-                                <a class="dropdown-item" data-action="tagImage">标签</a>
-                                <a class="dropdown-item" data-action="markImage">备注</a>
-                                <div class="dropdown-divider"></div>
-                                <div class="dropdown-content">
-                                    <button class="btn btn-block btn-danger" data-action="img_delete" type="button">删除</button>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="dropdown-top-right"></div>
                         <div id="traffic">
                             <div style="background-color: #55efc4" data-action="minSize"></div>
                             <div style="background-color: #ffeaa7" data-action="maxSize"></div>
@@ -207,21 +136,31 @@
                     </h5>
                     <div class="sidebar-divider"></div>
                     <div id="folders" style="max-height: 300px;overflow-y: auto;overflow-x: : hide;"></div>
+                    <div class="sidebar-divider"></div>
+
+                    <h5 class="sidebar-title">
+                        Plugins
+                    <i class="fa fa-plus float-right mt-5" data-action="" aria-hidden="true"></i>
+                    </h5>
+                    <div id="plugins" style="max-height: 300px;overflow-y: auto;overflow-x: : hide;"></div>
+
                     <div class="dropdown dropup" style="position: absolute;bottom: 30px;right: 20px;">
                         <div id="serverStatus" class="bg-success w-20 h-20" style="position: absolute;bottom: 5px;right: -4px;height: 12px;width: 12px;border-radius: 50%;"></div>
                         <img id='img_user' src="img/user.jpg" class="rounded-circle user-icon" data-toggle="dropdown" type="button" aria-haspopup="true" aria-expanded="false">
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="img_user">
-                            <a class="dropdown-item" data-action="localFolder_list">本地文件夹</a>
-                            <div class="dropdown-divider"></div>
                             <div class="dropdown-content">
-                                <button class="btn btn-block btn-primary" type="button" data-action="downloadUnsavedImages">本地化图片</button>
+                                
                                 <button class="btn btn-block btn-secondary mt-10" type="button" data-action="downloadData">下载配置</button>
                                 <button class="btn btn-block btn-danger mt-10" type="button" data-action="resetData">清除緩存</button>
-                                <button class="btn btn-block btn-success mt-10" type="button" data-action="checkUpdate">检测更新</button>
+                               
                                 <button class="btn btn-block mt-10" type="button" data-action="setting">头像设置</button>
                                 <div class="custom-switch mt-10">
                                     <input type="checkbox" id="checkbox-darkMode" value="" data-checkbox="darkMode">
                                     <label for="checkbox-darkMode">夜间</label>
+                                </div>
+                                <div class="custom-switch mt-10">
+                                    <input type="checkbox" id="checkbox-fullScreen" value="" data-checkbox="fullScreen">
+                                    <label for="checkbox-fullScreen">全屏</label>
                                 </div>
                             </div>
                         </div>
@@ -314,11 +253,7 @@
                         <div id="gallery_list" style=""></div>
                     </div>
                 </div>
-                <div id="subContent_detail" class="subContent">
-                    <div id="imageEdit">
-                        <img src="">
-                    </div>
-                </div>
+                
             </div>
             <nav class="navbar navbar-fixed-bottom">
             </nav>
@@ -363,5 +298,6 @@
         <script src="js/filter.js"></script>
         <script src="js/room.js"></script>
         <script src="js/emoji.js"></script>
+        <script src="js/plugins.js"></script>
     </body>
 </html>
