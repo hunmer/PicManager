@@ -91,14 +91,14 @@ var g_room = {
                 <div class="menu bottom_right_menu" id="menu_roomMenu" style="right: 20px;
                 z-index: 2100;
                 padding: 0px;
-                bottom: 45px;
+                bottom: 55px;
                 max-height: 40%;
                 height: auto;">
                     <div class="dropdown dropleft">
                         <a class="btn p-0 rounded-circle" style="width: 35px;height: 35px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-music fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
                         </a>
-                      <div class="dropdown-menu dropdown-menu-center w-200 shadow" id="music_player">
+                      <div class="dropdown-menu dropdown-menu-up w-200 shadow" id="music_player">
                         <div class="textScroll d-relative" >
                             <img class="w-full  rounded-top" src="img/user.jpg">
                             <span class="d-block text"></span>
@@ -334,7 +334,7 @@ var g_room = {
             var div = getAction('room_listRoom');
             if(div){
                  div.find('img').attr('src', 'res/sticker/1/fail.png');
-                  div.find('h4').html(_l('点击刷新'));
+                  div.find('h4').html(_l('点我可以刷新哦'));
             }
             clearTimeout(self.reconnect);
             self.reconnect = setTimeout(() => self.connect(), 1000 * 3);
@@ -668,7 +668,7 @@ var g_room = {
         } else {
             h = `<div data-action="room_listRoom" class="text-center">
                 <img src="res/sticker/1/loading.png" class="w-half">
-                <h4>${_l('加载中')}</h4>
+                <h4>${_l('点我可以刷新哦')}</h4>
             `;
         }
         $('#room_main').hide();

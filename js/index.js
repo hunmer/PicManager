@@ -37,7 +37,7 @@ function back() {
         g_site.preview.destroy();
         delete g_site.preview;
     } else
-    if (_viewer.fulled) { // 全屏
+    if (_viewer && _viewer.fulled) { // 全屏
         $('.viewer-fullscreen-exit').click()
     } else
     if (g_gallery.previewViewer) {
