@@ -1,5 +1,6 @@
 
 var _GET = getGETArray();
+var g_api = 'https://neysummer-api.glitch.me/';
 var socket_url = 'wss:///daily-websock1.glitch.me';
 var g_localKey = 'picManager_';
 var g_cache = {
@@ -12,6 +13,12 @@ var g_cache = {
 }
 
 var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
+
+// 解决图片无法加载问题
+function proxyImg(url){
+    // return url;
+    return 'https://metal-loving-sleet.glitch.me/?url='+url;
+}
 
 function getSystemLang(){
     var lang = navigator.language.substr(0, 2).toLowerCase();
@@ -583,6 +590,14 @@ function cutStrings(s_text, s_start, filter = false) {
     }
     return res;
 }
+function cutString(s_text, s_start, s_end, i_start = 0) {
+    i_start = s_text.indexOf(s_start, i_start);
+    if (i_start === -1) return '';
+    i_start += s_start.length;
+    i_end = s_text.indexOf(s_end, i_start);
+    if (i_end === -1) return '';
+    return s_text.substr(i_start, i_end - i_start);
+}
 
 function downloadData(blob, fileName) {
     if (typeof(blob) != 'blob') {
@@ -665,7 +680,7 @@ function isModalOpen(id, type) {
         if (type && modal.attr('data-type') != type) {
             return false;
         }
-        return true;
+        return modal;
     }
     return false;
 }
@@ -850,11 +865,16 @@ function dataURLtoFile(dataurl, filename) {
 function  initMenu(id, data) {
         var h = '';
         for (var d of data) {
-            h += `
-             <a data-action="${d.action}" class="btn ${d.class} p-0 rounded-circle" style="width: 35px;height: 35px;">
-                <i class="fa ${d.icon} fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
-            </a>
-            `
+            if(typeof(d) == 'string'){
+                h += d;
+            }else{
+                h += `
+                 <a data-action="${d.action}" class="btn ${d.class} p-0 rounded-circle" style="width: 35px;height: 35px;">
+                    <i class="fa ${d.icon} fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
+                </a>
+                `
+
+            }
         }
         $(id).html(h);
     }

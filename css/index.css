@@ -1,3 +1,12 @@
+
+.slider-groups {
+        max-height: 300px;
+    overflow-y: auto;
+    overflow-x: : hide;
+}
+
+
+
 /* room 开始 */
 
 
@@ -192,10 +201,10 @@
 }
  
 
-@font-face {
+/*@font-face {
     font-family: janFont;
     src: url(../fonts/KosugiMaru-Regular.ttf);
-}
+}*/
 .overflow-h{
     height: 0;
 }
@@ -375,15 +384,12 @@ outline: none;
 
 body {
      -webkit-overflow-scrolling: touch;
-
-
-
     color: var(--lm-base-text-color);
     overflow: hidden;
     background-position: center top;
     background-size: cover;
     background-attachment: fixed;
-    font-family: janFont, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 .subContent {

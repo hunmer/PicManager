@@ -83,7 +83,11 @@ halfmoon.toggleSidebar = function() {
     // $('#room_chat').css('left', `${width + 10}px`);
 
     $('#imageEdit').css('width', `calc(100vw - ${width}px)`);
-    if ($('#menu_main').css('display') != 'none') g_menu.showMenu('#menu_main', true)
+
+    var d = $('#menu_main');
+    if(d.css('display') != 'none' && d[0].style.left != 'unset'){ // 如果菜单不在侧边
+        g_menu.showMenu('#menu_main', true); // 调整菜单
+    }
     $(window).resize();
 
 }
@@ -250,12 +254,12 @@ $(function() {
 
     g_gallery.switchDetailBar(false);
 
-    if(!g_config.firstLogin){
-        g_config.firstLogin = new Date().getTime();
-        local_saveJson('config', g_config);
-        doAction(null, 'setting');
-    }
-    
+    // if(!g_config.firstLogin){
+    //     g_config.firstLogin = new Date().getTime();
+    //     local_saveJson('config', g_config);
+    //     doAction(null, 'setting');
+    // }
+
     if(_GET['r']){
         g_room.cache.targetRoom = {
             room: _GET['r'],
@@ -264,13 +268,13 @@ $(function() {
         toastPAlert('正在加入房间中...请稍等', 'alert-primary');
         showContent('room');
     }else{
-          if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
-            g_database.loadFolder(g_config.lastOpenFolder);
-            return;
-        }
-        $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
+        //  if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
+        //     g_database.loadFolder(g_config.lastOpenFolder);
+        //     return;
+        // }
+        // $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
+        showContent('room');
     }
-    // showContent('room');
 
 });
 

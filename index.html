@@ -46,7 +46,7 @@
         <input id="upload" class='inputstyle' type="file" accept=".json" onchange="uploadFile()"/>
         <audio id='soundTip' autoplay></audio>
         <canvas id="canvas" style="display: none"></canvas>
-        <div class="modal modal-full" id="modal-custom" tabindex="-1" role="dialog" style="z-index: 41;" data-overlay-dismissal-disabled='...' data-esc-dismissal-disabled='...'>
+        <div class="modal modal-full" id="modal-custom" tabindex="-1" role="dialog" style="z-index: 3000;" data-overlay-dismissal-disabled='...' data-esc-dismissal-disabled='...'>
             <div class="modal-dialog" role="document">
                 <div class="modal-content w-auto">
                     <a class="close" role="button" aria-label="Close">
@@ -57,7 +57,7 @@
                 </div>
             </div>
         </div>
-        <div class="modal modal-full" id="modal-custom-1" tabindex="-1" role="dialog" style="z-index: 41;">
+        <div class="modal modal-full" id="modal-custom-1" tabindex="-1" role="dialog" style="z-index: 3000;">
             <div class="modal-dialog" role="document">
                 <div class="modal-content w-auto">
                     <a class="close" role="button" aria-label="Close">
@@ -129,20 +129,20 @@
                         <i class="fa fa-plus float-right mt-5" data-action="filter_edit" aria-hidden="true"></i>
                     </h5>
                     <div id="" class="sidebar-divider"></div>
-                    <div id="sidebar_filters"></div>
+                    <div id="sidebar_filters" class="slider-groups"></div>
                     <h5 class="sidebar-title">
                         Folder
                     <i class="fa fa-plus float-right mt-5" data-action="newFolder" aria-hidden="true"></i>
                     </h5>
                     <div class="sidebar-divider"></div>
-                    <div id="folders" style="max-height: 300px;overflow-y: auto;overflow-x: : hide;"></div>
+                    <div id="folders" class="slider-groups"></div>
                     <div class="sidebar-divider"></div>
 
                     <h5 class="sidebar-title">
                         Plugins
                     <i class="fa fa-plus float-right mt-5" data-action="" aria-hidden="true"></i>
                     </h5>
-                    <div id="plugins" style="max-height: 300px;overflow-y: auto;overflow-x: : hide;"></div>
+                    <div id="plugins" class="slider-groups"></div>
 
                     <div class="dropdown dropup" style="position: absolute;bottom: 30px;right: 20px;">
                         <div id="serverStatus" class="bg-success w-20 h-20" style="position: absolute;bottom: 5px;right: -4px;height: 12px;width: 12px;border-radius: 50%;"></div>
@@ -152,8 +152,8 @@
                                 
                                 <button class="btn btn-block btn-secondary mt-10" type="button" data-action="downloadData">下载配置</button>
                                 <button class="btn btn-block btn-danger mt-10" type="button" data-action="resetData">清除緩存</button>
-                               
                                 <button class="btn btn-block mt-10" type="button" data-action="setting">头像设置</button>
+                                <button class="btn btn-block mt-10" type="button" data-action="zoom">缩放设置</button>
                                 <div class="custom-switch mt-10">
                                     <input type="checkbox" id="checkbox-darkMode" value="" data-checkbox="darkMode">
                                     <label for="checkbox-darkMode">夜间</label>
@@ -162,6 +162,7 @@
                                     <input type="checkbox" id="checkbox-fullScreen" value="" data-checkbox="fullScreen">
                                     <label for="checkbox-fullScreen">全屏</label>
                                 </div>
+
                             </div>
                         </div>
                     </div>

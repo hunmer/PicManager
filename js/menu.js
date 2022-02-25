@@ -31,7 +31,13 @@ var g_menu = {
             right: hide ? 0 - ($(id).width() - 20) + 'px' : 'unset',
             left: hide ? 'unset' : '',
         });
-    }
+    },
+    isMenuShow: function(id){
+        return $('#'+id).css('display') != 'none';
+    },
+    isInSlider: function(id) {
+        return !this.isMenuShow(id) && $('#'+id)[0].style.left == 'unset';
+    },
 
 }
 g_menu.init();

@@ -4,31 +4,33 @@ var mobiscrollHelper = {
 
     },
     test: () => {
-        // $(function() {
-
-        //     var groups = ['a', 'b', 'c', 'd'];
-        //     var h = $(mobiscrollHelper.buildMulitSelect({
-        //         id: 'mulitselect-demo',
-        //         name: '分类',
-        //         data: groups,
-        //         selected: []
-        //     })).prepend('body');
-        //     var dialog = mobiscroll_(h, 'select', {
-        //         minWidth: 200,
-        //         preset: "select",
-        //         closeOnOverlayTap: false,
-        //         headerText: '为目录设置分类',
-        //         buttons: [{
-        //             text: _l('确定'),
-        //             handler: function(event, instance) {
-        //                 instance.getVal()
-        //             }
-        //         }, {
-        //             text: _l('取消'),
-        //             handler: 'cancel'
-        //         }],
-        //     });
-        // });
+        $(function() {
+            console.log(mobiscrollHelper.actionMenu({
+                data: [{ icon: "image", title: 'title1', child: [{ icon: "file", text: "file 1" }] }]
+            }));
+            //     var groups = ['a', 'b', 'c', 'd'];
+            //     var h = $(mobiscrollHelper.buildMulitSelect({
+            //         id: 'mulitselect-demo',
+            //         name: '分类',
+            //         data: groups,
+            //         selected: []
+            //     })).prepend('body');
+            //     var dialog = mobiscroll_(h, 'select', {
+            //         minWidth: 200,
+            //         preset: "select",
+            //         closeOnOverlayTap: false,
+            //         headerText: '为目录设置分类',
+            //         buttons: [{
+            //             text: _l('确定'),
+            //             handler: function(event, instance) {
+            //                 instance.getVal()
+            //             }
+            //         }, {
+            //             text: _l('取消'),
+            //             handler: 'cancel'
+            //         }],
+            //     });
+        });
     },
     buildGroupSelect: (opts) => {
         opts = Object.assign({ id: 'selectGroupselect', data: {} }, opts);
@@ -73,6 +75,33 @@ var mobiscrollHelper = {
         }
 
         return h + '</select>';
+    },
+
+    buildActionMenu: (opts) => {
+        // [{icon: "", title: '', child: [{icon: "", text: ""}]}]
+        opts = Object.assign({ id: 'actionmenu-demo', data: {} }, opts);
+        var h = '<ul id="' + opts.id + '">';
+        for (var item of opts.data) {
+            var isArray = Array.isArray(item.child);
+            h += `
+                <li data-type="${isArray ? 'folder' : 'picture'}" data-icon="${isArray ? 'folder' : item.icon}">` + item.title
+            if (isArray) {
+                h += `<ul>`;
+                for (var child of item.child) {
+                    h += `<li data-type="music" data-icon="${child.icon}">${child.text}</li>`;
+                }
+                h += '</ul>'
+            }
+            h += '</li>'
+        }
+        return h + '</ul>';
+    },
+
+    actionMenu: function(opts, callback) {
+        var dialog = mobiscroll_(this.buildActionMenu(opts), 'listview', Object.assign({
+            enhance: true,
+        }, opts.opts));
+        return dialog;
     },
 
     buildProgress: (opts) => {
@@ -214,7 +243,7 @@ var mobiscrollHelper = {
         }, opts));
         return dialog;
     },
-    
+
     widget_actionWithIcon: function(opts) {
         var h = '';
         for (var item of opts.data) {
@@ -244,6 +273,7 @@ window.alert1 = function(opts) {
     opts = Object.assign({
         title: _l('提示'),
         html: '',
+        layout: 'fixed',
         buttons: ['set'],
 
     }, opts);
@@ -257,12 +287,12 @@ window.confirm1 = function(opts, callback) {
     if (!b) opts = { html: opts };
     opts = Object.assign({
         title: _l('请选择'),
+        layout: 'fixed',
         buttons: ['set', 'cancel'],
         onEnterKey: () => {
             $('.mbsc-fr-btn0').click();
         }
     }, opts);
-
     mobiscrollHelper.initButtonFun(opts, callback);
     return buildDialog(opts);
 }
@@ -274,6 +304,7 @@ window.prompt1 = function(opts, callback) {
     opts = Object.assign({
         title: _l('请输入'),
         html: '',
+        layout: 'fixed',
         buttons: [{
             text: _l('确定'),
             handler: function(event, instance) {
@@ -322,13 +353,14 @@ function buildDialog(opts) {
                     e.preventDefault();
                     opts.onEnterKey && opts.onEnterKey();
                 }
-            })
+            });
+
         }
     });
+    console.log(dialog.mobiscroll())
     return dialog;
 }
 
 
 mobiscrollHelper.init();
 mobiscrollHelper.test();
-

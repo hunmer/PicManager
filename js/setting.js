@@ -1,7 +1,25 @@
+function setZoom(num){
+   $('body').css('zoom', num / 100);
+}
+
 var g_setting = {
     init: function() {
-
-        
+        setZoom( g_config.zoom || 100);
+        registerAction('zoom', (dom, action, params) => {
+            var zoom = g_config.zoom || 100;
+            confirm1(`
+                <div id="range_zoom" class="${g_config.darkMode ? 'bg-dark text-light' : ''}" mbsc-enhance>
+                    <input type="range" value="${zoom}" min="35" max="100" step="1" data-tooltip="true" data-step-labels="[35, 75, 100]" onchange="setZoom($(this).mobiscroll('getVal'))">
+                </div>
+            `, check => {
+                if(check){
+                    g_config.zoom = $('body').css('zoom') * 100;
+                    local_saveJson('config', g_config);
+                }else{
+                    setZoom(zoom);
+                }
+            });
+        });
         registerAction('setting', (dom, action, params) => {
             g_user.modal();
         });

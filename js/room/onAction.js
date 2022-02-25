@@ -311,6 +311,11 @@
 
          },
          'room_listRoom': (dom, action, params) => {
+            var div = getAction('room_listRoom');
+            if(div){
+                 div.find('img').attr('src', 'res/sticker/1/loading.png');
+                  div.find('h4').html(_l('点击刷新'));
+            }
              g_room.send({
                  type: 'listRoom',
              })
@@ -322,10 +327,11 @@
                  d = {
                      title: _l('新建房间名', me()),
                      desc: '',
+                     bg: '',
                      cover: 'res/cover.jpg',
                      password: '',
                      maxPlayers: 10,
-                     tags: ['新人', 'R15'],
+                     tags: ['休闲', '欢迎'],
                  }
              }
 
@@ -375,10 +381,11 @@
                     
                      ${action[1] ? `
                         <div class="row mt-10">
-                            <img id="input_room_bg" class="w-full col-6 p-5" src="./a/2.jpg">
+                            <img id="input_room_bg" class="w-full col-6 p-5" src="${d.bg || ''}">
                             <select class="form-control form-control-lg col-6 h-auto" id="select-room-bg" oninput="g_room.optionSelected(this);" size="8">
                               <option value="" selected disabled>${_l('背景图片')}</option>
                               <option value="custom">${_l('背景图片_自定义')}</option>
+                              <option value="">无</option>
                               <option value="./res/1.jpg">1</option>
                               <option value="./res/2.jpg">2</option>
                               <option value="./res/3.jpg">3</option>
@@ -481,7 +488,7 @@
                  bg: $('#input_room_bg').attr('src'),
                  maxPlayers: parseInt(vals[1]),
                  password: password,
-                 tags: $('#input_room_tag').val().replaceAll1('，', ',').split(','),
+                 tags: $('#input_room_tag').val(),
                  desc: $('#input_room_desc').val(),
                  confirm: g_room.cache.confirmCreateRoom
              }

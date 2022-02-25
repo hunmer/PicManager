@@ -14,6 +14,7 @@ const WARNING_IMAGE_EXISTSED = 13;
 const ERR_ACCOUNT_PROTECT = 14;
 const ERR_WRONG_PASSWORD = 15;
 const ERR_NAME_ALREADY_EXISTSED = 16;
+const ERR_ROOM_PLAYER_MAXED = 17;
 
 var express = require('express');
 var http = require('http');
@@ -146,6 +147,7 @@ function startGame(room, game, data) {
             task: setInterval(() => {
                 var t = increase ? ++g_cache.timer[room].time : --g_cache.timer[room].time;
                 if (!increase && t <= 0) {
+                    delete roomData.game;
                     overGame(room);
                 } else
                 if (t % 60 == 0) {
@@ -192,16 +194,19 @@ function onMessage(msg, ws) {
 
     switch (r.type) {
         case 'kickPlayer':
+            if(d.target == undefined) return;
             if (!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
             if (d.target == ws._username) return sendMsg(ws, ERR_CANT_KICK_YOURSELF);
             _room.removePlayer(d.target, ws._room, KICK_BY_OWNER);
             sendMsg(ws, SUCCESS_KICKED, [d.target]);
             break;
         case 'startGame':
+            if(d.game == undefined) return;
             startGame(ws._room, d.game, {});
             break;
         case 'startVote':
-            var voteTime = 3;
+            if(d.time == undefined) return;
+            var voteTime = 60;
             broadcast(ws._room, 'startVote', { time: voteTime });
             setTimeout(() => {
                 // 获取投票结果
@@ -230,6 +235,7 @@ function onMessage(msg, ws) {
             break;
             /* vote */
         case 'heart':
+            if(d.id == undefined) return;
             for (var md5 in roomData.vote) {
                 var i = roomData.vote[md5].indexOf(ws._username);
                 if (i != -1) {
@@ -248,6 +254,7 @@ function onMessage(msg, ws) {
             /* mark */
             // 获取玩家标记
         case 'getPlayerMark':
+            if(d.target == undefined) return;
             roomData.data[d.target] && sendData(ws, {
                 type: 'playerMark',
                 data: {
@@ -267,17 +274,16 @@ function onMessage(msg, ws) {
             break;
 
         case 'deleteImage':
-            if(!d.id) return;
+            if(d.id == undefined) return;
             if(!g_cache.uploaded[ws._room]) return;
             var img = g_cache.uploaded[ws._room][d.id];
-            if(!img){
-
-                return sendMsg(ws, ERR_FILE_NOT_EXISTS);
-            }
-            if(img != ws._uuid && !isOwner){
-                return sendMsg(ws, ERR_NOT_PERMISSIOM);
-            }
+            if(!img) return sendMsg(ws, ERR_FILE_NOT_EXISTS);
+            if(img != ws._uuid && !isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
             delete g_cache.uploaded[ws._room][d.id];
+
+            roomData = _room.getRoom(ws._room, false);
+            delete roomData.imgs[d.id];
+
             sendMsg(ws, SUCC_IMAGE_DELETED);
             broadcast(ws._room, 'deleteImage', d.id);
 
@@ -285,6 +291,7 @@ function onMessage(msg, ws) {
 
         case 'room_addImgs,gallery':
         case 'room_addImgs,photo':
+            if(!Array.isArray(d)) return;
             var res = {};
             var c = 0;
             var exists = 0;
@@ -369,6 +376,14 @@ function onMessage(msg, ws) {
             }, 500)
             break;
 
+        case 'musicList':
+             var ret = {
+                player: r.player,
+                icon: getFilePath(getMd5(r.uuid)),
+            }
+            broadcast(ws._room, 'musicList', ret, d);
+            break;
+
         case 'chatMsg':
             var roomData = _room.getRoom(ws._room, false);
             if (roomData) {
@@ -408,7 +423,7 @@ function onMessage(msg, ws) {
             _room.joinRoom(d.room, d.password || '', ws);
             break;
         case 'createRoom':
-            _room.createRoom(d, ws);
+            _room.createRoom(d, ws, r.key);
             break;
 
     }
@@ -477,7 +492,13 @@ TODO:
 
 */
 
-
+String.prototype.replaceAll = function(s1, s2) {
+    var str = this;
+    while (str.indexOf(s1) != -1) {
+        str = str.replace(s1, s2);
+    }
+    return str;
+}
 // game: {
 //     type: 'copy',
 //     data: {
@@ -500,14 +521,14 @@ var _room = {
             cover: './img/cover.jpg',
             tags: ["全年龄"],
         },true)
-        this.setRoomProps('r15', {
-            cover: './img/r15.jpg',
-            tags: ["R15", "限制级"],
-        },true)
-        this.setRoomProps('r18', {
-            cover: './img/r18.jpg',
-            tags: ["R18", "成人级"],
-        },true);
+        // this.setRoomProps('r15', {
+        //     cover: './img/r15.jpg',
+        //     tags: ["R15", "限制级"],
+        // },true)
+        // this.setRoomProps('r18', {
+        //     cover: './img/r18.jpg',
+        //     tags: ["R18", "成人级"],
+        // },true);
     },
     uuids: [],
     uuid: function() {
@@ -565,7 +586,7 @@ var _room = {
                     d[k] = getFilePath(md5);
                 }
             } else {
-                if (k == 'tags') val = val.split(',').splice(0, 5);
+                if (k == 'tags') val = val.replaceAll('，', ',').split(',').splice(0, 5);
                 d[k] = val;
             }
         }
@@ -579,13 +600,14 @@ var _room = {
         return Object.values(this.list);
     },
 
-    createRoom: function(data, ws) {
+    createRoom: function(data, ws, roomKey) {
 
         data.title = delHtmlTag(data.title);
         data.desc = delHtmlTag(data.desc);
-        if (!isSystemRoom(ws._room) && ws._room && ws._key) {
+        if (!isSystemRoom(ws._room) && ws._room && roomKey) {
+            var r = this.getRoom(ws._room);
             // 验证
-            if (this.isRoomOwner(ws._room, ws._key)) {
+            if (r && r.key == roomKey) {
                 // 修改房间属性
                 this.setRoomProps(ws._room, data);
                 sendMsg(ws, SUCC_ROOM_SETTING_APPLY, [data.title]);
@@ -619,7 +641,6 @@ var _room = {
             ownerUuid: ws._uuid,
             key: key, // 房主密钥
         }, true)
-        ws._key = key;
 
         sendData(ws, {
             type: 'createRoom',
@@ -661,13 +682,21 @@ var _room = {
         if (ws._username == d.owner && !isOwner) {
             return sendMsg(ws, ERR_ACCOUNT_PROTECT);
         }
+
         var another = d.players[ws._username];
         if (another) {
             if (ws._uuid != another._uuid) {
                 return sendMsg(ws, ERR_NAME_ALREADY_EXISTSED, [ws._username]);
             }
+            // 重连
             another.close();
+            delete d.players[ws._username];
         }
+
+        if(d.maxPlayers && Object.keys(d.players).length >= d.maxPlayers){
+            return sendMsg(ws, ERR_ROOM_PLAYER_MAXED);
+        }
+
         // TODO 不刷新页面短线重连不用输入密码
         // password == null 跳过密码
         if (password != null && d.password && !isOwner) {
@@ -746,16 +775,19 @@ var _room = {
         delete d.key;
         delete d.ownerUuid;
         delete d.vote;
-        delete d.bg;
+        delete d.blockIps;
         if (d.password != undefined) {
             d.password = d.password.length > 0;
         }
         if (fromLobby) {
             delete d.data; // 游戏数据
             delete d.msgs; // 聊天记录
+           delete d.bg;
+           delete d.imgs;
+           delete d.photos;
             if (d.game) d.game = d.game.type; // 游戏类型
         } else {
-            if (d.game) d.game.time = g_cache.timer[d.room].time; // 剩余游戏时间
+            if (d.game && g_cache.timer[d.room]) d.game.time = g_cache.timer[d.room].time; // 剩余游戏时间
             if (d.data) d.data = getGameData(d)
         }
         d.players = this.getNameList(d.players);
