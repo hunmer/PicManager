@@ -1027,6 +1027,7 @@ var g_room = {
     },
 
     requestJoinRoom: function(room, password) {
+        toastPAlert(_l('加入中'), 'alert-primary');
         g_room.send({
             type: 'joinRoom',
             data: {
