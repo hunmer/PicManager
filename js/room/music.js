@@ -1,8 +1,8 @@
 var g_music = {
     list: [],
     index: -1,
-    // api: 'https://neysummer-api.glitch.me/',
-    api: './api/',
+    api: 'https://neysummer-api.glitch.me/',
+    // api: './api/',
     init: function() {
         var self = this;
         registerAction('music_click', (dom, action, params) => {
@@ -115,9 +115,9 @@ var g_music = {
 
     confirmURL: function() {
         var self = this;
-        prompt1('歌单地址(网易云)', url => {
+        prompt1({title: '歌单地址(网易云)', html: 'https://music.163.com/#/playlist?id=897784673'}, url => {
             if (!isEmpty(url)) {
-                var url = 'https://music.163.com/#/playlist?id=897784673';
+                // var url = 'https://music.163.com/#/playlist?id=897784673';
                 var params = self.getParmsFromUrl(url);
                 if (!params) return alert1(_l('暂不支持'));
                 self.parsePlaylist(params);

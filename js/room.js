@@ -17,8 +17,8 @@ const ERR_NAME_ALREADY_EXISTSED = 16;
 const ERR_ROOM_PLAYER_MAXED = 17;
 
 var g_room = {
-    host: '//picmanager-room.glitch.me',
-    // host: '//192.168.31.77:8000',
+    // host: '//picmanager-room.glitch.me',
+    host: '//192.168.31.77:8000',
     unread: 0,
     currentRoom: undefined,
     editingRoom: undefined,

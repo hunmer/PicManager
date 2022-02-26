@@ -26,10 +26,22 @@ var crypto = require('crypto');
 var request = require('request');
 var images = require("images");
 
-// if (fs.existsSync('./saves/')) {
-//     fs.rmdirSync('./saves/', { recursive: true, force: true });
+walkSync('./saves', file => {
+    fs.unlinkSync(file);
+});
 
-// }
+function walkSync(currentDirPath, callback) {
+    fs.readdirSync(currentDirPath).forEach(function(name) {
+        var filePath = path.join(currentDirPath, name);
+        var stat = fs.statSync(filePath);
+        if (stat.isFile()) {
+            callback(filePath, stat);
+        } else if (stat.isDirectory()) {
+            walkSync(filePath, callback);
+        }
+    });
+}
+
 var app = express();
 app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
@@ -207,7 +219,7 @@ function onMessage(msg, ws) {
         return;
     }
 
-    var roomData = _room.getRoom(ws._room);
+    var roomData = _room.getRoom(ws._room, ['clearMsg', 'deleteImage', 'startPlayList', 'chatMsg'].includes(r.type));
     if (!roomData) return;
 
     var isOwner = roomData.key == r.key;
@@ -220,7 +232,7 @@ function onMessage(msg, ws) {
     switch (r.type) {
         case 'clearMsg':
             if (!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
-            _room.setRoomProps(ws._room, {msgs: []});
+            roomData.msgs = [];
             broadcast(ws._room, 'clearMsg');
             break;
         case 'kickPlayer':
@@ -387,66 +399,61 @@ function onMessage(msg, ws) {
             //     break;
 
         case 'startPlayList':
-            var roomData = _room.getRoom(ws._room, false);
-            if (roomData) {
-                var msg = getMessageById(roomData.msgs, d.id);
-                if(msg && msg.players){
-                    if (!msg.players.includes(ws._uuid)) {
-                        msg.players.push(ws._uuid);
-                        broadcast(ws._room, 'startPlayList', {
-                            id: d.id,
-                            players: _room.uuidsToIcons(msg.players),
-                        });
-                    }
+            var msg = getMessageById(roomData.msgs, d.id);
+            if (msg && msg.players) {
+                if (!msg.players.includes(ws._uuid)) {
+                    msg.players.push(ws._uuid);
+                    broadcast(ws._room, 'startPlayList', {
+                        id: d.id,
+                        players: _room.uuidsToIcons(msg.players),
+                    });
                 }
             }
             break;
 
         case 'chatMsg':
-            var roomData = _room.getRoom(ws._room, false);
-            if (roomData) {
-                const callback = () => {
-                    for (var i = roomData.msgs.length; i > 10; i--) {
-                        roomData.msgs.shift();
-                    }
-
-                    var ret = {
-                        id: ++roomData.msgCount,
-                        isOwner: roomData.owner == ws._username,
-                        msg: delHtmlTag(d.msg),
-                        img: d.img,
-                        audio: d.audio,
-                        meta: d.meta,
-
-                        time: new Date().getTime(),
-                        player: ws._username,
-                        icon: getFilePath(getMd5(ws._uuid)),
-                    }
-                    if(d.meta){
-                        console.log(d);
-                        if(d.asDefault){ // 默认歌单
-                            if(!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
-                            roomData.media.music = d.meta.data;
-                        }
-                        ret.meta = d.meta;
-                        ret.players = [ret.icon]; // 默认发送icon
-                    }
-                    broadcast(ws._room, 'chatMsg', ret);
-                   
-                   ret.players = [ws._uuid]; // 保存数据是保存uuid
-                    roomData.msgs.push(ret);
+            var fun = () => {
+                for (var i = roomData.msgs.length; i > 10; i--) {
+                    roomData.msgs.shift();
                 }
-                if (typeof(d.img) == 'string' && d.img.startsWith('data:image')) {
-                    saveBase64Image(getMd5(d.img), d.img, (err, file, md5, format) => {
-                        // if (!err) {
-                        resizeImage(file, format);
-                        d.img = [getFilePath(md5), getFilePath(md5 + '.jpg.thumb')];
-                        callback();
-                        // }
-                    });
-                } else {
-                    callback();
+
+                var ret = {
+                    id: ++roomData.msgCount,
+                    isOwner: roomData.owner == ws._username,
+                    msg: delHtmlTag(d.msg),
+                    img: d.img,
+                    audio: d.audio,
+                    meta: d.meta,
+
+                    time: new Date().getTime(),
+                    player: ws._username,
+                    icon: getFilePath(getMd5(ws._uuid)),
                 }
+                if (d.meta) {
+                    console.log(d);
+                    if (d.asDefault) { // 默认歌单
+                        if (!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
+                        roomData.media.music = d.meta.data;
+                    }
+                    ret.meta = d.meta;
+                    ret.players = [ret.icon]; // 默认发送icon
+                }
+                broadcast(ws._room, 'chatMsg', ret);
+
+                ret.players = [ws._uuid]; // 保存数据是保存uuid
+                roomData.msgs.push(ret);
+            }
+
+            if (typeof(d.img) == 'string' && d.img.startsWith('data:image')) {
+                saveBase64Image(getMd5(d.img), d.img, (err, file, md5, format) => {
+                    // if (!err) {
+                    resizeImage(file, format);
+                    d.img = [getFilePath(md5), getFilePath(md5 + '.jpg.thumb')];
+                    fun();
+                    // }
+                });
+            } else {
+                fun();
             }
             break;
 
@@ -520,12 +527,6 @@ function sendMsg(ws, code, params) {
         }
     })
 }
-
-/*
-TODO: 
-
-
-*/
 
 String.prototype.replaceAll = function(s1, s2) {
     var str = this;
@@ -637,7 +638,7 @@ var _room = {
         // 给大厅的所有玩家发送更新
         _room.updateLobby();
         // 通知玩家更新
-        broadcast(room, 'roomUpdate', {broadcast: d.broadcast, bg: d.bg});
+        broadcast(room, 'roomUpdate', { broadcast: d.broadcast, bg: d.bg });
     },
 
     getRooms: function() {
@@ -761,7 +762,7 @@ var _room = {
 
         var isFirstJoin = !d.logined.includes(ws._uuid);
         detail.isFirstJoin = isFirstJoin;
-        if(isFirstJoin){
+        if (isFirstJoin) {
             d.logined.push(ws._uuid);
         }
 
@@ -819,7 +820,7 @@ var _room = {
     },
     getRoomDetail: function(room, fromLobby = true) {
         var d = this.getRoom(room);
-        if(!d) return;
+        if (!d) return;
 
         // 去除隐私信息
         delete d.ip;
@@ -841,8 +842,8 @@ var _room = {
             delete d.photos;
             if (d.game) d.game = d.game.type; // 游戏类型
         } else {
-            for(var msg of d.msgs){
-                if(msg.players) msg.players = this.uuidsToIcons(msg.players); // uuid转成头像列表
+            for (var msg of d.msgs) {
+                if (msg.players) msg.players = this.uuidsToIcons(msg.players); // uuid转成头像列表
             }
             if (d.game && g_cache.timer[d.room]) d.game.time = g_cache.timer[d.room].time; // 剩余游戏时间
             if (d.data) d.data = getGameData(d)
@@ -860,9 +861,9 @@ var _room = {
         }
         return list;
     },
-    uuidsToIcons: function(uuids){
+    uuidsToIcons: function(uuids) {
         var ret = [];
-        for(var uuid of uuids){
+        for (var uuid of uuids) {
             ret.push(getFilePath(getMd5(uuid)));
         }
         return ret;
