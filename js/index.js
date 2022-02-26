@@ -230,6 +230,13 @@ $(function() {
         })
 
     $(window).resize(function(event) {
+        // var x = this.innerWidth;
+        var w = $(window).width();
+        var h = $(window).height();
+        $(':root').css({
+            '--mh-60': h * 0.60 + 'px',
+            '--mw-80': w * 0.80 + 'px',
+        });
        resizeCustomScroll();
         $('#rm_target').hide();
         switch (g_cache.showing) {
@@ -275,7 +282,6 @@ $(function() {
         // $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
         showContent('room');
     }
-
 });
 
 function resizeCustomScroll(){

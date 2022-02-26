@@ -321,12 +321,31 @@
              })
 
          },
+         'room_clearMsg': (dom, action, params) => {
+            g_room.send({type: 'clearMsg'});
+         },
+         'room_admin': (dom, action, params) => {
+             var d = g_room.getData();
+             if(!d.isOwner) return toastPAlert(_l('无权限'), 'alert-danger');
+             var dialog = mobiscrollHelper.widget_actionWithIcon({
+                 data: [{
+                         action: 'room_clearMsg',
+                         icon: 'text-danger fa-trash-o',
+                         text: _l('清屏')
+                     }
+                 ],
+                 opts: {
+                     headerText: _l('选择操作'),
+                 }
+             });
+         },
          'room_editRoom': (dom, action, params) => {
              var d = g_room.getData();
              if (!d || !d.isOwner) {
                  d = {
                      title: _l('新建房间名', me()),
                      desc: '',
+                     broadcast: '',
                      bg: '',
                      cover: 'res/cover.jpg',
                      password: '',
@@ -378,8 +397,17 @@
                       </div>
                       <textarea id="input_room_desc" class="form-control" placeholder="${_l('房间介绍_占位符')}">${d.desc}</textarea>
                     </div>
+
+                  
                     
                      ${action[1] ? `
+                         <div class="input-group mt-10">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text">${_l('房间公告')}</span>
+                          </div>
+                          <textarea id="input_room_broad" class="form-control" placeholder="${_l('房间公告_占位符')}">${d.broadcast}</textarea>
+                        </div>
+
                         <div class="row mt-10">
                             <img id="input_room_bg" class="w-full col-6 p-5" src="${d.bg || ''}">
                             <select class="form-control form-control-lg col-6 h-auto" id="select-room-bg" oninput="g_room.optionSelected(this);" size="8">
@@ -490,6 +518,7 @@
                  password: password,
                  tags: $('#input_room_tag').val(),
                  desc: $('#input_room_desc').val(),
+                 broadcast: $('#input_room_broad').val(),
                  confirm: g_room.cache.confirmCreateRoom
              }
              g_room.send({

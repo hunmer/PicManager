@@ -268,9 +268,8 @@ var g_pose = {
     openInlineViewer: function(id) {
         var d = this.data[id];
         if (!d) return;
-
         for (var i = 0; i < 35; i++) {
-            this.preloadImage(d.u, i, 100);
+            preloadImage(d.u, i, 100);
         }
         var img = $('#pose_viewer img');
         var src = this.getImageUrl(d.u, 0, 512);
@@ -333,18 +332,7 @@ var g_pose = {
         }
     },
 
-    preloadImage: function(url) {
-        return new Promise(function(resolve, reject) {
-            let img = new Image();
-            img.onload = function() {
-                resolve(img);
-            }
-            img.onerror = function() {
-                //reject(src+'load failed');
-            }
-            img.src = url;
-        })
-    },
+ 
 
     toPage: function(page = 1, random = false) {
         this.page = page;

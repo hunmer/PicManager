@@ -6,8 +6,16 @@ g_room.onRevice = (data) => {
     var type = data.type;
     var d = data.data;
     switch (type) {
-        case 'bg':
-            g_setting.setBg(g_room.getImageUrl(d));
+        case 'roomUpdate':
+            var roomData = g_room.getData();
+            if(roomData['bg'] != d.bg){
+                g_setting.setBg(g_room.getImageUrl(d.bg));
+                g_room.setData('bg', d.bg);
+            }
+            if(roomData['broadcast'] != d.broadcast){
+                g_room.showBroadcast(d.broadcast);
+                g_room.setData('broadcast', d.broadcast);
+            }
             break;
         case 'requestPassword':
             mobiscrollHelper.password({ mask: '', closeOnOverlayTap: true }, (password) => {
@@ -143,11 +151,29 @@ g_room.onRevice = (data) => {
             showContent('room');
             break;
 
+        case 'clearMsg':
+             $('#msg_list').html('');
+             g_room.broadcastMsg({msg: _l('管理员清屏')});
+             g_room.setData('msgs', []);
+             if(g_room.isRoomMaster()){
+                toastPAlert(_l('清屏成功'), 'alert-success');
+
+             }
+            break;
+
         case 'createRoom':
             if (isModalOpen('modal-custom', 'room_editRoom')) halfmoon.toggleModal('modal-custom');
             delete g_room.cache.confirmCreateRoom;
             g_room.saveRoomKey(d.key);
             g_room.requestJoinRoom(d.room, d.password);
+            break;
+
+        // 玩家点击别人分享的歌单
+        case 'startPlayList':
+            var msg = $('.chat-msg[data-mid="'+d.id+'"]');
+            if(msg.length){
+                msg.find('.hideScroll').html(g_room.getPlayersIcon(d.players));
+            }
             break;
 
         case 'joinRoom':
@@ -165,15 +191,6 @@ g_room.onRevice = (data) => {
         case 'deleteImage':
             g_room.removeImage(d)
             break;
-
-        case 'musicList':
-            d.msg = `我分享了歌单, 大家快来听呀!<button class="btn btn-block mt-10" data-json='${JSON.stringify(data.props)}' data-action="music_parse">收听</button>`;
-             g_room.onRevice({
-                type: 'chatMsg',
-                data: d
-            });
-            break;
-
         case 'on-player-join':
         case 'on-player-change-icon':
         case 'on-player-quit':

@@ -84,9 +84,28 @@ class Meting
         if (isset($api['decode'])) {
             $this->data = call_user_func_array(array($this, $api['decode']), array($this->data));
         }
-        if (isset($api['format'])) {
+         if (isset($api['format'])) {
             $this->data = $this->clean($this->data, $api['format']);
         }
+        if(isset($api['detail']) && $api['detail']){
+            $detail = [];
+            $json = json_decode($this->raw, 1);
+            switch($this->server){
+                case 'netease':
+                    $detail = [
+                        'name' => $json['playlist']['name'],
+                        'cover' => $json['playlist']['coverImgUrl'],
+                        'tags' => $json['playlist']['tags'],
+                    ];
+                    break;
+            }
+
+            $this->data = [
+                'list' => $this->data,
+                'detail' => $detail
+            ];
+        }
+       
 
         return $this->data;
     }
@@ -540,7 +559,7 @@ class Meting
         return $this->exec($api);
     }
 
-    public function playlist($id)
+    public function playlist($id, $detail = false)
     {
         switch ($this->server) {
             case 'netease':
@@ -632,7 +651,7 @@ class Meting
             );
             break;
         }
-
+        $api['detail'] = $detail;
         return $this->exec($api);
     }
 

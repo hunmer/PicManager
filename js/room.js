@@ -44,12 +44,12 @@ var g_room = {
                         <div id="room_event_tip" style="max-width: 300px;display: flex;align-items: center;" class="p-10">
                             <div></div>
                         </div>
-                        <div id="msg_list" class="animated fadeIn border rounded shadow" animated='fadeIn' style="padding-bottom: 50px;max-width: 300px;height: 300px;overflow-y: scroll;overflow-x: hidden; color: #ffffff;background-color: rgba(0, 0, 0, .4)">
+                        <div id="msg_list" class="animated fadeIn border rounded shadow hide" animated='fadeIn' style="padding-bottom: 50px;overflow-y: scroll;overflow-x: hidden; color: #ffffff;background-color: rgba(0, 0, 0, .4);width: var(--mw-80);max-width: 500px;height: var(--mh-60);">
                         </div>
                         <div class="d-flex">
                           <div class="mr-auto">
                             <i data-action="room_toggleChatUI" class="fa fa-caret-square-o-down fa-2x ml-10" aria-hidden="true"></i>
-                            <i id="msg_chat_range_switch" class="fa fa-eye fa-2x ml-10 hide" aria-hidden="true" onclick=" $('#msg_chat_range').toggleClass('hide');"></i>
+                            <i id="msg_chat_range_switch" class="fa fa-eye fa-2x ml-10 hide" aria-hidden="true" onclick="$('#msg_chat_range').toggleClass('hide');"></i>
                             <span id="room_msg_unread" class="badge badge-danger badge-pill" style="display:none;position: absolute;right: -6px;bottom: -6px;" onclick="getAction('room_toggleChatUI').click()">0</span> 
                           </div>
 
@@ -94,13 +94,14 @@ var g_room = {
                 bottom: 55px;
                 max-height: 40%;
                 height: auto;">
-                    <div class="dropdown dropleft">
-                        <a class="btn p-0 rounded-circle" style="width: 35px;height: 35px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa fa-music fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
+                    <div class="dropdown dropleft" id="music_player">
+                        <a class="btn btn-danger p-0 rounded-circle" style="width: 35px;height: 35px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-music fa-2x" style="line-height: 35px;margin-left: 1px;" aria-hidden="true"></i>
+                            <img class="musicCocver w-full hide" style="border-radius: 50%;">
                         </a>
-                      <div class="dropdown-menu dropdown-menu-up w-200 shadow" id="music_player">
+                      <div class="dropdown-menu dropdown-menu-up w-200 shadow">
                         <div class="textScroll d-relative" >
-                            <img class="w-full  rounded-top" src="img/user.jpg">
+                            <img class="w-full rounded-top hide musicCocver">
                             <span class="d-block text"></span>
                         </div>
                         <div class="row dropdown-content p-10">
@@ -151,7 +152,8 @@ var g_room = {
                       <a class="badge badge-secondary badge-pill"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>
                     </span>
                     <div class="dropdown-menu dropdown-menu-center pr-10">
-                        <a class="dropdown-item" data-action="">信息</a>
+                        <a class="dropdown-item" data-action="">${_l('信息')}</a>
+                        <a class="dropdown-item" data-action="room_admin">${_l('管理')}</a>
                         <a class="dropdown-item" data-action="room_share">${_l('分享')}</a>
                         <div class="dropdown-divider"></div>
                         <div class="dropdown-content">
@@ -240,7 +242,7 @@ var g_room = {
                     <div id="room_title" class="col-3 text-left textScroll">
                         <span class="text"></span>
                     </div>
-                   <div id="room_players" data-action="room_playerList" class="col-5 pl-10 pr-10 hideScroll w-full" style="display: inline-flex;height: 40px;overflow-y: hidden;overflow-x: scroll;align-items: center;">
+                   <div id="room_players" data-action="room_playerList" class="col-5 pl-10 pr-10 hideScroll w-full users-icon" style="align-items: center;">
                     </div>
                 </div>
             </div>
@@ -356,6 +358,7 @@ var g_room = {
         data.uuid = this.getUUID();
         data.room = this.currentRoom;
         data.key = g_config.roomKey;
+        if(data.data == undefined) data.data = {};
         console.log(data);
         if (this.isConnected()) {
             this.connection.send(JSON.stringify(data));
@@ -393,7 +396,7 @@ var g_room = {
         var h = '';
         for (var p in players) {
             h += `
-                <img src="${g_room.getImageUrl(players[p].icon)}" class="rounded-circle user-icon-small">
+                <img src="${g_room.getImageUrl(players[p].icon || players[p])}" class="rounded-circle user-icon-small">
             `
         }
         return h;
@@ -634,11 +637,10 @@ var g_room = {
                             ${r.desc}
                           </p>
                           <div>
-                            <div class="hideScroll w-full pt-10" style="display: inline-flex;height: 40px;overflow-y: hidden;overflow-x: scroll;">
+                            <div class="hideScroll users-icon w-full pt-10" >
                                 ${g_room.getPlayersIcon(r.players)}
                             </div>
                             <div class="text-right">
-                                
                                 <span class="text-muted">
                                     <i class="fa fa-clock-o mr-5" aria-hidden="true"></i>${getFormatedTime(0, r.createAt)}
                                 </span>
@@ -652,12 +654,17 @@ var g_room = {
                                     </span>`;
                                 return s + '</div>';
                             })() + `
-                            <div class="text-right mt-10">
-                                 <span class="badge ml-5 mt-5">
-                                    <i class="fa fa-users text-danger mr-5" aria-hidden="true"></i>${Object.keys(r.players).length}/${r.maxPlayers || '∞'}
-                                </span>
+                            <div class="d-flex mt-10">
+                                <div>
+                                    <span class="badge ml-5 mt-5">
+                                        <i class="fa fa-commenting-o text-success mr-5" aria-hidden="true"></i>${r.msgCount}
+                                    </span>
 
-                                <a data-action="room_joinRoom" class="btn btn-primary">${_l('加入')}</a>
+                                    <span class="badge ml-5 mt-5">
+                                        <i class="fa fa-users text-danger mr-5" aria-hidden="true"></i>${Object.keys(r.players).length}/${r.maxPlayers || '∞'}
+                                    </span>
+                                </div>
+                                <a data-action="room_joinRoom" class="btn btn-primary ml-auto">${_l('加入')}</a>
                             </div>
                           </div>
                         </div>
@@ -711,8 +718,31 @@ var g_room = {
         }
     },
     parseChatMessage: function(d) {
-
         var content = d.player != undefined ? d.player + ' : ' : '';
+        if(d.meta){
+            var data = d.meta.data;
+            switch(d.meta.type){
+                case 'musicList':
+                    d.msg = `
+                    <div class="mt-10 bg-dark-light">
+                        <div class="position-relative">
+                            <span class="badge badge-primary p-5" style="position: absolute;top:0;left:0;">歌单</span>
+                            <img src="${data.detail.cover}" class="w-full rounded-top">
+                        </div>
+                        <div class="p-10">
+                            ${_l('分享了歌曲', data.detail.name)}
+                            <div class="d-flex pt-10">
+                                <span class="text-muted" style="align-self: center;">${data.songs}首</span>
+                                <button class="ml-auto btn btn-success" data-action="music_parse" data-json='${JSON.stringify({id: data.id, source: data.source})}'>${_l('播放')}</button>
+                            </div>
+                            <div class="hideScroll users-icon w-full pt-10">
+                                ${g_room.getPlayersIcon(d.players)}
+                            </div>
+                        </div>
+                    </div>`;
+                    break;
+            }
+        }
         if (d.msg) {
             content += d.msg;
         } else
@@ -730,7 +760,7 @@ var g_room = {
             content += '</div>'
         }
         return `
-        <div class="chat-msg d-flex animated fadeInLeft" animated='fadeInLeft'>
+        <div class="chat-msg d-flex animated fadeInLeft" animated='fadeInLeft' data-mid="${d.id}">
             <img src="${g_room.getImageUrl(d.icon)}" class="mr-10 rounded-circle user-icon-small" >
             <div class="flex-fill">${d.isOwner ? `<span class="badge badge-secondary mr-10">${_l('房主')}</span>` : ''}${content}</div>
             <span class="flex-fill text-right" style="align-self: flex-end;">${getFormatedTime(0, d.time)}</span>
@@ -748,6 +778,8 @@ var g_room = {
             h += this.parseChatMessage(msg);
         }
         $('#msg_list').html(h);
+        g_room.msg_toBottom();
+
         $('#room_gallery, #room_photo, #room_subContent_game').html(`
             <img src="res/sticker/1/shan.png" class="d-block mx-auto">
             <h4 class="text-center">${_l('什么都没有')}</h4>
@@ -760,7 +792,7 @@ var g_room = {
             g_room.cache.disconectTimer = setTimeout(() => {
                 g_room.disconect();
                 g_room.leaveRoom();
-            }, 1000 * 60 * 5);
+            }, 1000 * 60 * 15);
 
             var t = g_room.cache.targetRoom;
             if (t) {
@@ -768,6 +800,28 @@ var g_room = {
                 delete g_room.cache.targetRoom;
             }
             return;
+        }
+        if(d.isFirstJoin){
+            // if(d.broadcast){ // 公告
+            //     g_room.showBroadcast(d.broadcast);
+            // }
+
+            // if(d.media){ // 特殊数据
+            //      var music = d.media.music;
+            //     if(music){ // 房主推荐音乐
+            //         confirm1({
+            //             title: _l('房主的推荐歌单'),
+            //             html: `
+            //             <div class="h-400 text center textScroll">
+            //              <img src="${music.detail.cover}" class="w-full rounded-top">
+            //              <h4 class="text">${music.detail.name}</h4>
+            //             </div>
+            //             `,
+            //         }, play => {
+            //             if(play) g_music.parsePlaylist(music, false);
+            //         })
+            //     }
+            // }
         }
         window.history.pushState(null, null, `?r=${room}`);
 
@@ -792,6 +846,12 @@ var g_room = {
         }
 
         $('.content-wrapper').css('overflowY', 'hidden'); // 自定义滚动内容
+    },
+    showBroadcast: function(msg){
+        alert1({
+            title: _l('房间公告'),
+            html: msg
+        });
     },
     reviceImgs: function(id, imgs) {
         if (!imgs || !Object.keys(imgs).length) return;
@@ -925,7 +985,7 @@ var g_room = {
         if (!hide && g_menu.isMenuShow('menu_main') && !g_menu.isInSlider('menu_main')) {
             g_menu.toggleMenu('#menu_main', true);
         }
-        $('#msg_chat_range').hide()
+        $('#msg_chat_range').addClass('hide')
 
         getAction('room_toggleChatUI').attr('class', 'fa fa-2x fa-' + (hide ? 'weixin' : 'caret-square-o-down'));
         $('#msg_list').toggleClass('hide', hide);
@@ -1078,6 +1138,8 @@ var g_room = {
         当然，你有什么好的想法也可以跟<a href="" target="_blank">我们</a>进行反馈。
     </div>`,
         ];
+
+        for(var i in list) preloadImage('./res/guide/'+i+'.png');
         var modal;
         var page = 0;
         var max = list.length - 1;

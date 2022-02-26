@@ -1,4 +1,3 @@
-
 var _GET = getGETArray();
 var g_api = 'https://neysummer-api.glitch.me/';
 var socket_url = 'wss:///daily-websock1.glitch.me';
@@ -15,12 +14,12 @@ var g_cache = {
 var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
 
 // 解决图片无法加载问题
-function proxyImg(url){
+function proxyImg(url) {
     // return url;
-    return 'https://metal-loving-sleet.glitch.me/?url='+url;
+    return 'https://metal-loving-sleet.glitch.me/?url=' + url;
 }
 
-function getSystemLang(){
+function getSystemLang() {
     var lang = navigator.language.substr(0, 2).toLowerCase();
     return ['zh', 'jp', 'en'].includes(lang) ? lang : 'zh';
 }
@@ -47,7 +46,7 @@ if (!g_config.clientData.imgPath) {
 }
 
 if (g_config.debug) {
-    loadRes([{url: 'js/eruda.js', type: 'js'}], () => {
+    loadRes([{ url: 'js/eruda.js', type: 'js' }], () => {
         eruda.init(
             /*{
             // container: el,
@@ -79,11 +78,11 @@ function searchArray(arr, search) {
     });
 }
 
-function _get(a){
+function _get(a) {
     return typeof(a) == 'function' ? a() : a;
 }
 
-function inputCopy(text){
+function inputCopy(text) {
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.setAttribute('value', text);
@@ -94,7 +93,7 @@ function inputCopy(text){
     document.body.removeChild(input);
 }
 
- function gridProgress(grid, key){
+function gridProgress(grid, key) {
     grid.imagesLoaded()
         .progress(function(instance, image) {
             var par = image.img.parentElement;
@@ -158,11 +157,11 @@ function me() {
     return g_config.user.name;
 }
 
-function randomString(e) {    
+function randomString(e) {
     e = e || 32;
     var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
-    a = t.length,
-    n = "";
+        a = t.length,
+        n = "";
     for (i = 0; i < e; i++) n += t.charAt(Math.floor(Math.random() * a));
     return n
 }
@@ -564,9 +563,10 @@ function registerAction(name, callback) {
 }
 
 var g_actions_list = {};
+
 function registerActionList(name, actions) {
-    if(!g_actions_list[name]) g_actions_list[name] = [];
-    for(var action in actions){
+    if (!g_actions_list[name]) g_actions_list[name] = [];
+    for (var action in actions) {
         g_actions_list[name].push(action);
         registerAction(action, actions[action]);
     }
@@ -590,6 +590,7 @@ function cutStrings(s_text, s_start, filter = false) {
     }
     return res;
 }
+
 function cutString(s_text, s_start, s_end, i_start = 0) {
     i_start = s_text.indexOf(s_start, i_start);
     if (i_start === -1) return '';
@@ -673,6 +674,19 @@ function copyText(text) {
     halfmoon.toggleModal('modal-copy');
 }
 
+function preloadImage(url) {
+    return new Promise(function(resolve, reject) {
+        let img = new Image();
+        img.onload = function() {
+            resolve(img);
+        }
+        img.onerror = function() {
+            //reject(src+'load failed');
+        }
+        img.src = url;
+    })
+}
+
 // 检测弹出的窗口是否为指定的类型
 function isModalOpen(id, type) {
     var modal = $('#' + id)
@@ -701,14 +715,14 @@ function checkInputValue(doms) {
     return values;
 }
 
- function selfDestroyFun(obj, key, before, callback) {
-        if (obj[key])
-            before(obj[key]);
-        obj[key] = {
-            val: callback(obj, key)
-        }
+function selfDestroyFun(obj, key, before, callback) {
+    if (obj[key])
+        before(obj[key]);
+    obj[key] = {
+        val: callback(obj, key)
     }
-    
+}
+
 
 function loadRes(files, callback, cache = true) {
     var i = 0;
@@ -820,16 +834,16 @@ function getBase64Image(img, ext) {
     var dataURL = canvas.toDataURL("image/" + ext || img.src.substring(img.src.lastIndexOf(".") + 1).toLowerCase());
     return dataURL;
 }
- 
+
 /**
-*Base64字符串转二进制
-*/
+ *Base64字符串转二进制
+ */
 function dataURLtoBlob(dataurl) {
     var arr = dataurl.split(','),
-    mime = arr[0].match(/:(.*?);/)[1],
-    bstr = atob(arr[1]),
-    n = bstr.length,
-    u8arr = new Uint8Array(n);
+        mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
     while (n--) {
         u8arr[n] = bstr.charCodeAt(n);
     }
@@ -837,91 +851,95 @@ function dataURLtoBlob(dataurl) {
         type: mime
     });
 }
-function getImgToBase64(url,callback, format){//将图片转换为Base64
-  var canvas = document.createElement('canvas'),
-    ctx = canvas.getContext('2d'),
-    img = new Image;
-  img.crossOrigin = 'Anonymous';
-  img.onload = function(){
-    canvas.height = img.height;
-    canvas.width = img.width;
-    ctx.drawImage(img,0,0);
-    var dataURL = canvas.toDataURL(format || 'image/webp');
-    callback(dataURL);
-    canvas = null;
-  }
-  img.src = url;
-}
- 
-function dataURLtoFile(dataurl, filename) {
-    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
+
+function getImgToBase64(url, callback, format) { //将图片转换为Base64
+    var canvas = document.createElement('canvas'),
+        ctx = canvas.getContext('2d'),
+        img = new Image;
+    img.crossOrigin = 'Anonymous';
+    img.onload = function() {
+        canvas.height = img.height;
+        canvas.width = img.width;
+        ctx.drawImage(img, 0, 0);
+        var dataURL = canvas.toDataURL(format || 'image/webp');
+        callback(dataURL);
+        canvas = null;
     }
-    return new File([u8arr], filename, {type:mime});
+    img.src = url;
 }
 
-function  initMenu(id, data) {
-        var h = '';
-        for (var d of data) {
-            if(typeof(d) == 'string'){
-                h += d;
-            }else{
-                h += `
+function dataURLtoFile(dataurl, filename) {
+    var arr = dataurl.split(','),
+        mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+}
+
+function initMenu(id, data) {
+    var h = '';
+    for (var d of data) {
+        if (typeof(d) == 'string') {
+            h += d;
+        } else {
+            h += `
                  <a data-action="${d.action}" class="btn ${d.class} p-0 rounded-circle" style="width: 35px;height: 35px;">
                     <i class="fa ${d.icon} fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
                 </a>
                 `
 
-            }
-        }
-        $(id).html(h);
-    }
-
-    function showSubContent(classes, id){
-        for(var con of $('.'+classes)){
-            var finded = con.id == classes+'_'+id;
-            $(con).toggleClass('hide', !finded);
-
-            var btn = $(`[data-action="${classes}"][data-value="${con.id.split('_').pop()}"]`)
-            btn.toggleClass('btn-primary', finded);
         }
     }
+    $(id).html(h);
+}
 
-function initViewer(img, opts, prop){
+function showSubContent(classes, id) {
+    for (var con of $('.' + classes)) {
+        var finded = con.id == classes + '_' + id;
+        $(con).toggleClass('hide', !finded);
+
+        var btn = $(`[data-action="${classes}"][data-value="${con.id.split('_').pop()}"]`)
+        btn.toggleClass('btn-primary', finded);
+    }
+}
+
+function initViewer(img, opts, prop) {
     prop.viewer = new Viewer(img, Object.assign({
-            toolbar: 0,
-            navbar: 0,
-            title: 0,
-            url(image) {
-                var url = image.src.replace('https://i.pinimg.com/236x/', 'https://i.pinimg.com/originals/')
-                return url;
-            },
-            // transition:false,
-            ready() {
-                // img.hidden = true;
-            },
-            viewed(event) {
-                if(prop.blurBg){
-                    $(prop.viewer.viewer).backgroundBlur({
-                        blurAmount: 10, // 模糊度
-                        imageClass: 'tinted-bg-blur',
-                        overlayClass: 'tinted-bg-overlay',
-                        duration: 1500, // 图片淡出时间
-                        endOpacity: 1 // 图像最终的不透明度
-                    }).backgroundBlur(prop.bgUrl);
-                }
-            },
-            toggleOnDblclick: false,
-        }, opts));
+        toolbar: 0,
+        navbar: 0,
+        title: 0,
+        url(image) {
+            var url = image.src.replace('https://i.pinimg.com/236x/', 'https://i.pinimg.com/originals/')
+            return url;
+        },
+        // transition:false,
+        ready() {
+            // img.hidden = true;
+        },
+        viewed(event) {
+            if (prop.blurBg) {
+                $(prop.viewer.viewer).backgroundBlur({
+                    blurAmount: 10, // 模糊度
+                    imageClass: 'tinted-bg-blur',
+                    overlayClass: 'tinted-bg-overlay',
+                    duration: 1500, // 图片淡出时间
+                    endOpacity: 1 // 图像最终的不透明度
+                }).backgroundBlur(prop.bgUrl);
+            }
+        },
+        toggleOnDblclick: false,
+    }, opts));
     return prop.viewer;
 }
 
-  // 获取父dom的data
-    function getParentData(d, k = 'md5'){
-        d = $(d);
-        var r = d.data(k);
-        if(r) return r;
-        return d.parents('[data-'+k+']').data(k)
-    }
+// 获取父dom的data
+function getParentData(d, k = 'md5') {
+    d = $(d);
+    var r = d.data(k);
+    if (r) return r;
+    return d.parents('[data-' + k + ']').data(k)
+}

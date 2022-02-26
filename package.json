@@ -19,6 +19,7 @@
     "electron-builder": "^22.10.5"
   },
   "dependencies": {
+    "clone-deep": "^4.0.1",
     "concurrently": "^7.0.0",
     "crypto": "^1.0.1",
     "express": "^4.17.2",

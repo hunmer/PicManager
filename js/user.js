@@ -66,7 +66,7 @@ var g_user = {
                 "en": ""
             },
 
-            
+
         })
 
         registerAction('user_uploadIcon', (dom, action, params) => {

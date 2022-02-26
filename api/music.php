@@ -23,7 +23,7 @@ $api->format(true);
 
 switch ($type) {
 	case 'playlist':
-		echo $api->playlist(getParam('id'));
+		echo json_encode($api->playlist(getParam('id'), getParam('withDetail')));
 		break;
 	case 'cover':
 		echo header('location:' . json_decode($api->pic(getParam('id')), true)['url']);

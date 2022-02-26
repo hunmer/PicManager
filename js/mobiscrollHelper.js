@@ -354,10 +354,13 @@ function buildDialog(opts) {
                     opts.onEnterKey && opts.onEnterKey();
                 }
             });
-
-        }
+        },
+        // 不能多开.
+        // onClose: function(event, instance) {
+        //     instance.destroy();
+        //     this.remove();
+        // }
     });
-    console.log(dialog.mobiscroll())
     return dialog;
 }
 
