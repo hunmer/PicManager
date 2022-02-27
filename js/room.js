@@ -1042,6 +1042,7 @@ var g_room = {
     },
 
     msg_toBottom: () => {
+        g_room.unread = 0;
         $('#room_msg_unread').html('0').hide();
         var scroll = $('#msg_list')[0];
         scroll.scrollTop = scroll.scrollHeight;
@@ -1080,6 +1081,7 @@ var g_room = {
         $('#room_chat').css('minWidth', hide ? 'unset' : '250px'); // 最小宽度
         $('.navbar-fixed-bottom').css('zIndex', hide ? 2 : 9999); // 让底部栏在viewer内显示
         if (hide) {
+           g_room.unread = 0;
             $('#room_msg_unread').html('0').hide();
         }
     },
