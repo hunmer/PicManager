@@ -157,7 +157,7 @@
                             </div>
 
                             <div class="text-right mt-10">
-                                <a class="btn btn-primary" onclick="prompt1({title: '${_l('输入视频URL')}', html:'https://www.bilibili.com/video/BV1u4411K7KQ/?p=2'}, url => g_room.parseVideoUrl(url))" role="button">${_l('解析网址')}</a>
+                                <a class="btn btn-primary" onclick="prompt1({title: '${_l('输入视频URL')}', html:''}, url => g_room.parseVideoUrl(url))" role="button">${_l('解析网址')}</a>
                                 <a class="btn btn-primary hide" data-action="room_shareEmbed">${_l('分享')}</a>
                             </div>
                           </div>

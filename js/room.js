@@ -30,7 +30,14 @@ var g_room = {
         roomList: {}
     },
     grid: {},
-    cache: {},
+    cache: {
+        unread: {
+            gallery: 0,
+            photo: 0,
+            msg: 0,
+            embed: 0,
+        }
+    },
     preload: function() {
 
         registerContent({
@@ -70,9 +77,9 @@ var g_room = {
 
                      <div class="btn-toolbar rounded" role="toolbar"> 
                       <div class="btn-group mx-auto w-full">
-                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="gallery">${_l('参考图')}</button>
-                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="photo">${_l('照片')}</button>
-                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="embed">${_l('分享')}</button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="gallery">${_l('参考图')}<span id="badge_gallery" class="ml-5 badge badge-pill hide">0</span></button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="photo">${_l('照片')}<span id="badge_photo" class="ml-5 badge badge-pill hide">0</span></button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="embed">${_l('分享')}<span id="badge_embed" class="ml-5 badge badge-pill hide">0</span></button>
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="game">${_l('游戏')}</button>
                       </div>
                     </div>
@@ -664,6 +671,7 @@ var g_room = {
             </div>`
     },
     addEmbed: function(item) {
+        g_room.setBadgeCount('embed', ++g_room.cache.unread['embed']);
         var key = item.source + '_' + item.time;
         var html = this.parseEmbedMsg(item);
         if (!g_room.roomData.media.embed) g_room.roomData.media.embed = {};
@@ -673,6 +681,7 @@ var g_room = {
         }
     },
     parseEmbedList: function(d) {
+        g_room.setBadgeCount('embed', Object.keys(d).length);
         g_room.roomData.media.embed = d;
         var h = '';
         for (var id in d) {
@@ -916,10 +925,16 @@ var g_room = {
             html: msg
         });
     },
+    setBadgeCount: function(type, cnt) {
+        g_room.cache.unread[type] = cnt;
+        $('#badge_' + type).html(cnt).toggleClass('hide', cnt == 0).toggleClass('badge-danger', g_room.currentContent != type);
+    },
     reviceImgs: function(id, imgs) {
         if (!imgs || !Object.keys(imgs).length) return;
         Object.assign(g_room.roomData[id == 'room_gallery' ? 'imgs' : 'photos'], imgs);
-        console.log(imgs);
+
+        var type = id.split('_')[1];
+        g_room.setBadgeCount(type, ++g_room.cache.unread[type]);
         if (!g_page.getOpts(id)) {
             $('#' + id).html('');
             g_page.setList(id, {
@@ -1037,6 +1052,7 @@ var g_room = {
         g_room.initMenu(id);
 
         showSubContent(classes, id);
+        g_room.setBadgeCount(id, 0);
         switch (id) {
             case 'gallery':
                 g_room.isotopeResize('room_gallery');
