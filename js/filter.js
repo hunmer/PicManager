@@ -87,7 +87,7 @@ var g_filter = {
         let hideFolder_rm = () => {
             if (g_filter.getSelectedFilter()) g_filter.folder_rm.dialog.mobiscroll('hide');
         }
-        registerAction('filter_edit', (dom, action, params) => {
+        registerAction('filter_edit', (dom, action) => {
             hideFolder_rm();
             var filter = action[1] || g_filter.getSelectedFilter();
             var d = g_filter.getFilter(filter) || {
@@ -127,7 +127,7 @@ var g_filter = {
             });
 
         });
-        registerAction('filter_save', (dom, action, params) => {
+        registerAction('filter_save', (dom, action) => {
             var vals = checkInputValue(['#input_filter_name', '#input_filter_value']);
             if (vals) {
                 console.log(vals);
@@ -149,7 +149,7 @@ var g_filter = {
                 }
             }
         });
-        registerAction('filter_delete', (dom, action, params) => {
+        registerAction('filter_delete', (dom, action) => {
             hideFolder_rm();
             var filter = action[1] ||  g_filter.getSelectedFilter();
             if (filter) {

@@ -22,7 +22,7 @@ var g_file = {
                 this.value = '';
             });
 
-            registerAction('dialog_openImageFile', (dom, action, params) => {
+            registerAction('dialog_openImageFile', (dom, action) => {
                 g_file.openDialog('images', true);
             });
 

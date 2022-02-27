@@ -12,7 +12,7 @@ var g_pose = {
     },
     cache: {},
     preload: function() {
-        registerAction('loadPlugin_pose', (dom, action, params) => {
+        registerAction('loadPlugin_pose', (dom, action) => {
             if (!g_pose.inited) {
                 g_pose.init();
                 showContent('pose');

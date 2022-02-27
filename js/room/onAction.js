@@ -28,25 +28,171 @@
 
  (() => {
      const _hideActionList = () => {
-         g_room.cache.rm.dialog.mobiscroll('hide');
-         delete g_room.cache.rm;
+         self.cache.rm.dialog.mobiscroll('hide');
+         delete self.cache.rm;
      }
 
+     var self = g_room;
+
      registerActionList('room', {
-         room_deleteImage: (dom, action, params) => {
-             if (g_room.cache.rm) {
-                 g_room.send({ type: 'deleteImage', data: { id: g_room.cache.rm.id } });
+        /* embed */
+        
+        'room_deleteEmbed': (dom, action) => {
+            g_room.send({
+                type: 'delEmbed',
+                data: {
+                    id: $(dom).parents('[data-embed]').data('embed')
+                }
+            })
+        },
+        'room_downloadEmbed': (dom, action) => {
+            var data = self.roomData.media.embed[$(dom).parents('[data-embed]').data('embed')];
+            if(!data) return;
+            window.open(data.url, '_blank');
+        },
+        'room_loadEmbed': (dom, action) => {
+            var id = $(dom).parents('[data-embed]').data('embed');
+            var data = self.roomData.media.embed[id];
+            if(!data) return;
+            var embed;
+            var url = data.url;
+            var type = data.type;
+
+            const includes = (str, arr) => !arr.some(s => str.indexOf(s) == -1);
+            if (includes(url, ['.bilibili.com', '/video/'])) {
+                embed = '//player.bilibili.com/player.html?bvid='+cutString(url + '/', '/video/', '/');
+            }else
+            if (includes(url, ['.youtube.com', 'watch?v='])) {
+                embed = '//www.youtube.com/embed/'+cutString(url + '&', '?v=', '&');
+            }
+            if(embed){
+                if(confirm('是否观看弹幕') ){
+                    type = 'ifrmae';
+                    url = embed;
+                }
+            }
+            switch(type){
+                case 'ifrmae':
+                    $('#room_embed').html(`
+                        <iframe style="width: 100%;height: 100%;min-height: 250px;border: unset;" scrolling="no" border="0" allowfullscreen="" mozallowfullscreen="true" webkitallowfullscreen="true" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" src="${url}" allowfullscreen></iframe>
+                    `).removeClass('hide1');
+                    break;
+
+                case 'video':
+                    var video = $('#room_video');
+                     if (!video.length) {
+                         $('#room_embed').html(`
+                            <video id="room_video" class="w-full" controls></video>
+                        `).removeClass('hide1');
+                         if(data.ext == 'flv'){
+                            loadRes([{url: 'js/flv.js', type: 'js'}], () => {
+                                 var flvPlayer = flvjs.createPlayer({
+                                    type: data.ext,
+                                    url: data.src
+                                });
+                                flvPlayer.attachMediaElement($('#room_video')[0]);
+                                flvPlayer.load();
+                                flvPlayer.play();
+                                self.cache.flvPlayer = flvPlayer;
+                            })
+                         }else{
+                            $('#room_embed').find('video').attr('src', data.src);
+                         }
+                    }else{
+                        video.attr('src', data.src); 
+                    }
+                    break;
+            }
+        },
+        'room_subDialogContent': (dom, action) => {
+             showSubContent('room_subDialogContent', $(dom).data('value'));
+         },
+        'room_shareEmbed': (dom, action) => {
+            var dialog = isModalOpen('modal-custom', 'dialog_room_embed_share');
+            self.send({
+                type: 'shareEmbed',
+                data: Object.assign({
+                    time: new Date().getTime(),
+                    source: 'custom',
+                    title: dialog && $('#input_roomEmbed_name').val(),
+                    description: dialog &&  $('#input_roomEmbed_desc').html(),
+                }, self.cache.videoDetail || {})
+            });
+            if(dialog){
+                halfmoon.toggleModal('modal-custom');
+            }
+         },
+         room_addshareEmbed: (dom, action) => {
+             var modal = modalOpen({
+                 id: 'modal-custom',
+                 type: 'dialog_room_embed_share',
+                 width: '100%',
+                 fullScreen: true,
+                 title: _l('内容分享'),
+                 html: `
+                     <div class="btn-toolbar rounded" role="toolbar"> 
+                      <div class="btn-group mx-auto w-full">
+                        <button class="btn btn-square btn-primary" type="button" data-action="room_subDialogContent" data-value="VideoDetail">${_l('分享_视频信息')}</button>
+                        <button class="btn btn-square" type="button" data-action="room_subDialogContent" data-value="shareHistory">${_l('分享_历史记录')}</button>
+                      </div>
+                    </div>
+
+                    <div>
+                          <div id="room_subDialogContent_VideoDetail" class="room_subDialogContent animated fadeIn" animated='fadeIn'>
+
+                           <img class="d-block mx-auto w-three-quarter mt-10">
+
+                           <div class="input-group mt-10">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text">${_l('视频名称')}</span>
+                              </div>
+                              <input id="input_roomEmbed_name" type="text" class="form-control" placeholder="${_l('视频名称_占位符')}" value="">
+                            </div>
+
+                            <div class="input-group mt-10">
+                              <div class="input-group-prepend">
+                                <span class="input-group-text">${_l('视频说明')}</span>
+                              </div>
+                                <textarea class="form-control" id="input_roomEmbed_desc" rows="3" placeholder="${_l('视频说明_占位符')}"></textarea>
+                            </div>
+
+                            <div class="text-right mt-10">
+                                <a class="btn btn-primary" onclick="prompt1({title: '${_l('输入视频URL')}', html:'https://www.bilibili.com/video/BV1u4411K7KQ/?p=2'}, url => g_room.parseVideoUrl(url))" role="button">${_l('解析网址')}</a>
+                                <a class="btn btn-primary hide" data-action="room_shareEmbed">${_l('分享')}</a>
+                            </div>
+                          </div>
+                           <div id="room_subDialogContent_shareHistory" class="room_subDialogContent hide animated fadeIn" animated='fadeIn'>
+                          开发中...
+                          </div>
+                    </div>
+
+                     
+                        `,
+                 onShow: () => {
+                 },
+                 onClose: () => {
+                     return true;
+                 }
+             })
+
+            // var url = '//player.bilibili.com/player.html?aid=55266745&bvid=BV1u4411K7KQ&cid=96638712&page=2';
+            // $('#embed').attr('src', url).show();
+        },
+
+         room_deleteImage: (dom, action) => {
+             if (self.cache.rm) {
+                 self.send({ type: 'deleteImage', data: { id: self.cache.rm.id } });
                  _hideActionList();
              }
          },
-         room_downloadImage: (dom, action, params) => {
-             var md5 = g_room.cache.rm.id;
-             var dom = g_room.getImage(md5).find('.photo');
+         room_downloadImage: (dom, action) => {
+             var md5 = self.cache.rm.id;
+             var dom = self.getImage(md5).find('.photo');
              if (!dom.length) return toastPAlert(_l('对象不存在'), 'alert-danger');
              _hideActionList();
              var url = dom.data('origin') || dom.data('src');
              if (url.startsWith('{host}')) { // 可以下载数据
-                 getImageBlob(g_room.getImageUrl(url), (blob) => {
+                 getImageBlob(self.getImageUrl(url), (blob) => {
                      downloadData(blob, md5 + '.jpg');
                  }, () => {
                      alert(_l('发生错误'));
@@ -55,17 +201,17 @@
                  window.open(url, '_blank');
              }
          },
-         room_playerList: (dom, action, params) => {
-             var pls = g_room.getData('players', {});
+         room_playerList: (dom, action) => {
+             var pls = self.getData('players', {});
              var names = Object.keys(pls);
              if (names.length == 0) return;
 
              var r = {};
              // todo 显示房主
-             var owner = g_room.getData('owner');
+             var owner = self.getData('owner');
              for (var name in pls) {
                  r[name] = {
-                     icon: g_room.getImageUrl(pls[name].icon),
+                     icon: self.getImageUrl(pls[name].icon),
                      text: name == owner ? '<span class="text-secondary">' + name + '</span>' : name
                  }
              }
@@ -81,10 +227,13 @@
                      handler: (event, instance) => {
                          var pl = instance.getVal();
                          if (pl === null) pl = names[0]; // 如果没滚动就会返回null
-                         g_room.send({
-                             type: 'kickPlayer',
-                             data: { target: pl }
-                         });
+                         if(confirm(_l('确定吗'))){
+                            self.send({
+                                 type: 'kickPlayer',
+                                 data: { target: pl }
+                             });
+                         }
+                         
                      }
                  });
              }
@@ -99,8 +248,8 @@
                  },
              });
          },
-         room_share: (dom, action, params) => {
-             var url = location.host + location.pathname + '?r=' + g_room.getData('room');
+         room_share: (dom, action) => {
+             var url = location.host + location.pathname + '?r=' + self.getData('room');
              loadRes([{ url: 'js/qrcode.min.js', type: 'js' }], () => {
                  var modal = modalOpen({
                      id: 'modal-custom-1',
@@ -133,59 +282,59 @@
                  })
              });
          },
-         room_game_playerIcon: (dom, action, params) => {
+         room_game_playerIcon: (dom, action) => {
              var pl = $(dom).data('user');
              if ($(dom).hasClass('selected_player') || pl == me()) {
                  // 解锁
-                 return g_room.applyPlayerMark(me(), g_mark.showingData.m);
+                 return self.applyPlayerMark(me(), g_mark.showingData.m);
              }
-             g_room.send({
+             self.send({
                  type: 'getPlayerMark',
                  data: {
                      target: pl
                  }
              });
          },
-         room_img_heart: (dom, action, params) => {
+         room_img_heart: (dom, action) => {
              if ($(dom).hasClass('room_img_heart_mine')) { // 禁止重复选择
                  return;
              }
-             g_room.send({
+             self.send({
                  type: 'heart',
                  data: {
                      id: $(dom).parents('[data-md5]').data('md5')
                  }
              });
          },
-         room_exit: (dom, action, params) => {
+         room_exit: (dom, action) => {
              window.history.pushState(null, null, "?room");
-             g_room.leaveRoom(true);
+             self.leaveRoom(true);
          },
-         // room_openInlineViewer: (dom, action, params) => {
-         //     var game = g_room.roomData.game;
+         // room_openInlineViewer: (dom, action) => {
+         //     var game = self.roomData.game;
          //     if (game && game.type == 'copy' && game.data.src != undefined) {
          //         confirm1('当前游戏模式不是自由模式,你确定要使用其他的参考图吗?', sure => {
          //             if (sure) {
-         //                 g_room.openInlineViewer(g_room.viewer.viewer.querySelector('img').src);
-         //                 g_room.viewer.hide();
+         //                 self.openInlineViewer(self.viewer.viewer.querySelector('img').src);
+         //                 self.viewer.hide();
          //             }
          //         })
          //     }
          // },
-         'room_countdown': (dom, action, params) => {
-             // if (g_room.isRoomMaster()) {
-             var imgs = g_room.roomData.imgs;
+         'room_countdown': (dom, action) => {
+             // if (self.isRoomMaster()) {
+             var imgs = self.roomData.imgs;
              var keys = Object.keys(imgs);
              if (!keys.length) return toastPAlert(_l('请先上传'));
 
              const onSelcted = (val) => {
-                 g_room.data.min = $('#range_room_time input').mobiscroll('getVal') * 60; // 游戏时间
+                 self.data.min = $('#range_room_time input').mobiscroll('getVal') * 60; // 游戏时间
                  switch (val) {
                      case 0:
-                         g_room.send({
+                         self.send({
                              type: 'startVote',
                              data: {
-                                 time: g_room.data.min
+                                 time: self.data.min
                              }
                          });
                          break;
@@ -195,7 +344,7 @@
                              var random = imgs[arrayRandom(keys)];
                              confirm1({
                                  title: _l('确定吗'),
-                                 html: `<img src="${g_room.getImageUrl(random.src)}" class="w-full">`,
+                                 html: `<img src="${self.getImageUrl(random.src)}" class="w-full">`,
                                  buttons: ['set', {
                                      text: _l('再来一次'),
                                      handler: () => {
@@ -204,13 +353,13 @@
                                  }, 'cancel']
                              }, sure => {
                                  if (!sure) return;
-                                 g_room.send({
+                                 self.send({
                                      type: 'startGame',
                                      data: {
                                          game: {
                                              type: 'copy',
                                              data: random,
-                                             time: g_room.data.min
+                                             time: self.data.min
                                          },
                                      }
                                  });
@@ -221,13 +370,13 @@
                          break;
 
                      case 2:
-                         g_room.send({
+                         self.send({
                              type: 'startGame',
                              data: {
                                  game: {
                                      type: 'copy',
                                      data: {},
-                                     time: g_room.data.min
+                                     time: self.data.min
                                  },
                              }
                          });
@@ -261,8 +410,8 @@
              // }
 
          },
-         'room_chat_img_click': (dom, action, params) => {
-             g_room.chatImgviewer = new Viewer(dom, {
+         'room_chat_img_click': (dom, action) => {
+             self.chatImgviewer = new Viewer(dom, {
                  title: 0,
                  ready() {
                      $('.navbar-fixed-bottom').css('zIndex', 2);
@@ -270,68 +419,97 @@
                  },
                  hide() {
                      $('#room_chat').css('zIndex', 9999);
-                     g_room.chatImgviewer.destroy();
-                     delete g_room.chatImgviewer;
+                     self.chatImgviewer.destroy();
+                     delete self.chatImgviewer;
 
                  },
 
                  url(image) {
-                     if (image.dataset.origin) return g_room.getImageUrl(image.dataset.origin);
+                     if (image.dataset.origin) return self.getImageUrl(image.dataset.origin);
                  },
              });
-             g_room.chatImgviewer.show();
+             self.chatImgviewer.show();
 
          },
-         'room_subContent': (dom, action, params) => {
-             g_room.showSubContent($(dom).data('value'));
+         'room_subContent': (dom, action) => {
+             self.showSubContent($(dom).data('value'));
          },
-         'room_toggleChatUI': (dom, action, params) => {
+         'room_toggleChatUI': (dom, action) => {
              // if($('#msg_list').html() == '') return;
-             g_room.msg_toBottom();
-             g_room.toggleChat();
+             self.msg_toBottom();
+             self.toggleChat();
          },
-         'room_msg_playAudio': (dom, action, params) => {
+         'room_msg_playAudio': (dom, action) => {
              soundTip(dom.dataset.url);
          },
-         'qm': (dom, action, params) => {
+         'qm': (dom, action) => {
              halfmoon.deactivateAllDropdownToggles();
-             g_room.sendMsg({
+             self.sendMsg({
                  msg: $(dom).html(),
              });
          },
-         'room_sendMsg': (dom, action, params) => {
+         'room_sendMsg': (dom, action) => {
              var msg = $('#msg').val();
              if (!isEmpty(msg)) {
 
                  if (msg.length > 100) return toastPAlert(_l('字数过长'), 'alert-danger');
-                 g_room.sendMsg({
+                 self.sendMsg({
                      msg: msg,
                  });
              }
 
          },
-         'room_listRoom': (dom, action, params) => {
+         'music_player_click': (dom, action, event) => {
+            var badge = $(dom).find('.badge');
+            if(badge.css('display') != 'none'){
+                badge.addClass('hide');
+                var music = self.getData('media', {}).music;
+                if(music){ // 房主推荐音乐
+                    confirm1({
+                        title: _l('房主的推荐歌单'),
+                        html: `
+                        <div class="text center textScroll">
+                         <img src="${music.detail.cover}" class="d-block mx-auto h-300 rounded-top">
+                         <h4 class="text">${music.detail.name}</h4>
+                        </div>
+                        `,
+                    }, play => {
+                        if(play) g_music.parsePlaylist(music, false);
+                    })
+                }
+            }
+         },
+         'room_listRoom': (dom, action) => {
             var div = getAction('room_listRoom');
             if(div){
                  div.find('img').attr('src', 'res/sticker/1/loading.png');
                   div.find('h4').html(_l('点击刷新'));
             }
-             g_room.send({
+             self.send({
                  type: 'listRoom',
              })
 
          },
-         'room_clearMsg': (dom, action, params) => {
-            g_room.send({type: 'clearMsg'});
+         'room_broadcast': (dom, action) => {
+             alert1(self.getData('broadcast') || _l('暂无公告'));
          },
-         'room_admin': (dom, action, params) => {
-             var d = g_room.getData();
+         'room_clearMsg': (dom, action) => {
+            mobiscroll_cancelAll();
+            self.send({type: 'clearMsg'});
+         },
+         'room_admin': (dom, action) => {
+             var d = self.getData();
              if(!d.isOwner) return toastPAlert(_l('无权限'), 'alert-danger');
              var dialog = mobiscrollHelper.widget_actionWithIcon({
                  data: [{
                          action: 'room_clearMsg',
                          icon: 'text-danger fa-trash-o',
                          text: _l('清屏')
+                     },
+                     {
+                         action: 'room_editRoom',
+                         icon: 'text-success fa-cog',
+                         text: _l('管理')
                      }
                  ],
                  opts: {
@@ -339,9 +517,11 @@
                  }
              });
          },
-         'room_editRoom': (dom, action, params) => {
-             var d = g_room.getData();
-             if (!d || !d.isOwner) {
+         'room_editRoom': (dom, action) => {
+            mobiscroll_cancelAll();
+             var d = self.getData();
+             var create = !d || !d.isOwner;
+             if (create) {
                  d = {
                      title: _l('新建房间名', me()),
                      desc: '',
@@ -398,9 +578,7 @@
                       <textarea id="input_room_desc" class="form-control" placeholder="${_l('房间介绍_占位符')}">${d.desc}</textarea>
                     </div>
 
-                  
-                    
-                     ${action[1] ? `
+                     ${!create ? `
                          <div class="input-group mt-10">
                           <div class="input-group-prepend">
                             <span class="input-group-text">${_l('房间公告')}</span>
@@ -410,7 +588,7 @@
 
                         <div class="row mt-10">
                             <img id="input_room_bg" class="w-full col-6 p-5" src="${d.bg || ''}">
-                            <select class="form-control form-control-lg col-6 h-auto" id="select-room-bg" oninput="g_room.optionSelected(this);" size="8">
+                            <select class="form-control form-control-lg col-6 h-auto" id="select-room-bg" oninput="self.optionSelected(this);" size="4">
                               <option value="" selected disabled>${_l('背景图片')}</option>
                               <option value="custom">${_l('背景图片_自定义')}</option>
                               <option value="">无</option>
@@ -428,7 +606,7 @@
                     ` : ''}
                     <div class="text-right mt-10">
                    
-                        <a class="btn btn-primary" role="button" data-action="room_createRoom">${action[1] ? _l('保存') : _l('新建')}</a>
+                        <a class="btn btn-primary" role="button" data-action="room_createRoom">${create ? _l('新建') : _l('保存')}</a>
                       </div>
                 </div>
                         `,
@@ -438,18 +616,18 @@
              });
 
          },
-         'room_img_click': (dom, action, params) => {
+         'room_img_click': (dom, action) => {
              var p = $(dom).parents('.grid-item');
-             g_room.viewer = new Viewer($('#room_' + g_room.currentContent)[0], {
+             self.viewer = new Viewer($('#room_' + self.currentContent)[0], {
                  backdrop: 'static',
                  title: 0,
                  toggleOnDblclick: true,
                  initialViewIndex: p.index(), // 设置默认打开当前图片
                  ready() {
-                     if (!g_room.isHideMessage()) {
+                     if (!self.isHideMessage()) {
                          getAction('room_toggleChatUI').click();
                      }
-                     g_room.initMenu('viewer');
+                     self.initMenu('viewer');
                  },
                  viewed() {
                      $('.navbar-fixed-bottom').css('zIndex', 2);
@@ -457,25 +635,25 @@
                  },
                  hide() {
                      $('#room_chat').removeClass('withViewer');
-                     g_room.viewer.destroy();
-                     delete g_room.viewer;
-                     g_room.initMenu(g_room.currentContent);
+                     self.viewer.destroy();
+                     delete self.viewer;
+                     self.initMenu(self.currentContent);
 
                  },
                  filter(image) {
                      return image.dataset.origin;
                  },
                  url(image) {
-                     return g_room.getImageUrl(image.dataset.origin);
+                     return self.getImageUrl(image.dataset.origin);
                  },
              });
-             g_room.viewer.targetImg = {
+             self.viewer.targetImg = {
                  md5: p.data('md5'),
                  img: p.find('img').data('origin')
              };
-             g_room.viewer.show();
+             self.viewer.show();
          },
-         'room_saveImg': (dom, action, params) => {
+         'room_saveImg': (dom, action) => {
              const openDialog = (url, md5) => {
                  var r = {};
                  r[md5] = {
@@ -485,9 +663,9 @@
                  g_database.showSaveDialog(r);
                  $(dom).removeClass('btn-primary').html(_l('已收集'));
              }
-             var data = g_room.getCuttentImage(dom);
+             var data = self.getCuttentImage(dom);
              if (data.url.startsWith('{host}')) { // 可以下载数据
-                 getImgToBase64(g_room.getImageUrl(data.url), base64 => {
+                 getImgToBase64(self.getImageUrl(data.url), base64 => {
                      openDialog(base64, data.md5);
                      // getMD5(dataURLtoFile(base64, 'file.jpg'), (md5) => {});
                  });
@@ -495,7 +673,7 @@
                  openDialog(data.url, data.md5);
              }
          },
-         'room_setCover': (dom, action, params) => {
+         'room_setCover': (dom, action) => {
              g_file.openDialog('room_setCover', false, {
                  cropper: { aspectRatio: 16 / 9 },
                  callback: () => {
@@ -503,7 +681,7 @@
                  },
              });
          },
-         'room_createRoom': (dom, action, params) => {
+         'room_createRoom': (dom, action) => {
              var vals = checkInputValue(['#input_room_name', '#input_room_maxPlayers']);
              if (!vals) return;
              var password = $('#input_room_password').val();
@@ -519,24 +697,25 @@
                  tags: $('#input_room_tag').val(),
                  desc: $('#input_room_desc').val(),
                  broadcast: $('#input_room_broad').val(),
-                 confirm: g_room.cache.confirmCreateRoom
+                 confirm: self.cache.confirmCreateRoom
              }
-             g_room.send({
+             toast(_l('创建中'));
+             self.send({
                  type: 'createRoom',
                  data: data
              })
          },
-         'room_joinRoom': (dom, action, params) => {
+         'room_joinRoom': (dom, action) => {
              var room = $(dom).parents('[data-room]').data('room');
              if(room == 'r18'){
                 if(!confirm(_l('年龄验证'))) return;
              }
-             g_room.requestJoinRoom(room);
+             self.requestJoinRoom(room);
          },
-         'room_addImgs': (dom, action, params) => {
+         'room_addImgs': (dom, action) => {
              g_file.openDialog(action.join(','), true);
          },
-         'room_sendImage': (dom, action, params) => {
+         'room_sendImage': (dom, action) => {
              g_file.openDialog('room_sendImage', true);
          },
      });

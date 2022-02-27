@@ -90,7 +90,7 @@ var g_database = {
             `).appendTo('#navbar-content');
 
 
-        registerAction('setFilter', (dom, action, params) => {
+        registerAction('setFilter', (dom, action) => {
             // hideSidebar();
             $('.active_text').removeClass('active_text')
             $(dom).addClass('active_text');
@@ -98,14 +98,14 @@ var g_database = {
         });
 
 
-        registerAction('downloadData', (dom, action, params) => {
+        registerAction('downloadData', (dom, action) => {
             if (isApp()) {
                 g_autojs.log('saveData');
             } else {
                 downloadData(getDataString(), 'PicManager_data.json');
             }
         });
-        registerAction('resetData', (dom, action, params) => {
+        registerAction('resetData', (dom, action) => {
             if (confirm('你確定重置吗？')) {
                 local_clearAll(confirm('是否保留图片目录?') ? ['config'] : []);
                 if (!isApp()) {
@@ -118,7 +118,7 @@ var g_database = {
         });
 
 
-        registerAction('loadFolder', (dom, action, params) => {
+        registerAction('loadFolder', (dom, action) => {
             // hideSidebar();
             g_database.loadFolder($(dom).attr('data-folder'));
         });
@@ -127,7 +127,7 @@ var g_database = {
             if (g_database.folder_rm.dialog) g_database.folder_rm.dialog.mobiscroll('hide');
         }
 
-        registerAction('folder_delete', (dom, action, params) => {
+        registerAction('folder_delete', (dom, action) => {
             hideFolder_rm();
             var folder = action[1] || g_database.folder_rm.folder;
             if (folder) {
@@ -140,12 +140,12 @@ var g_database = {
         });
 
 
-        registerAction('downloadUnsavedImages', (dom, action, params) => {
+        registerAction('downloadUnsavedImages', (dom, action) => {
             confirm1('此操作会尝试下载图库中的网络图片到本地，确定吗?(可能需要开启代理)', (value) => {
                 if (value) g_database.downloadUnsavedImages();
             });
         });
-        registerAction('folder_rename', (dom, action, params) => {
+        registerAction('folder_rename', (dom, action) => {
             hideFolder_rm();
             var folder = action[1] || g_database.folder_rm.folder;
             if (folder) {
@@ -153,7 +153,7 @@ var g_database = {
                 if (typeof(name) == 'string' && name.length) {
                     if (g_database.getFolder(name)) {
                         alert('名字已经存在!');
-                        return doAction(dom, action, params)
+                        return doAction(dom, action)
                     }
                     g_folders[folder].name = name;
                     local_saveJson('folders', g_folders);
@@ -162,7 +162,7 @@ var g_database = {
             }
         });
 
-        registerAction('folder_setGroup', (dom, action, params) => {
+        registerAction('folder_setGroup', (dom, action) => {
             hideFolder_rm();
 
             var folder = action[1] || g_database.folder_rm.folder;
@@ -246,7 +246,7 @@ var g_database = {
         });
 
 
-        registerAction('newFolder', (dom, action, params) => {
+        registerAction('newFolder', (dom, action) => {
             prompt1('创建新目录', (folder) => {
                 if (typeof(folder) == 'string' && folder.length) {
                     if (g_database.getFolder(folder)) {

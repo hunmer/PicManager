@@ -27,6 +27,7 @@
     "images": "^3.2.3",
     "node-storage": "^0.0.9",
     "request": "^2.88.2",
+    "superagent": "^7.1.1",
     "ws": "^8.4.2"
   },
   "build": {

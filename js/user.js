@@ -69,10 +69,10 @@ var g_user = {
 
         })
 
-        registerAction('user_uploadIcon', (dom, action, params) => {
+        registerAction('user_uploadIcon', (dom, action) => {
             g_file.openDialog('icon', false, { width: 50, quality: 0.5 });
         });
-        registerAction('user_setProfile', (dom, action, params) => {
+        registerAction('user_setProfile', (dom, action) => {
             var v = checkInputValue($('#user_input_name'));
             if (!v) return;
             var icon = $('#user_icon').attr('src');

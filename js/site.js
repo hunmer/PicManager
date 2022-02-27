@@ -31,10 +31,10 @@ var g_site = {
         </div>`).appendTo('.content-wrapper');
         
 
-        registerAction('site_select', (dom, action, params) => {
+        registerAction('site_select', (dom, action) => {
             g_site.loadSite($(dom).data('site'))
         });
-        registerAction('site_img_action', (dom, action, params) => {
+        registerAction('site_img_action', (dom, action) => {
             // todo 选择目录，统一搞一个接口把..
             var img = $(dom).parents('.grid-item').find('img');
             g_database.importImagesFromUrls(img.data('origin'), false);
@@ -45,7 +45,7 @@ var g_site = {
                 btn.parent().toggleClass('btn-primary btn-success');
             }
         });
-        registerAction('site_img_click', (dom, action, params) => {
+        registerAction('site_img_click', (dom, action) => {
             g_site.preview = new Viewer(dom, {
                 backdrop: 'static',
                 toolbar: 0,

@@ -177,7 +177,7 @@ var g_autojs = {
         }
 
 
-        registerAction('localFolder_remove', (dom, action, params) => {
+        registerAction('localFolder_remove', (dom, action) => {
             var path = $(dom).parent().prev().html();
             var i = g_config.clientData.paths.indexOf(path);
             if (i != -1) {
@@ -188,14 +188,14 @@ var g_autojs = {
         });
 
 
-        registerAction('dialogGallery_img_click', (dom, action, params) => {
+        registerAction('dialogGallery_img_click', (dom, action) => {
             $(dom).toggleClass('selected');
         });
-         registerAction('checkUpdate', (dom, action, params) => {
+         registerAction('checkUpdate', (dom, action) => {
            g_autojs.checkUpdate();
         });
         
-        registerAction('localFolder_list', (dom, action, params) => {
+        registerAction('localFolder_list', (dom, action) => {
             var modal = modalOpen({
                 id: 'modal-custom',
                 type: 'localFolder',

@@ -10,7 +10,7 @@ var g_tag = {
         }
         g_tags = local_readJson('tags', data);
 
-        registerAction('tagGroup_delete', (dom, action, params) => {
+        registerAction('tagGroup_delete', (dom, action) => {
             var parent = $(dom).parents('[data-group]');
             var group = parent.attr('data-group');
             confirm1('确定删除吗?', (value) => {
@@ -42,7 +42,7 @@ var g_tag = {
         });
 
         
-        registerAction('tag_toGroup', (dom, action, params) => {
+        registerAction('tag_toGroup', (dom, action) => {
             var target = $('[data-group="'+$(dom).text()+'"]');
             if(target.length){
                 $(target).addClass('div-border')[0].scrollIntoViewIfNeeded();
@@ -50,7 +50,7 @@ var g_tag = {
             }
         });
 
-        registerAction('tagGroup_add', (dom, action, params) => {
+        registerAction('tagGroup_add', (dom, action) => {
             prompt1('输入标签组', (group) => {
                 if (typeof(group) == 'string' && group.length) {
                     g_tags.groups[group] = {
@@ -62,7 +62,7 @@ var g_tag = {
             });
 
         });
-        registerAction('tagGroup_tagClick', (dom, action, params) => {
+        registerAction('tagGroup_tagClick', (dom, action) => {
             var tag = $(dom).text();
             var checked = $(dom).toggleClass('badge-primary').hasClass('badge-primary');
             if ($('#modal-custom').attr('data-type') == 'tags') {
@@ -73,18 +73,18 @@ var g_tag = {
         });
 
         // 当前图片标签列表的标签
-        registerAction('tagClick', (dom, action, params) => {
+        registerAction('tagClick', (dom, action) => {
             g_tag.addTagToShowing($(dom).text(), !$(dom).hasClass('badge-primary'));
 
         });
 
         // 搜索栏的标签
-        registerAction('tagAddFromSearch', (dom, action, params) => {
+        registerAction('tagAddFromSearch', (dom, action) => {
             g_tag.addTagToShowing($(dom).text(), !$(dom).hasClass('badge-primary'));
         });
 
         
-        registerAction('tagGroup_rename', (dom, action, params) => {
+        registerAction('tagGroup_rename', (dom, action) => {
             var parent = $(dom).parents('[data-group]');
             var group = parent.attr('data-group');
             prompt1({title: '改名', html: group}, (name) => {
@@ -103,7 +103,7 @@ var g_tag = {
                 }
             });
         });
-        registerAction('addTagToGroup', (dom, action, params) => {
+        registerAction('addTagToGroup', (dom, action) => {
             var parent = $(dom).parents('[data-group]');
             var group = parent.attr('data-group');
             prompt1('添加标签到 ' + group, (tag) => {

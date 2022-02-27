@@ -5,21 +5,22 @@ var g_music = {
     // api: './api/',
     init: function() {
         var self = this;
-        registerAction('music_click', (dom, action, params) => {
+        registerAction('music_click', (dom, action) => {
             self.playIndex(dom.dataset.index);
         });
-        registerAction('music_list', (dom, action, params) => {
+        registerAction('music_list', (dom, action) => {
             self.showList();
         });
-        registerAction('music_prev', (dom, action, params) => {
+        registerAction('music_prev', (dom, action) => {
             self.prev();
         });
-        registerAction('music_next', (dom, action, params) => {
+        registerAction('music_next', (dom, action) => {
             self.next();
         });
-        registerAction('music_parse', (dom, action, params) => {
+        registerAction('music_parse', (dom, action) => {
             var data = JSON.parse(dom.dataset.json);
             const fun = () => {
+                self.params = data; // 暂时保存 以免玩家重复加载
                 self.parsePlaylist(data, false);
                 g_room.send({
                     type: 'startPlayList',
@@ -36,7 +37,7 @@ var g_music = {
                 fun();
             }
         });
-        registerAction('music_toggle', (dom, action, params) => {
+        registerAction('music_toggle', (dom, action) => {
             if (!self.audio) return toastPAlert(_l('没有播放歌曲'), 'alert-danger');
             if (self.audio.paused) {
                 self.audio.play()
@@ -120,6 +121,7 @@ var g_music = {
                 // var url = 'https://music.163.com/#/playlist?id=897784673';
                 var params = self.getParmsFromUrl(url);
                 if (!params) return alert1(_l('暂不支持'));
+                toast(_l('解析中'));
                 self.parsePlaylist(params);
             }
         });
@@ -127,6 +129,7 @@ var g_music = {
 
     parsePlaylist: function(params, show = true) {
         var self = this;
+        getAction('music_player_click').find('.badge').addClass('hide'); // 有解析后不显示推荐
         $.getJSON(this.api + `music.php?server=${params.source}&type=playlist&withDetail=1&id=${params.id}`, function(json, textStatus) {
             if (textStatus != 'success') return toastPAlert(_l('错误'), 'alert-danger');
             self.clearAll();

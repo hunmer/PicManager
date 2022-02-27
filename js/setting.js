@@ -5,7 +5,7 @@ function setZoom(num){
 var g_setting = {
     init: function() {
         setZoom( g_config.zoom || 100);
-        registerAction('zoom', (dom, action, params) => {
+        registerAction('zoom', (dom, action) => {
             var zoom = g_config.zoom || 100;
             confirm1(`
                 <div id="range_zoom" class="${g_config.darkMode ? 'bg-dark text-light' : ''}" mbsc-enhance>
@@ -20,7 +20,7 @@ var g_setting = {
                 }
             });
         });
-        registerAction('setting', (dom, action, params) => {
+        registerAction('setting', (dom, action) => {
             g_user.modal();
         });
         if(g_cache.isApp){

@@ -1,3 +1,21 @@
+#toast {
+    display: none;
+    position: fixed;
+    bottom: 10%;
+    width: 100%;
+    text-align: center;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+#toast span {
+    padding: 5px;
+    margin: 0 auto;
+    border-radius: 12px;
+    color: var(--lm-base-text-color);
+    background-color: var(--gray-color-light);
+}
+
 .users-icon {
     display: inline-flex;
     height: 40px;

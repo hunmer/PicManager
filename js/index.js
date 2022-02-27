@@ -178,7 +178,7 @@ $(function() {
             }
         })
         .on('click', '[data-action]', function(event) {
-            doAction(this, this.dataset.action);
+            doAction(this, this.dataset.action, event);
             if(['button', 'a'].includes(this.nodeName.toLowerCase())){
              addAnimation($(this), 'rubberBand');
             }
@@ -234,6 +234,7 @@ $(function() {
         var w = $(window).width();
         var h = $(window).height();
         $(':root').css({
+            '--mh-40': h * 0.40 + 'px',
             '--mh-60': h * 0.60 + 'px',
             '--mw-80': w * 0.80 + 'px',
         });
@@ -272,16 +273,19 @@ $(function() {
             room: _GET['r'],
             password: _GET['p'],
         }
-        toastPAlert('正在加入房间中...请稍等', 'alert-primary');
-        showContent('room');
+        delete _GET['r'];
+        delete _GET['p'];
+        console.log(g_room.cache.targetRoom);
+        //showContent('room');
     }else{
-        //  if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
+         //  if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
         //     g_database.loadFolder(g_config.lastOpenFolder);
         //     return;
         // }
         // $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
-        showContent('room');
     }
+        showContent('room');
+
 });
 
 function resizeCustomScroll(){
@@ -304,10 +308,10 @@ function isMobile() {
     }
 }
 
-function doAction(dom, action, params) {
+function doAction(dom, action, event) {
     var action = action.split(',');
     if (g_actions[action[0]]) {
-        g_actions[action[0]](dom, action, params);
+        g_actions[action[0]](dom, action, event);
     }
     switch (action[0]) {
         case 'showContent':

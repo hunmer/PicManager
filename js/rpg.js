@@ -33,10 +33,10 @@ var g_rpg = {
         };
         g_shops = d;
         // g_shops = local_readJson('shops', d);
-        registerAction('uploadImage', (dom, action, params) => {
+        registerAction('uploadImage', (dom, action) => {
                 g_file.openDialog('camera', true);
         });
-        registerAction('uploadImagefromNetwork', (dom, action, params) => {
+        registerAction('uploadImagefromNetwork', (dom, action) => {
             // 服务器IP 
             $.getJSON('http://127.0.0.1:41596/getServerIp', function(json, textStatus) {
                 if (textStatus == 'success' && json.ip) {
@@ -77,7 +77,7 @@ var g_rpg = {
             // 生成二维码
 
         });
-        registerAction('rpg_addExpFromImage', (dom, action, params) => {
+        registerAction('rpg_addExpFromImage', (dom, action) => {
             var val = g_rpg.dialogData['all'].getValue(true);
             g_rpg.addValue({ exp: val, ability: 10 });
 

@@ -15,7 +15,10 @@ const ERR_ACCOUNT_PROTECT = 14;
 const ERR_WRONG_PASSWORD = 15;
 const ERR_NAME_ALREADY_EXISTSED = 16;
 const ERR_ROOM_PLAYER_MAXED = 17;
-
+const SUCC_EMBED_DELETED = 18;
+const SUCC_EMBED_SHARED = 19;
+const ERR_EMBED_NOT_EXISTS = 20;
+const ERR_EMBED_ALREADY_EXISTSED = 21;
 var g_room = {
     host: '//picmanager-room.glitch.me',
     // host: '//192.168.31.77:8000',
@@ -60,7 +63,7 @@ var g_room = {
                         </div>
                     </div>
 
-                <div id="room_list" class="row animated bounceIn pb-100" animated='bounceIn'>
+                <div id="room_list" class="row animated bounceIn" style="padding-bottom: 200px;" animated='bounceIn'>
                 </div>
 
                 <div id="room_main" class="animated fadeIn" animated='fadeIn' style="width: 100%;display: none;">
@@ -69,6 +72,7 @@ var g_room = {
                       <div class="btn-group mx-auto w-full">
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="gallery">${_l('参考图')}</button>
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="photo">${_l('照片')}</button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="embed">${_l('分享')}</button>
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="game">${_l('游戏')}</button>
                       </div>
                     </div>
@@ -83,6 +87,10 @@ var g_room = {
                             <div id="room_photo">
                             </div>
                         </div>
+                        <div id="room_subContent_embed" class="room_subContent hide animated fadeIn" animated='fadeIn'>
+                                <div id="room_embed" class="hide1 w-full" style="height: var(--mh-40);min-height: 250px;display: inline-grid;align-content: center;"></div>
+                                <div id="room_sharedList"></div>
+                            </div>
                             <div id="room_subContent_game" class="room_subContent hide animated fadeIn" animated='fadeIn'>
                             </div>
                     </div>
@@ -94,10 +102,11 @@ var g_room = {
                 bottom: 55px;
                 max-height: 40%;
                 height: auto;">
-                    <div class="dropdown dropleft" id="music_player">
-                        <a class="btn btn-danger p-0 rounded-circle" style="width: 35px;height: 35px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <div class="dropdown dropleft" id="music_player" data-action="music_player_click">
+                        <a class="btn btn-danger p-0 rounded-circle position-relative" style="width: 35px;height: 35px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-music fa-2x" style="line-height: 35px;margin-left: 1px;" aria-hidden="true"></i>
                             <img class="musicCocver w-full hide" style="border-radius: 50%;">
+                            <span class="badge badge-secondary badge-pill hide" style="position:absolute;right:-5px;bottom:-5px;">!</span>
                         </a>
                       <div class="dropdown-menu dropdown-menu-up w-200 shadow">
                         <div class="textScroll d-relative" >
@@ -145,14 +154,14 @@ var g_room = {
                 </div>`;
             },
             dropDownHtml: () => {
+                // <a class="dropdown-item" data-action="">${_l('信息')}</a>
                 return `
                 <div class="dropdown" id="dropdown_room">
                    <span class="badge-group" role="group" data-toggle="dropdown">
                       <a id="room_time" class="badge badge-primary badge-pill">00:00</a>
                       <a class="badge badge-secondary badge-pill"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>
                     </span>
-                    <div class="dropdown-menu dropdown-menu-center pr-10">
-                        <a class="dropdown-item" data-action="">${_l('信息')}</a>
+                    <div class="dropdown-menu dropdown-menu-right pr-10">
                         <a class="dropdown-item" data-action="room_admin">${_l('管理')}</a>
                         <a class="dropdown-item" data-action="room_share">${_l('分享')}</a>
                         <div class="dropdown-divider"></div>
@@ -168,12 +177,20 @@ var g_room = {
                 // g_menu.toggleMenu('#menu_main', true);
                 $('#menu_main').hide();
                 g_room.init();
-                if (! g_config.firstRoom) { // 第一次进入房间系统
-                    g_room.showGuide();
-                }
             },
             overflowY: true,
         });
+    },
+    step: function() {
+        if (!g_config.firstRoom) { // 第一次进入房间系统
+            g_room.showGuide();
+        } else
+        if (g_room.cache.targetRoom) {
+            var t = g_room.cache.targetRoom;
+            g_room.requestJoinRoom(t['room'], t['password']);
+            delete g_room.cache.targetRoom;
+            toast(_l('加入房间中'));
+        }
     },
     disconect: function() {
         // todo 
@@ -239,10 +256,10 @@ var g_room = {
             $(`
             <div class="toolbar text-center hide" id="toolbar_room">
                 <div class="row w-full" style="align-items: center;">
-                    <div id="room_title" class="col-3 text-left textScroll">
+                    <div id="room_title" data-action="room_broadcast" class="col-3 text-left textScroll">
                         <span class="text"></span>
                     </div>
-                   <div id="room_players" data-action="room_playerList" class="col-5 pl-10 pr-10 hideScroll w-full users-icon" style="align-items: center;">
+                   <div id="room_players" class="col-5 pl-10 pr-10 hideScroll w-full users-icon" style="align-items: center;">
                     </div>
                 </div>
             </div>
@@ -251,6 +268,7 @@ var g_room = {
             self.setRoomList();
             self.toggleChat(true);
             self.connect();
+
         })
 
     },
@@ -263,14 +281,18 @@ var g_room = {
                         { action: "room_countdown", class: "btn-primary", icon: "fa-hourglass-start" },
                         { action: "room_addImgs,gallery", class: "btn-success", icon: "fa-plus" }
                     ];
-                    if (g_room.getData('isOwner')) {
-                        data.unshift({ action: "room_editRoom,1", class: "btn-primary", icon: "fa-ellipsis-h" });
-                    }
+                    // if (g_room.getData('isOwner')) {}
                     break;
 
                 case 'photo':
                     data = [
                         { action: "room_addImgs,photo", class: "btn-success", icon: "fa-plus" }
+                    ];
+                    break;
+
+                case 'embed':
+                    data = [
+                        { action: "room_addshareEmbed", class: "btn-success", icon: "fa-plus" }
                     ];
                     break;
 
@@ -324,6 +346,8 @@ var g_room = {
                     icon: g_config.user.icon
                 }
             });
+            if (self.ping) clearTimeout(self.ping);
+            self.ping = setInterval(() => socket.send('ping'), 1000 * 30);
         }
 
         socket.onmessage = (e) => {
@@ -334,9 +358,9 @@ var g_room = {
             // todo 退出房间
             self.setConnecting(true);
             var div = getAction('room_listRoom');
-            if(div){
-                 div.find('img').attr('src', 'res/sticker/1/fail.png');
-                  div.find('h4').html(_l('点我可以刷新哦'));
+            if (div) {
+                div.find('img').attr('src', 'res/sticker/1/fail.png');
+                div.find('h4').html(_l('点我可以刷新哦'));
             }
             clearTimeout(self.reconnect);
             self.reconnect = setTimeout(() => self.connect(), 1000 * 3);
@@ -358,7 +382,7 @@ var g_room = {
         data.uuid = this.getUUID();
         data.room = this.currentRoom;
         data.key = g_config.roomKey;
-        if(data.data == undefined) data.data = {};
+        if (data.data == undefined) data.data = {};
         console.log(data);
         if (this.isConnected()) {
             this.connection.send(JSON.stringify(data));
@@ -390,13 +414,13 @@ var g_room = {
     },
     initPlayersIcon: function(players) {
         if (!players) players = this.getData('players');
-        $('#room_players').html(this.getPlayersIcon(players));
+        $('#room_players').html(this.getPlayersIcon(players, 'room_playerList'));
     },
-    getPlayersIcon: (players) => {
+    getPlayersIcon: (players, action) => {
         var h = '';
         for (var p in players) {
             h += `
-                <img src="${g_room.getImageUrl(players[p].icon || players[p])}" class="rounded-circle user-icon-small">
+                <img ${action ? `data-action="${action}"` : ''} src="${g_room.getImageUrl(players[p].icon || players[p])}" class="rounded-circle user-icon-small">
             `
         }
         return h;
@@ -606,6 +630,56 @@ var g_room = {
         var pls = this.roomData.players;
         return pls[name] ? g_room.getImageUrl(pls[name].icon) : './img/user.jpg';
     },
+
+    parseEmbedMsg: function(d, key) {
+        if (key == undefined) key = d.source + '_' + d.time;
+        if ($('[data-embed="' + key + '"]').length) return '';
+        // var embed;
+        // if (includes(url, ['.bilibili.com', '/video/'])) {
+        //     embed = 'player.bilibili.com/player.html?bvid='+cutString(url + '/', '/video/', '/')；
+        // }
+        //   ${embed ? `<a class="btn btn-secondary" data-action="room_loadEmbed,${embed}">${_l('弹幕')}</a>` : ''}
+
+
+        return `
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-3" data-embed="${key}"> 
+              <div class="card p-0 position-relative">
+                <img class="user-icon rounded-circle" src="${d.icon}" alt="${d.player}" style="position: absolute;left: 8px;top:8px;">
+                <img src="${proxyImg(d.cover)}" class="img-fluid rounded-top" alt="${d.title}">
+                <div class="content">
+                  <h2 class="content-title">
+                    ${d.title}
+                  </h2>
+                  <p class="text-muted">
+                    ${d.uploader ? `<span class="badge badge-secondary mr-10">${d.uploader}</span>` : ''}${d.desc}
+                  </p>
+                  <div class="text-right"> 
+                    ${d.player == me() || g_room.isRoomMaster() ? `<a class="btn btn-danger" data-action="room_deleteEmbed"><i class="fa fa-trash-o" aria-hidden="true"></i></a>` : ''}
+                    <a class="btn" onclick="window.open('${d.url}', '_blank')"><i class="fa fa-external-link" aria-hidden="true"></i></a>
+                    <a class="btn btn-success" onclick="window.open('${d.src}', '_blank')"><i class="fa fa-download" aria-hidden="true"></i></a>
+                    <a class="btn btn-primary" data-action="room_loadEmbed"><i class="fa fa-play" aria-hidden="true"></i></a>
+                  </div>
+                </div>
+              </div>
+            </div>`
+    },
+    addEmbed: function(item) {
+        var key = item.source + '_' + item.time;
+        var html = this.parseEmbedMsg(item);
+        if (!g_room.roomData.media.embed) g_room.roomData.media.embed = {};
+        if (html) {
+            g_room.roomData.media.embed[key] = item;
+            $('#room_sharedList').append(html);
+        }
+    },
+    parseEmbedList: function(d) {
+        g_room.roomData.media.embed = d;
+        var h = '';
+        for (var id in d) {
+            h += this.parseEmbedMsg(d[id]);
+        }
+        $('#room_sharedList').html(h);
+    },
     setRoomList: function(d) {
         // TODO 当前正在进行的游戏，以及游戏标签
         var h = '';
@@ -646,14 +720,14 @@ var g_room = {
                                 </span>
                             </div>
                             ` + (() => {
-                                if (!r.tags) return '';
-                                var s = '<div>';
-                                for (var tag of r.tags) s += `
+                    if (!r.tags) return '';
+                    var s = '<div>';
+                    for (var tag of r.tags) s += `
                                     <span class="badge ml-5 mt-5">
                                         <i class="fa fa-hashtag text-primary mr-5" aria-hidden="true"></i>${tag}
                                     </span>`;
-                                return s + '</div>';
-                            })() + `
+                    return s + '</div>';
+                })() + `
                             <div class="d-flex mt-10">
                                 <div>
                                     <span class="badge ml-5 mt-5">
@@ -672,10 +746,13 @@ var g_room = {
                     </div>
                 `;
             }
+            if (h == '') h = `<div data-action="room_editRoom" class="text-center w-full">
+                <img src="res/sticker/1/kiss.png" class="w-half">
+                <h4>${_l('快创建房间呀')}</h4></div>`;
         } else {
-            h = `<div data-action="room_listRoom" class="text-center">
+            h = `<div data-action="room_listRoom" class="text-center w-full">
                 <img src="res/sticker/1/loading.png" class="w-half">
-                <h4>${_l('点我可以刷新哦')}</h4>
+                <h4>${_l('点我可以刷新哦')}</h4></div>
             `;
         }
         $('#room_main').hide();
@@ -688,6 +765,7 @@ var g_room = {
             halfmoon.deactivateAllDropdownToggles();
             $('.content-wrapper').css('overflowY', 'auto');
             if (g_room.isConnected()) this.send({ type: 'exit', data: data });
+            getAction('music_player_click').find('.badge').addClass('hide');
             this.setRoomList();
             delete g_room.roomData;
             $('#room_main').hide();
@@ -719,9 +797,9 @@ var g_room = {
     },
     parseChatMessage: function(d) {
         var content = d.player != undefined ? d.player + ' : ' : '';
-        if(d.meta){
+        if (d.meta) {
             var data = d.meta.data;
-            switch(d.meta.type){
+            switch (d.meta.type) {
                 case 'musicList':
                     d.msg = `
                     <div class="mt-10 bg-dark-light">
@@ -767,6 +845,7 @@ var g_room = {
         </div>`;
     },
     joinRoom: function(room, d) {
+        hideToast();
         this.joinTime = new Date().getTime();
         this.unread = 0;
         this.currentRoom = room;
@@ -779,11 +858,11 @@ var g_room = {
         }
         $('#msg_list').html(h);
         g_room.msg_toBottom();
-
+        // # #room_sharedList
         $('#room_gallery, #room_photo, #room_subContent_game').html(`
             <img src="res/sticker/1/shan.png" class="d-block mx-auto">
             <h4 class="text-center">${_l('什么都没有')}</h4>
-        `);
+        `); // 点击上传图片？
 
         var inLobby = room == 'chat';
         g_room.toggleChat(inLobby || h == '');
@@ -794,34 +873,17 @@ var g_room = {
                 g_room.leaveRoom();
             }, 1000 * 60 * 15);
 
-            var t = g_room.cache.targetRoom;
-            if (t) {
-                g_room.requestJoinRoom(t['room'], t['password']);
-                delete g_room.cache.targetRoom;
-            }
+            g_room.step();
             return;
         }
-        if(d.isFirstJoin){
-            // if(d.broadcast){ // 公告
-            //     g_room.showBroadcast(d.broadcast);
-            // }
-
-            // if(d.media){ // 特殊数据
-            //      var music = d.media.music;
-            //     if(music){ // 房主推荐音乐
-            //         confirm1({
-            //             title: _l('房主的推荐歌单'),
-            //             html: `
-            //             <div class="h-400 text center textScroll">
-            //              <img src="${music.detail.cover}" class="w-full rounded-top">
-            //              <h4 class="text">${music.detail.name}</h4>
-            //             </div>
-            //             `,
-            //         }, play => {
-            //             if(play) g_music.parsePlaylist(music, false);
-            //         })
-            //     }
-            // }
+        delete g_room.cache.targetRoom;
+        if (d.isFirstJoin) {
+            if (d.broadcast) { // 公告
+                g_room.showBroadcast(d.broadcast);
+            }
+            if (d.media.music) { // 特殊数据
+                getAction('music_player_click').find('.badge').removeClass('hide');
+            }
         }
         window.history.pushState(null, null, `?r=${room}`);
 
@@ -841,13 +903,14 @@ var g_room = {
 
         g_room.reviceImgs('room_gallery', d.imgs);
         g_room.reviceImgs('room_photo', d.photos);
+        d.media.embed && g_room.parseEmbedList(d.media.embed);
         if (d.game) {
             g_room.startGame(d.game, d.data)
         }
 
         $('.content-wrapper').css('overflowY', 'hidden'); // 自定义滚动内容
     },
-    showBroadcast: function(msg){
+    showBroadcast: function(msg) {
         alert1({
             title: _l('房间公告'),
             html: msg
@@ -898,6 +961,7 @@ var g_room = {
                 r = [_l('房主的账号受到特殊保护'), 'alert-danger']
                 break;
             case SUCC_IMAGE_DELETED:
+            case SUCC_EMBED_DELETED:
                 r = [_l('成功删除'), 'alert-success']
                 break;
             case ERR_FILE_NOT_EXISTS:
@@ -917,6 +981,7 @@ var g_room = {
                 g_room.leaveRoom();
                 break;
             case ERR_ROOM_NOT_EXISTS:
+            case ERR_EMBED_NOT_EXISTS:
                 r = [_l('对象不存在'), 'alert-danger']
                 break;
             case SUCC_ROOM_SETTING_APPLY:
@@ -928,6 +993,12 @@ var g_room = {
                 break;
             case ERR_ROOM_PLAYER_MAXED:
                 r = [_l('房间满人'), 'alert-danger']
+                break;
+            case SUCC_EMBED_SHARED:
+                r = [_l('成功分享'), 'alert-success']
+                break;
+            case ERR_EMBED_ALREADY_EXISTSED:
+                r = [_l('对象已存在'), 'alert-danger']
                 break;
             case CONFIRM_CREATE_ROOM:
                 return confirm1(_l('是否关闭旧房间', d.params), sure => {
@@ -1087,7 +1158,7 @@ var g_room = {
     },
 
     requestJoinRoom: function(room, password) {
-        toastPAlert(_l('加入中'), 'alert-primary');
+        toast(_l('加入中'));
         g_room.send({
             type: 'joinRoom',
             data: {
@@ -1104,48 +1175,41 @@ var g_room = {
         var list = [
             `<div class="text-center">
         {img}
-        简单来说就是一个画画自习室。
-        可以一边画画一边与其他画友交流的小房间，让动笔变得没那么艰难与无聊。
+        画画自习室。边画边交流，让动笔变得没那么无聊。
     </div>`,
 
             `<div class="text-center">
         {img}
-        成员们都可以上传各自参考图，也可以进行计时训练。
-        甚至可以一起在线标注图片或者进行指定主题创作
+        可以上传参考图，也可以计时训练。
     </div>`,
 
             `<div class="text-center">
         {img}
-        创作完后你也可以发照片,
-        成员们可以帮你把错误的地方标注出来，进行更改
+        可以在线标注图片或者进行指定主题创作
     </div>`,
 
             `<div class="text-center">
         {img}
-        每完成一张画后,我们都帮你记录下来。
-        你引用的图片，花费的时间，设置的标签，以及别人或者自己的评价
+        记录绘画数据，保存素材图片
     </div>`,
 
             `<div class="text-center">
         {img}
-        它更是一个你的图片管理库,你可以保存别人的图也可以导入自己的图。
-        房间系统只是冰山一角(累哭)
-    </div>`,
-
-            `<div class="text-center">
-        {img}
-        总之，是否能够好好利用还是看个人。
-        当然，你有什么好的想法也可以跟<a href="" target="_blank">我们</a>进行反馈。
+        推荐下载APP或者用主流浏览器打开
     </div>`,
         ];
 
-        for(var i in list) preloadImage('./res/guide/'+i+'.png');
+        for (var i in list) preloadImage('./res/guide/' + i + '.png');
         var modal;
         var page = 0;
         var max = list.length - 1;
         const next = (add) => {
             if (add < 0 && page == 0) return;
-            if (add > 0 && page == max) return halfmoon.toggleModal('modal-custom');
+            if (add > 0 && page == max) {
+                halfmoon.toggleModal('modal-custom');
+                g_room.step();
+                return;
+            }
             page += add;
             if (!modal) {
                 var modal = modalOpen({
@@ -1176,7 +1240,15 @@ var g_room = {
             return page;
         }
         next(0);
-    }
+    },
+
+    parseVideoUrl: function(url) {
+        if (!isEmpty(url) && (url.startsWith('http://') || url.startsWith('https://'))) {
+            toastPAlert(_l('请稍等'), 'alert-primary');
+            g_room.send({ type: 'fetchVideo', data: { url: url } });
+        }
+    },
+
 
 }
 // g_room.preload();

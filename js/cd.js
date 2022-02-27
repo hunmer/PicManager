@@ -24,7 +24,7 @@ var g_cd = {
             }
         }
         g_cds = local_readJson('times', data);
-        registerAction('history_newNote', (dom, action, params) => {
+        registerAction('history_newNote', (dom, action) => {
             var data = g_cd.getOpts('image');
             if (data) {
                 // 如果不再图片页则点击跳转
@@ -45,11 +45,11 @@ var g_cd = {
             }
         });
 
-        registerAction('history_view', (dom, action, params) => {
+        registerAction('history_view', (dom, action) => {
             g_cd.openDialog_detail(g_database.showingImage);
         });
 
-        registerAction('history_viewNotes', (dom, action, params) => {
+        registerAction('history_viewNotes', (dom, action) => {
             var key = $(dom).parents('[data-time]').data('time');
             var data = g_cds[key];
             var h = '';
@@ -58,7 +58,7 @@ var g_cd = {
             }
             alert(h || '没有数据!');
         });
-        registerAction('history_save', (dom, action, params) => {
+        registerAction('history_save', (dom, action) => {
             confirm1('结束计时吗?',  (value) => {
                 if (!value) return;
                 confirm1('是否保存计时?', async (value) => {
@@ -73,7 +73,7 @@ var g_cd = {
             });
         });
 
-        registerAction('history_remove', (dom, action, params) => {
+        registerAction('history_remove', (dom, action) => {
             confirm1('是否删除?', (value) => {
                 if (value) {
                     var parent = $(dom).parents('[data-time]');
@@ -85,7 +85,7 @@ var g_cd = {
             })
         });
 
-        registerAction('timer_start', (dom, action, params) => {
+        registerAction('timer_start', (dom, action) => {
             g_cd.startImageTimer();
         });
     },

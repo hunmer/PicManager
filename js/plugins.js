@@ -26,7 +26,7 @@ var g_plugins = {
 
 
         this.loadScripts(() => {
-        	 registerAction('loadPlugin', (dom, action, params) => {
+        	 registerAction('loadPlugin', (dom, action) => {
         	 	$('[data-plugin].text-primary').removeClass('text-primary');
         	 	dom.classList.add('text-primary');
         	 	doAction(dom, 'loadPlugin_'+dom.dataset.plugin)

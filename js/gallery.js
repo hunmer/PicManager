@@ -200,17 +200,17 @@ var g_gallery = {
         }
 
 
-        registerAction('switchDetailBar', (dom, action, params) => {
+        registerAction('switchDetailBar', (dom, action) => {
             g_gallery.switchDetailBar();
         });
-        registerAction('switchImageTools', (dom, action, params) => {
+        registerAction('switchImageTools', (dom, action) => {
             var show = $(dom).toggleClass('text-primary').hasClass('text-primary');
             $('#toolbar_pic_items').css('display', show ? 'inherit' : 'none')
             $('#badge_cd').toggleClass('hide1', show || !g_cd.getOpts('image'));
         });
 
 
-        registerAction('errorImages', (dom, action, params) => {
+        registerAction('errorImages', (dom, action) => {
             var h = ``;
             for (var md5 of g_gallery.errorImgs) {
                 h += `
@@ -240,7 +240,7 @@ var g_gallery = {
                 }
             });
         });
-        registerAction('img_share', async (dom, action, params) => {
+        registerAction('img_share', async (dom, action) => {
             if(g_room.isConnected()){
                 var doms = g_gallery.getSelecteImages(dom);
                 const fun = async (type) => {
@@ -288,14 +288,14 @@ var g_gallery = {
             }
             g_gallery.showMenu(false);
         });
-        registerAction('mulit_select', (dom, action, params) => {
+        registerAction('mulit_select', (dom, action) => {
             $(dom).toggleClass('btn-primary');
         });
 
 
 
 
-        registerAction('img_setFolder', async (dom, action, params) => {
+        registerAction('img_setFolder', async (dom, action) => {
             var h = '';
             var dialog = mobiscroll_($('#mobi_div').html(mobiscrollHelper.buildGroupSelect({
                 id: '',
@@ -331,7 +331,7 @@ var g_gallery = {
             if (g_cache.showing == 'detail') back();
         });
 
-        registerAction('img_delete', (dom, action, params) => {
+        registerAction('img_delete', (dom, action) => {
             if (dom.tagName != 'IMG') { // 按钮触发删除
                 dom = $('.grid-item[data-md5="' + g_gallery.rmMd5 + '"] img');
             }
@@ -349,44 +349,44 @@ var g_gallery = {
             if (g_cache.showing == 'detail') back();
         });
 
-        registerAction('openLink', (dom, action, params) => {
+        registerAction('openLink', (dom, action) => {
             var url = $('#detail_link').val();
             if (url != '') {
                 window.open(url, '_blank');
             }
         });
 
-        registerAction('tagImage', (dom, action, params) => {
+        registerAction('tagImage', (dom, action) => {
             g_tag.openDialog(g_gallery.rmMd5 || g_database.showingImage);
             g_gallery.showMenu(false);
         });
 
-        registerAction('markImage', (dom, action, params) => {
+        registerAction('markImage', (dom, action) => {
             g_mark.openDialog(g_database.showingImage);
             g_gallery.showMenu(false);
         });
-        registerAction('flipX', (dom, action, params) => {
+        registerAction('flipX', (dom, action) => {
             _viewer.scaleX(_viewer.imageData.scaleX == -1 ? 1 : -1);
         });
 
-        registerAction('flipY', (dom, action, params) => {
+        registerAction('flipY', (dom, action) => {
             _viewer.scaleY(_viewer.imageData.scaleY == -1 ? 1 : -1);
         });
 
-        registerAction('rotateLeft', (dom, action, params) => {
+        registerAction('rotateLeft', (dom, action) => {
             _viewer.rotate(-25);
         });
 
-        registerAction('rotateRight', (dom, action, params) => {
+        registerAction('rotateRight', (dom, action) => {
             _viewer.rotate(25);
         });
 
-        registerAction('resetViewer', (dom, action, params) => {
+        registerAction('resetViewer', (dom, action) => {
             _viewer.reset();
         });
 
 
-        registerAction('gallery_img_click', (dom, action, params) => {
+        registerAction('gallery_img_click', (dom, action) => {
             if (getAction('mulit_select').hasClass('btn-primary')) {
                 return $(dom).toggleClass('img_selected')
             }
@@ -455,7 +455,7 @@ var g_gallery = {
             }), 'flipInX', () => {});
         });
 
-        registerAction('openViewer', (dom, action, params) => {
+        registerAction('openViewer', (dom, action) => {
             g_gallery.previewViewer = new Viewer(dom, {
                 backdrop: 'static',
                 toolbar: 0,

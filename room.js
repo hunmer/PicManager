@@ -15,6 +15,10 @@ const ERR_ACCOUNT_PROTECT = 14;
 const ERR_WRONG_PASSWORD = 15;
 const ERR_NAME_ALREADY_EXISTSED = 16;
 const ERR_ROOM_PLAYER_MAXED = 17;
+const SUCC_EMBED_DELETED = 18;
+const SUCC_EMBED_SHARED = 19;
+const ERR_EMBED_NOT_EXISTS = 20;
+const ERR_EMBED_ALREADY_EXISTSED = 21;
 
 const cloneDeep = require('clone-deep');
 var express = require('express');
@@ -25,6 +29,7 @@ var path = require('path');
 var crypto = require('crypto');
 var request = require('request');
 var images = require("images");
+var superagent = require('superagent');
 
 walkSync('./saves', file => {
     fs.unlinkSync(file);
@@ -57,6 +62,19 @@ app.use(function(req, res, next) {
     }
 })
 app.use(express.static(__dirname));
+app.get('/proxy', function(req, res) {
+    if (!req.query.url) {
+        res.writeHead(505);
+        res.end();
+        return;
+    }
+    var sreq = superagent.get(req.query.url)
+        // .proxy('http://127.0.0.1:1080')
+        .pipe(res)
+    // .on('end', function(){
+    //     console.log('done');
+    // });
+});
 
 var g_cache = {
     timer: {},
@@ -82,6 +100,16 @@ wss.on('connection', function connection(ws) {
         }
     });
 });
+//fetchVideo('https://alltubedownload.net/json?url=https://www.bilibili.com/video/BV1u4411K7KQ/?p=2');
+function fetchVideo(ws, url) {
+    if (typeof(url) == 'string' && url.startsWith('http://') || url.startsWith('https://')) {
+        request.get('https://alltubedownload.net/json?url=' + url, function(err, res, body) {
+            if (err === null && res && res.statusCode == 200) {
+                sendData(ws, { type: 'videoDetail', data: body })
+            }
+        });
+    }
+}
 
 function getMd5(str) {
     return crypto.createHash('md5').update(str).digest("hex")
@@ -211,7 +239,6 @@ function onMessage(msg, ws) {
         }
 
         _room.updateLobby(ws);
-
         // _room.joinRoom('chat', '', ws);
         setTimeout(() => {
             _room.joinRoom(targetRoom || 'chat', null, ws);
@@ -219,7 +246,7 @@ function onMessage(msg, ws) {
         return;
     }
 
-    var roomData = _room.getRoom(ws._room, ['clearMsg', 'deleteImage', 'startPlayList', 'chatMsg'].includes(r.type));
+    var roomData = _room.getRoom(ws._room, !['clearMsg', 'deleteImage', 'startPlayList', 'chatMsg', 'room_addImgs,gallery', 'room_addImgs,photo', 'deleteImage', 'updateMark', 'heart', 'startPlayList', 'delEmbed', 'shareEmbed'].includes(r.type));
     if (!roomData) return;
 
     var isOwner = roomData.key == r.key;
@@ -230,6 +257,37 @@ function onMessage(msg, ws) {
     }
 
     switch (r.type) {
+        case 'delEmbed':
+            var id = d.id;
+            if (!roomData.media.embed || !roomData.media.embed[id] || !g_cache.uploaded[ws._room]) {
+                return sendMsg(ws, ERR_EMBED_NOT_EXISTS);
+            }
+            if (!isOwner && g_cache.uploaded[ws._room][id] != ws._uuid) {
+                return sendMsg(ws, ERR_NOT_PERMISSIOM);
+            }
+            delete g_cache.uploaded[ws._room][id];
+            delete roomData.media.embed[id];
+            sendMsg(ws, SUCC_EMBED_DELETED);
+            broadcast(ws._room, 'delEmbed', id);
+            break;
+        case 'shareEmbed':
+            var id = d.source + '_' + d.time;
+            if (!roomData.media.embed) {
+                roomData.media.embed = {};
+            } else
+            if (roomData.media.embed[id]) {
+                return sendMsg(ws, ERR_EMBED_ALREADY_EXISTSED);
+            }
+            g_cache.uploaded[ws._room][id] = ws._uuid; // 记录是谁上传的
+            // todo 检查数据
+            Object.assign(d, {player: ws._username, icon: getFilePath(getMd5(ws._uuid))});
+            roomData.media.embed[id] = d;
+            sendMsg(ws, SUCC_EMBED_SHARED);
+            broadcast(ws._room, 'shareEmbed', d);
+            break;
+        case 'fetchVideo':
+            fetchVideo(ws, d.url);
+            break;
         case 'clearMsg':
             if (!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
             roomData.msgs = [];
@@ -316,23 +374,19 @@ function onMessage(msg, ws) {
             if (!img) return sendMsg(ws, ERR_FILE_NOT_EXISTS);
             if (img != ws._uuid && !isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
             delete g_cache.uploaded[ws._room][d.id];
-
-            roomData = _room.getRoom(ws._room, false);
             delete roomData.imgs[d.id];
-
             sendMsg(ws, SUCC_IMAGE_DELETED);
             broadcast(ws._room, 'deleteImage', d.id);
 
             break;
-
         case 'room_addImgs,gallery':
         case 'room_addImgs,photo':
             if (!Array.isArray(d)) return;
             var res = {};
             var c = 0;
             var exists = 0;
-            var uploaded = _room.getRoom(ws._room)[r.type == 'room_addImgs,gallery' ? 'imgs' : 'photos']; // todo
-            const callback = (url, md5) => {
+            var uploaded = roomData[r.type == 'room_addImgs,gallery' ? 'imgs' : 'photos']; // todo
+            var callback = (url, md5) => {
                 if (md5) {
                     var img = {
                         src: url,
@@ -340,8 +394,6 @@ function onMessage(msg, ws) {
                     }
                     res[md5] = img;
                     uploaded[md5] = img;
-
-                    if (!g_cache.uploaded[ws._room]) g_cache.uploaded[ws._room] = [];
                     g_cache.uploaded[ws._room][md5] = ws._uuid; // 记录是谁上传的
                 }
                 if (++c == d.length) {
@@ -370,7 +422,6 @@ function onMessage(msg, ws) {
             break;
         case 'listRoom':
             _room.updateLobby(ws);
-
             break;
         case 'exit':
             if (d.close && _room.isRoomOwner(roomData, r.key)) {
@@ -416,7 +467,6 @@ function onMessage(msg, ws) {
                 for (var i = roomData.msgs.length; i > 10; i--) {
                     roomData.msgs.shift();
                 }
-
                 var ret = {
                     id: ++roomData.msgCount,
                     isOwner: roomData.owner == ws._username,
@@ -430,7 +480,6 @@ function onMessage(msg, ws) {
                     icon: getFilePath(getMd5(ws._uuid)),
                 }
                 if (d.meta) {
-                    console.log(d);
                     if (d.asDefault) { // 默认歌单
                         if (!isOwner) return sendMsg(ws, ERR_NOT_PERMISSIOM);
                         roomData.media.music = d.meta.data;
@@ -556,11 +605,11 @@ var _room = {
                 blockIps: []
             }
         }
-        // this.setRoomProps('lobby', {
-        //     cover: './img/cover.jpg',
-        //     broadcast: '',
-        //     tags: ["全年龄"],
-        // },true)
+        this.setRoomProps('lobby', {
+            cover: './img/cover.jpg',
+            broadcast: '',
+            tags: ["全年龄"],
+        }, true)
         // this.setRoomProps('r15', {
         //     cover: './img/r15.jpg',
         //     tags: ["R15", "限制级"],
@@ -595,6 +644,7 @@ var _room = {
     },
     setRoomProps: function(room, data, create = false) {
         if (create) {
+            g_cache.uploaded[room] = [];
             this.list[room] = Object.assign({
                 room: room,
                 owner: '',

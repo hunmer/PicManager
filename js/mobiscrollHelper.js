@@ -4,10 +4,10 @@ var mobiscrollHelper = {
 
     },
     test: () => {
-        $(function() {
-            console.log(mobiscrollHelper.actionMenu({
-                data: [{ icon: "image", title: 'title1', child: [{ icon: "file", text: "file 1" }] }]
-            }));
+        //$(function() {
+            // console.log(mobiscrollHelper.actionMenu({
+            //     data: [{ icon: "image", title: 'title1', child: [{ icon: "file", text: "file 1" }] }]
+            // }));
             //     var groups = ['a', 'b', 'c', 'd'];
             //     var h = $(mobiscrollHelper.buildMulitSelect({
             //         id: 'mulitselect-demo',
@@ -30,7 +30,7 @@ var mobiscrollHelper = {
             //             handler: 'cancel'
             //         }],
             //     });
-        });
+        //});
     },
     buildGroupSelect: (opts) => {
         opts = Object.assign({ id: 'selectGroupselect', data: {} }, opts);

@@ -110,7 +110,7 @@ var g_emoji = {
     },
     registerAction: () => {
 
-        registerAction('emoji_send', (dom, action, params) => {
+        registerAction('emoji_send', (dom, action) => {
             var data = {};
             var d = $(dom).find('img');
 
@@ -124,10 +124,10 @@ var g_emoji = {
             g_emoji.hide();
 
         });
-        registerAction('stricker_toEmoji', (dom, action, params) => {
+        registerAction('stricker_toEmoji', (dom, action) => {
             g_emoji.loadEmojiCate(action[1]);
         });
-        registerAction('stricker_toType', (dom, action, params) => {
+        registerAction('stricker_toType', (dom, action) => {
             if (!g_emoji.list[action[1]]) {
                 switch (action[1]) {
                     case 'stricker':
@@ -174,7 +174,7 @@ var g_emoji = {
             }
 
         });
-        registerAction('sendStricker', (dom, action, params) => {
+        registerAction('sendStricker', (dom, action) => {
             var img = $('.selected').attr('src');
             if (img.indexOf('img/reload.png') != -1) {
                 toastPAlert('読み込み中', 'alert-secondary');
@@ -185,7 +185,7 @@ var g_emoji = {
             g_emoji.hide();
             local_saveJson('stricker_options', g_stricker_options); // 保存最后选择的贴图
         });
-        registerAction('previewStricker_bottom', (dom, action, params) => {
+        registerAction('previewStricker_bottom', (dom, action) => {
             if (dom.src.indexOf('img/reload.png') != -1) {
                 dom.src = $(dom).attr('data-src');
                 reloadImage(dom);
@@ -199,7 +199,7 @@ var g_emoji = {
                 sendStricker();
             }
         });
-        registerAction('previewStricker', (dom, action, params) => {
+        registerAction('previewStricker', (dom, action) => {
             if (dom.src.indexOf('img/reload.png') != -1) {
                 dom.src = $(dom).attr('data-src');
                 reloadImage(dom);
@@ -230,7 +230,7 @@ var g_emoji = {
                 $('#modal-stricker textarea').val(g_stricker_options.tags[key] != undefined ? g_stricker_options.tags[key] : '');
             }
         });
-        registerAction('stricker_toTab', (dom, action, params) => {
+        registerAction('stricker_toTab', (dom, action) => {
             $('.selected').removeClass('selected');
             clearInterval(g_cache.reloadImage_timer);
             g_cache.reloadImage_timer = 0;
@@ -255,13 +255,13 @@ var g_emoji = {
             }
         });
 
-        registerAction('stricker_openURL', (dom, action, params) => {
+        registerAction('stricker_openURL', (dom, action) => {
             if (parseInt(g_stricker_options.last.id) > 0) {
                 window.open('https://store.line.me/stickershop/product/' + g_stricker_options.last.id, '_blank');
             }
 
         });
-        registerAction('addStrick', (dom, action, params) => {
+        registerAction('addStrick', (dom, action) => {
             confirm('[' + $(dom).attr('data-title') + '] を追加しますか?').then((d) => {
                 if (d.button == 'ok') {
                     queryStricker($(dom).attr('data-id'));
@@ -269,7 +269,7 @@ var g_emoji = {
             });
         });
 
-        registerAction('show_stricker_search', (dom, action, params) => {
+        registerAction('show_stricker_search', (dom, action) => {
             prompt('キーワード&URL', 'kizuna').then((d) => {
                 if (d.text != '') {
                     searchStrick(search);
@@ -277,7 +277,7 @@ var g_emoji = {
             });
         });
 
-        registerAction('show_stricker', (dom, action, params) => {
+        registerAction('show_stricker', (dom, action) => {
             if (g_emoji.isShowing()) {
                 g_emoji.hide();
             } else {

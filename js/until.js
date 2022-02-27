@@ -1,6 +1,5 @@
 var _GET = getGETArray();
 var g_api = 'https://neysummer-api.glitch.me/';
-var socket_url = 'wss:///daily-websock1.glitch.me';
 var g_localKey = 'picManager_';
 var g_cache = {
     contents: {},
@@ -16,7 +15,21 @@ var g_imgCache = new Set(local_readJson('keys', [])); // 所有图片key缓存
 // 解决图片无法加载问题
 function proxyImg(url) {
     // return url;
-    return 'https://metal-loving-sleet.glitch.me/?url=' + url;
+    // return 'http://127.0.0.1:8000/proxy?url=' + url;
+    return 'https://picmanager-room.glitch.me/proxy?url=' + url;
+}
+
+function toast(msg, time = 3000) {
+    var toast = $('#toast');
+    toast.find('span').html(msg);
+    if (g_cache.timer_toast) clearTimeout(g_cache.timer_toast);
+    addAnimation(toast.show(), 'fadeIn', () => {
+        g_cache.timer_toast = setTimeout(() => addAnimation(toast, 'fadeOutDown', (d) => d.hide()), time);
+    });
+}
+
+function hideToast(){
+  $('#toast').hide();  
 }
 
 function getSystemLang() {
@@ -388,9 +401,7 @@ function addAnimation(d, x, callback) {
         function() {
             if ($(this).attr('animated') != undefined) {
                 $(this).removeClass('animated ' + $(this).attr('animated')).attr('animated', '');
-                if (callback != undefined) {
-                    callback();
-                }
+                callback && callback(d);
             }
         })
 }

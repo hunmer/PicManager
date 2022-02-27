@@ -124,7 +124,7 @@ var g_mark = {
                 
         $(`<div id="area_select" style="display: none;position: fixed; z-index: 2;border: 2px solid blue;"></div>`).appendTo('body')
 
-        registerAction('mark_setMark', (dom, action, params) => {
+        registerAction('mark_setMark', (dom, action) => {
             $('#area_select').css('display', 'none');
             var actived = $(dom).hasClass('text-primary');
             g_mark.opts.onSetMarkMode(action[1], !actived);
@@ -139,7 +139,7 @@ var g_mark = {
             $('#area_select').css('borderRadius', action[1] == 'c' ? '50%' : '')
         });
 
-        registerAction('mark_clear', async (dom, action, params) => {
+        registerAction('mark_clear', async (dom, action) => {
             if (confirm('清空吗?')) {
                 if(!g_mark.opts.beforeClearMark || g_mark.opts.beforeClearMark() !== false){
                     $('.img-mark-dots').remove();
@@ -149,7 +149,7 @@ var g_mark = {
                 }
             }
         });
-        registerAction('dot_delete', async (dom, action, params) => {
+        registerAction('dot_delete', async (dom, action) => {
             if (confirm('删除吗?')) {
                 if(!g_mark.opts.beforeDeleteMark || g_mark.opts.beforeDeleteMark(action) !== false){
                     var dotKey = action.length > 1 ? action[1] : g_mark.dot.attr('data-key');
@@ -161,7 +161,7 @@ var g_mark = {
             }
         });
 
-        registerAction('dot_apply', (dom, action, params) => {
+        registerAction('dot_apply', (dom, action) => {
             var text = g_mark.getText();
             if (text == '') return toastPAlert('请输入文本', 1000, '', 'alert-primary');
             g_mark.dot.attr('data-title', text);
@@ -171,7 +171,7 @@ var g_mark = {
                 g_mark.initMarkTexts();
             }
         });
-        registerAction('dot_click', (dom, action, params) => {
+        registerAction('dot_click', (dom, action) => {
 
             dom = $(dom);
             var text = dom.attr('data-title');
