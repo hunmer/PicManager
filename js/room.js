@@ -19,9 +19,13 @@ const SUCC_EMBED_DELETED = 18;
 const SUCC_EMBED_SHARED = 19;
 const ERR_EMBED_NOT_EXISTS = 20;
 const ERR_EMBED_ALREADY_EXISTSED = 21;
+const SUCC_BOOK_SHARED = 22;
+const ERR_BOOK_SHARE_NOT_ARROW = 23;
+
+
 var g_room = {
     host: '//picmanager-room.glitch.me',
-    // host: '//192.168.31.77:8000',
+    // host: '//192.168.43.107:8000',
     unread: 0,
     currentRoom: undefined,
     editingRoom: undefined,
@@ -81,6 +85,7 @@ var g_room = {
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="photo">${_l('照片')}<span id="badge_photo" class="ml-5 badge badge-pill hide">0</span></button>
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="embed">${_l('分享')}<span id="badge_embed" class="ml-5 badge badge-pill hide">0</span></button>
                         <button class="btn btn-square" type="button" data-action="room_subContent" data-value="game">${_l('游戏')}</button>
+                        <button class="btn btn-square" type="button" data-action="room_subContent" data-value="book">${_l('书籍')}</button>
                       </div>
                     </div>
 
@@ -99,6 +104,11 @@ var g_room = {
                                 <div id="room_sharedList"></div>
                             </div>
                             <div id="room_subContent_game" class="room_subContent hide animated fadeIn" animated='fadeIn'>
+                            </div>
+                             <div id="room_subContent_book" class="room_subContent hide animated fadeIn animated='fadeIn'>
+                                <div class="w-full mt-10" id="div_bookImg_room">
+                                    <img class="w-full">
+                                </div>
                             </div>
                     </div>
                     
@@ -283,6 +293,16 @@ var g_room = {
     initMenu: function(type, data) {
         if (!data) {
             switch (type) {
+                case 'book':
+                 data = [
+                        { action: "book_prevPage", class: "btn-primary", icon: "fa-arrow-left" },
+                        { action: "book_nextPage", class: "btn-primary", icon: "fa-arrow-right" },
+                        { action: "book_selectPage", class: "btn-secondary", text: `
+                            <b>1</b>
+                        ` },
+                        { action: "loadPlugin_book", class: "btn-success", icon: "fa-plus" }
+                    ];
+                    break;
                 case 'gallery':
                     data = [
                         { action: "room_countdown", class: "btn-primary", icon: "fa-hourglass-start" },
@@ -893,7 +913,9 @@ var g_room = {
             if (d.media.music) { // 特殊数据
                 getAction('music_player_click').find('.badge').removeClass('hide');
             }
+           
         }
+         
         window.history.pushState(null, null, `?r=${room}`);
 
         if (g_room.cache.disconectTimer) {
@@ -918,6 +940,10 @@ var g_room = {
         }
 
         $('.content-wrapper').css('overflowY', 'hidden'); // 自定义滚动内容
+
+        if(d.media.book){
+            setTimeout(() => g_room.onRevice({type: 'book', data: d.media.book}), 500);
+        }
     },
     showBroadcast: function(msg) {
         alert1({
@@ -999,6 +1025,7 @@ var g_room = {
             case ERR_EMBED_NOT_EXISTS:
                 r = [_l('对象不存在'), 'alert-danger']
                 break;
+
             case SUCC_ROOM_SETTING_APPLY:
                 if (isModalOpen('modal-custom', 'room_editRoom')) halfmoon.toggleModal('modal-custom');
                 r = [_l('成功修改'), 'alert-success']
@@ -1010,7 +1037,14 @@ var g_room = {
                 r = [_l('房间满人'), 'alert-danger']
                 break;
             case SUCC_EMBED_SHARED:
-                r = [_l('成功分享'), 'alert-success']
+                r = [_l('成功分享'), 'alert-success'];
+                break;
+             case SUCC_BOOK_SHARED:
+                r = [_l('成功分享'), 'alert-success'];
+                showContent('room');
+                break;
+            case ERR_BOOK_SHARE_NOT_ARROW:
+                r = [_l('此房间不允许此操作'), 'alert-danger']
                 break;
             case ERR_EMBED_ALREADY_EXISTSED:
                 r = [_l('对象已存在'), 'alert-danger']
@@ -1080,10 +1114,8 @@ var g_room = {
         $('#msg_chat_range_switch').toggleClass('hide', hide);
         $('#room_chat').css('minWidth', hide ? 'unset' : '250px'); // 最小宽度
         $('.navbar-fixed-bottom').css('zIndex', hide ? 2 : 9999); // 让底部栏在viewer内显示
-        if (hide) {
-           g_room.unread = 0;
-            $('#room_msg_unread').html('0').hide();
-        }
+       g_room.unread = 0;
+        $('#room_msg_unread').html('0').hide();
     },
 
     isRoomMaster: function() {

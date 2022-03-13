@@ -7,6 +7,14 @@ g_room.onRevice = (data) => {
     var type = data.type;
     var d = data.data;
     switch (type) {
+        case 'book':
+            g_book.loadBook(d, () => {
+                // $('#toolbar_book').html(d.n);
+                // $().html();
+                g_room.showSubContent('book');
+                g_book.toPage(d.page);
+            });
+            break;
         case 'delEmbed':
             $('[data-embed="' + d + '"]').remove();
             break;
@@ -14,9 +22,9 @@ g_room.onRevice = (data) => {
             g_room.addEmbed(d);
             break;
         case 'videoDetail':
-            if(!d) return toastPAlert(_l('解析失败'), 'alert-danger');
+            if (!d) return toastPAlert(_l('解析失败'), 'alert-danger');
             var json = JSON.parse(d);
-            if(d.playlist) return toastPAlert(_l('暂时不支持列表'), 'alert-danger');
+            if (d.playlist) return toastPAlert(_l('暂时不支持列表'), 'alert-danger');
             // json.ext   flv 可能要用其他的播放器
             var detail = {
                 type: 'video',
@@ -34,7 +42,7 @@ g_room.onRevice = (data) => {
             }
             self.cache.videoDetail = detail;
             var dialog = isModalOpen('modal-custom', '');
-            if(!dialog) return;
+            if (!dialog) return;
             dialog.find('#input_roomEmbed_name').val(detail.title);
             dialog.find('img').attr('src', proxyImg(detail.cover)).show();
             dialog.find('textarea').html(detail.desc);
@@ -42,11 +50,11 @@ g_room.onRevice = (data) => {
             break;
         case 'roomUpdate':
             var roomData = self.getData();
-            if(roomData['bg'] != d.bg){
+            if (roomData['bg'] != d.bg) {
                 g_setting.setBg(self.getImageUrl(d.bg));
                 self.setData('bg', d.bg);
             }
-            if(roomData['broadcast'] != d.broadcast){
+            if (roomData['broadcast'] != d.broadcast) {
                 self.showBroadcast(d.broadcast);
                 self.setData('broadcast', d.broadcast);
             }
@@ -187,14 +195,14 @@ g_room.onRevice = (data) => {
             break;
 
         case 'clearMsg':
-             $('#msg_list').html('');
-             self.broadcastMsg({msg: _l('管理员清屏')});
-             self.setData('msgs', []);
-             self.unread = 0;
-             if(self.isRoomMaster()){
+            $('#msg_list').html('');
+            self.broadcastMsg({ msg: _l('管理员清屏') });
+            self.setData('msgs', []);
+            self.unread = 0;
+            if (self.isRoomMaster()) {
                 toastPAlert(_l('清屏成功'), 'alert-success');
 
-             }
+            }
             break;
 
         case 'createRoom':
@@ -204,10 +212,10 @@ g_room.onRevice = (data) => {
             self.requestJoinRoom(d.room, d.password);
             break;
 
-        // 玩家点击别人分享的歌单
+            // 玩家点击别人分享的歌单
         case 'startPlayList':
-            var msg = $('.chat-msg[data-mid="'+d.id+'"]');
-            if(msg.length){
+            var msg = $('.chat-msg[data-mid="' + d.id + '"]');
+            if (msg.length) {
                 msg.find('.hideScroll').html(self.getPlayersIcon(d.players));
             }
             break;

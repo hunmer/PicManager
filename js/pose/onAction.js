@@ -36,7 +36,6 @@
             var selected = g_pose.getSelectedVal();
             if(!selected.length) return toastPAlert(_l('没有选中任何'), 'alert-danger');
             if(!g_pose.isConnected()) return toastPAlert(_l('没有连接房间'), 'alert-danger');
-
             g_pose.unselectAll();
          },
          'pose_countdown': (dom, action) => {

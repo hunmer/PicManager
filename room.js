@@ -19,6 +19,8 @@ const SUCC_EMBED_DELETED = 18;
 const SUCC_EMBED_SHARED = 19;
 const ERR_EMBED_NOT_EXISTS = 20;
 const ERR_EMBED_ALREADY_EXISTSED = 21;
+const SUCC_BOOK_SHARED = 22;
+const ERR_BOOK_SHARE_NOT_ARROW = 23;
 
 const cloneDeep = require('clone-deep');
 var express = require('express');
@@ -246,17 +248,26 @@ function onMessage(msg, ws) {
         return;
     }
 
-    var roomData = _room.getRoom(ws._room, !['clearMsg', 'deleteImage', 'startPlayList', 'chatMsg', 'room_addImgs,gallery', 'room_addImgs,photo', 'deleteImage', 'updateMark', 'heart', 'startPlayList', 'delEmbed', 'shareEmbed'].includes(r.type));
+    var roomData = _room.getRoom(ws._room, !['clearMsg', 'deleteImage', 'startPlayList', 'chatMsg', 'room_addImgs,gallery', 'room_addImgs,photo', 'deleteImage', 'updateMark', 'heart', 'startPlayList', 'delEmbed', 'shareEmbed', 'book'].includes(r.type));
     if (!roomData) return;
 
     var isOwner = roomData.key == r.key;
-    if (['startVote', 'startGame', 'kickPlayer', 'clearMsg'].includes(r.type)) { // 需要权限
+    if (['startVote', 'startGame', 'kickPlayer', 'clearMsg', 'book'].includes(r.type)) { // 需要权限
         if (_room.getPlayerByName(roomData.owner, ws._room) && !isOwner) {
             return sendMsg(ws, ERR_NOT_PERMISSIOM);
         }
     }
 
     switch (r.type) {
+        case 'book':
+            if(roomData.media){
+                 roomData.media.book = d;
+                broadcast(ws._room, r.type, d);
+                sendMsg(ws, SUCC_BOOK_SHARED);
+            }else{
+                sendMsg(ws, ERR_BOOK_SHARE_NOT_ARROW);
+            }
+            break;
         case 'delEmbed':
             var id = d.id;
             if (!roomData.media.embed || !roomData.media.embed[id] || !g_cache.uploaded[ws._room]) {

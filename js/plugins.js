@@ -5,7 +5,13 @@ var g_plugins = {
         	res: [
 	            { url: './js/pose/main.js', type: 'js' }
 	        ]
-	     }
+	     },
+         book: {
+            name: "绘画书籍",
+            res: [
+                { url: './js/book/main.js', type: 'js' }
+            ]
+         }
     },
     loadScripts: function(callback) {
         var cnt = 0;

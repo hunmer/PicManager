@@ -898,10 +898,10 @@ function initMenu(id, data) {
             h += d;
         } else {
             h += `
-                 <a data-action="${d.action}" class="btn ${d.class} p-0 rounded-circle" style="width: 35px;height: 35px;">
-                    <i class="fa ${d.icon} fa-2x" style="line-height: 35px;" aria-hidden="true"></i>
-                </a>
-                `
+             <a data-action="${d.action}" class="btn ${d.class} p-0 rounded-circle" style="width: 35px;height: 35px;">
+             ${d.text || `<i class="fa ${d.icon} fa-2x" style="line-height: 35px;" aria-hidden="true"></i>`}
+            </a>
+            `
 
         }
     }

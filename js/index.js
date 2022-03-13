@@ -179,7 +179,7 @@ $(function() {
         })
         .on('click', '[data-action]', function(event) {
             doAction(this, this.dataset.action, event);
-            if(['button', 'a'].includes(this.nodeName.toLowerCase())){
+            if(['button', 'a'].includes(this.nodeName.toLowerCase()) && !this.classList.contains('disabled')){
              addAnimation($(this), 'rubberBand');
             }
         })
