@@ -2,6 +2,7 @@ var g_book = {
     pageMax: 30,
     cache: {},
     preload: function() {
+        var self = this;
         registerAction('loadPlugin_book', (dom, action) => {
             if (!g_book.inited) {
                 g_book.init();
@@ -161,7 +162,7 @@ var g_book = {
     },
 
     showSubContent: function(id, classes = 'book_subContent') {
-        if (g_book.currentContent == id) return;
+        //if (g_book.currentContent == id) return;
         g_book.currentContent = id;
         g_book.initMenu(id);
         showSubContent(classes, id);
@@ -250,7 +251,6 @@ var g_book = {
     },
 
     getHtml: function(books) {
-        console.log(books);
         var h = '<div class="row">';
         for (var id of books) {
             var item = g_book.data[id];

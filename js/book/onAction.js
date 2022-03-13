@@ -6,7 +6,7 @@
             { url: './js/book/bookList.js', type: 'js' },
         ], () => {
             self.page = 1;
-            self.maxPage = Math.ceil(Object.keys(g_book.data).length / this.pageMax);
+            self.maxPage = Math.ceil(Object.keys(g_book.data).length / self.pageMax);
            self.toPage(1);
         }, false)
          },
