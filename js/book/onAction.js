@@ -27,15 +27,13 @@
             g_book.nextPage();
          },
          'book_selectPage': (dom, action) => {
-
-
             mobiscrollHelper.step({
                 headerText: _l('输入页数'),
                 defaultValue: g_book.getPage(),
                 max: g_book.getMaxPage(),
                 min: 1,
             }, val => {
-                g_book.toPage(val);
+                g_book.toPage(parseInt(val));
             })
          },
          'book_share': (dom, action) => {
