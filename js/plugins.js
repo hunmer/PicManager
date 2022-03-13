@@ -8,6 +8,7 @@ var g_plugins = {
 	     },
          book: {
             name: "绘画书籍",
+            icon: 'fa-book',
             res: [
                 { url: './js/book/main.js', type: 'js' }
             ]
@@ -44,7 +45,7 @@ var g_plugins = {
                 h += `
 		            <a data-action="loadPlugin" data-plugin="${key}" class="sidebar-link sidebar-link-with-icon row` + (g_database.folder == key ? ' active_text' : '') + `">
 		                    <span class="sidebar-icon col-auto">
-		                        <i class="fa fa-plug" aria-hidden="true"></i>
+		                        <i class="fa ${d.icon || 'fa-plug'}" aria-hidden="true"></i>
 		                    </span>
 		                    <span class="col plugin-name">${d.name}</span>
 		                    <span class="col text-right"></span>

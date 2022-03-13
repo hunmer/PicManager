@@ -47,7 +47,6 @@ var g_book = {
 
                 case 'viewer':
                      data = [
-                        { action: "book_share", class: "btn-secondary", icon: "fa-share" },
                     ];
                     break;
 
@@ -115,7 +114,11 @@ var g_book = {
             initNavBottom: () => {
                 return `
                     <div id="bottom_book" class="d-flex w-full" style="margin: 0 auto;border-radius: 20px;display: flex;align-items: center;">
-
+                      <div class="ml-10">
+                        <a data-action="book_share" class="btn btn-square">
+                           <i class="fa fa-share" aria-hidden="true"></i>
+                        </a>
+                    </div>
                         <nav class="ml-auto">
                           <ul class="pagination m-0">
                             <li class="page-item" data-action="book_prevPage">
