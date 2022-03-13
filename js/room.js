@@ -105,7 +105,7 @@ var g_room = {
                             </div>
                             <div id="room_subContent_game" class="room_subContent hide animated fadeIn" animated='fadeIn'>
                             </div>
-                             <div id="room_subContent_book" class="room_subContent hide animated fadeIn animated='fadeIn'>
+                             <div id="room_subContent_book" class="room_subContent hide animated fadeIn" animated='fadeIn'>
                                 <div class="w-full mt-10" id="div_bookImg_room">
                                     <img class="w-full">
                                 </div>
@@ -241,6 +241,9 @@ var g_room = {
         g_room.loadScripts(() => {
             var self = g_room;
             g_back['room'] = () => {
+                if (g_book.cache.div_bookImg_room && g_book.cache.div_bookImg_room.fulled) {
+                    g_book.cache.div_bookImg_room.exit()
+                }
                 if (g_room.inlineViewer && g_room.inlineViewer.fulled) {
                     g_room.inlineViewer.exit()
                 }
