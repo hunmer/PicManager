@@ -13,6 +13,16 @@ var g_book = {
          this.loadScripts(() => {
             self.showSubContent('list');
         });
+       g_back['room'] = () => {
+            if (g_book.cache.div_bookImg && g_book.cache.div_bookImg.fulled) {
+                g_book.cache.div_bookImg.exit();
+                return true;
+            }
+            if(self.currentContent != 'list'){
+                self.showSubContent('list');
+                return true;
+            }
+        }
         // $(function() {
         //     setTimeout(() => doAction(null, 'loadPlugin_book'), 2000);
         // });

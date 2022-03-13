@@ -275,17 +275,14 @@ $(function() {
         }
         delete _GET['r'];
         delete _GET['p'];
-        console.log(g_room.cache.targetRoom);
-        //showContent('room');
-    }else{
-         //  if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
-        //     g_database.loadFolder(g_config.lastOpenFolder);
-        //     return;
-        // }
-        // $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
-    }
         showContent('room');
-
+    }else{
+          if (g_config.lastOpenFolder && g_folders[g_config.lastOpenFolder]) {
+            g_database.loadFolder(g_config.lastOpenFolder);
+            return;
+        }
+        $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
+    }
 });
 
 function resizeCustomScroll(){

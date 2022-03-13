@@ -242,10 +242,12 @@ var g_room = {
             var self = g_room;
             g_back['room'] = () => {
                 if (g_book.cache.div_bookImg_room && g_book.cache.div_bookImg_room.fulled) {
-                    g_book.cache.div_bookImg_room.exit()
+                    g_book.cache.div_bookImg_room.exit();
+                    return true;
                 }
                 if (g_room.inlineViewer && g_room.inlineViewer.fulled) {
                     g_room.inlineViewer.exit()
+                    return true;
                 }
                 if (g_room.chatImgviewer) {
                     g_room.chatImgviewer.hide();
