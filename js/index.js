@@ -268,7 +268,11 @@ $(function() {
     //     doAction(null, 'setting');
     // }
 
-    if(_GET['r']){
+    //loadContent();
+});
+
+function loadContent(){
+      if(_GET['r']){
         g_room.cache.targetRoom = {
             room: _GET['r'],
             password: _GET['p'],
@@ -283,7 +287,7 @@ $(function() {
         }
         $(`[data-action="setFilter"][data-value='` + JSON.stringify(g_config.filter || {}) + `']`).click();      
     }
-});
+}
 
 function resizeCustomScroll(){
      var bottom = 0;

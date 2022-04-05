@@ -116,7 +116,7 @@ var g_music = {
 
     confirmURL: function() {
         var self = this;
-        prompt1({title: '歌单地址(网易云)', html: 'https://music.163.com/#/playlist?id=897784673'}, url => {
+        prompt1({title: _l('歌单地址'), html: 'https://music.163.com/#/playlist?id=897784673'}, url => {
             if (!isEmpty(url)) {
                 // var url = 'https://music.163.com/#/playlist?id=897784673';
                 var params = self.getParmsFromUrl(url);
@@ -131,7 +131,7 @@ var g_music = {
         var self = this;
         getAction('music_player_click').find('.badge').addClass('hide'); // 有解析后不显示推荐
         $.getJSON(this.api + `music.php?server=${params.source}&type=playlist&withDetail=1&id=${params.id}`, function(json, textStatus) {
-            if (textStatus != 'success') return toastPAlert(_l('错误'), 'alert-danger');
+            if (textStatus != 'success') return toastPAlert(_l('发生错误'), 'alert-danger');
             self.clearAll();
             var list = JSON.parse(json.list);
             params.detail = json.detail;
@@ -233,7 +233,7 @@ var g_music = {
 
                     <div class="text-right mt-10">
                         <a class="btn btn-primary ${!maxPage ? 'hide' : ''}" onclick="g_music.share()" role="button">分享歌单</a>
-                        <a class="btn btn-primary" onclick="g_music.confirmURL()" role="button">解析歌单</a>
+                        <a class="btn btn-primary" onclick="g_music.confirmURL()" role="button">${_l('解析歌单')}</a>
                         <a class="btn btn-danger ${!maxPage ? 'hide' : ''}" onclick="g_music.clearAll()" role="button">删除所有</a>
                      </div>
                  `,

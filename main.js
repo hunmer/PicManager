@@ -32,11 +32,11 @@ function createWindow() {
     win = new BrowserWindow({
         width: 1200,
         height: 1000,
-        title: 'PicManager',
         frame: false,
         // hasShadow: true,
         // nativeWindowOpen: true,
         resizable: true,
+        title: 'PicManager',
         webPreferences: {
             webSecurity: false,
             // enableRemoteModule:true,

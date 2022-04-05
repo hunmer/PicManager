@@ -12,38 +12,41 @@ var g_user = {
                 icon: './img/user.jpg'
             }
             local_saveJson('config', g_config);
+            g_user.modal();
+        }else{
+            loadContent();
         }
 
         addLang({
 
             "用户设置": {
-                "zh": "",
-                "jp": "ユーザー設定",
-                "en": ""
+                "zh": "user setting",
+                "jp": "user setting",
+                "en": "user setting"
             },
 
             "用户名": {
-                "zh": "",
-                "jp": "名前",
-                "en": ""
+                "zh": "name",
+                "jp": "name",
+                "en": "name"
             },
 
             "用户名_占位符": {
-                "zh": "",
-                "jp": "名前を入力",
-                "en": ""
+                "zh": "enter name",
+                "jp": "enter name",
+                "en": "enter name"
             },
 
             "成功设置": {
-                "zh": "",
-                "jp": "セットアップ成功",
-                "en": ""
+                "zh": "saved",
+                "jp": "saved",
+                "en": "saved"
             },
 
             "用户头像": {
-                "zh": "",
-                "jp": "アイコン",
-                "en": ""
+                "zh": "icon",
+                "jp": "icon",
+                "en": "icon"
             },
             "language": {
                 "zh": "",
@@ -61,6 +64,11 @@ var g_user = {
                 "en": ""
             },
             "japanese": {
+                "zh": "",
+                "jp": "",
+                "en": ""
+            },
+            "english": {
                 "zh": "",
                 "jp": "",
                 "en": ""
@@ -122,12 +130,13 @@ var g_user = {
 
               <div class="input-group mt-10">
                 <div class="input-group-prepend">
-                  <span class="input-group-text">${_l('语言')}</span>
+                  <span class="input-group-text">${_l('language')}</span>
                 </div>
                 <select id="user_select_lang" class="form-control">
-                    <option value="" selected disabled>${_l('选择语言')}</option>
-                    <option value="zh">${_l('中文')}</option>
-                     <option value="jp">${_l('日语')}</option>
+                    <option value="" selected disabled>${_l('select language')}</option>
+                    <option value="zh">${_l('chinese')}</option>
+                     <option value="jp">${_l('japanese')}</option>
+                     <option value="en">${_l('english')}</option>
                 </select>
               </div>
 

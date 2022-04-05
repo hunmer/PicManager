@@ -34,7 +34,7 @@
     "productName": "picManager",
     "appId": "com.hunmer.picManager",
     "copyright": "hunmer",
-    "asar": false,
+    "asar": true,
     "directories": {
       "output": "build"
     },

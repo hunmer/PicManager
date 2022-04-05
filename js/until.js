@@ -38,10 +38,6 @@ function getSystemLang() {
 }
 var g_config = local_readJson('config', {
     lang: getSystemLang(),
-    user: {
-        name: randomString(6),
-        icon: './img/user.jpg'
-    },
     debug: false,
     nomedia: true,
     clientData: {
@@ -525,7 +521,7 @@ function toTime(s) {
 
 function isEmpty(a) {
     if (typeof(a) == 'string') return a.length == 0;
-    return a;
+    return true;
 }
 
 function removeAnimation(d) {

@@ -183,7 +183,7 @@ var g_room = {
                         <a class="dropdown-item" data-action="room_share">${_l('分享')}</a>
                         <div class="dropdown-divider"></div>
                         <div class="dropdown-content">
-                            <button class="btn btn-block btn-danger" data-action="room_exit" type="button"><i class="fa fa-sign-out fa-flip-horizontal mr-10" aria-hidden="true"></i>退出</button>
+                            <button class="btn btn-block btn-danger" data-action="room_exit" type="button"><i class="fa fa-sign-out fa-flip-horizontal mr-10" aria-hidden="true"></i>${_l('退出')}</button>
                         </div>
                     </div>
                 </div>
@@ -1213,7 +1213,7 @@ var g_room = {
     },
 
     requestJoinRoom: function(room, password) {
-        toast(_l('加入中'));
+        toast(_l('加入房间中'));
         g_room.send({
             type: 'joinRoom',
             data: {
@@ -1222,7 +1222,6 @@ var g_room = {
             }
         })
     },
-
     showGuide: function() {
         g_config.firstRoom = new Date().getTime();
         local_saveJson('config', g_config);
@@ -1230,27 +1229,28 @@ var g_room = {
         var list = [
             `<div class="text-center">
         {img}
-        画画自习室。边画边交流，让动笔变得没那么无聊。
+        ${_l('房间指南_1')}
     </div>`,
 
             `<div class="text-center">
         {img}
-        可以上传参考图，也可以计时训练。
+        ${_l('房间指南_2')}
     </div>`,
 
             `<div class="text-center">
         {img}
-        可以在线标注图片或者进行指定主题创作
+        ${_l('房间指南_3')}
     </div>`,
 
             `<div class="text-center">
         {img}
-        记录绘画数据，保存素材图片
+        ${_l('房间指南_4')}
     </div>`,
 
             `<div class="text-center">
         {img}
-        推荐下载APP或者用主流浏览器打开
+        ${_l('房间指南_5')}
+        
     </div>`,
         ];
 
@@ -1275,8 +1275,8 @@ var g_room = {
                     title: `${_l('这是什么东西')} <div id="guide_progress" class="bg-primary" style="height: 3px;top:0;position: relative;width: 0%;"></div>`,
                     html: `<div id="guide_content"></div>
                        <div class="text-right mt-10">
-                        <a class="btn disabled" id="guide_prevPage" role="button">上一个</a>
-                        <a class="btn btn-primary" id="guide_nextPage"  role="button">下一个</a>
+                        <a class="btn disabled" id="guide_prevPage" role="button">${_l('上一个')}</a>
+                        <a class="btn btn-primary" id="guide_nextPage"  role="button">${_l('下一个')}</a>
                       </div>
                 `,
                     onShow: (modal) => {
@@ -1289,7 +1289,7 @@ var g_room = {
                 });
             }
             $('#guide_prevPage').toggleClass('disabled', page == 0);
-            $('#guide_nextPage').html(page == max ? '开始使用' : '下一个');
+            $('#guide_nextPage').html(page == max ? _l('开始使用') : _l('下一个'));
             modal.find('#guide_progress').css('width', (page / max) * 100 + '%');
             modal.find('#guide_content').html(list[page].replace('{img}', `<img src="./res/guide/${page}.png" class="d-block mx-auto animated bounceIn" animated='bounceIn'>`));
             return page;
