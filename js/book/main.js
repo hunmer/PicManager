@@ -6,7 +6,7 @@ var g_book = {
         registerAction('loadPlugin_book', (dom, action) => {
             if (!g_book.inited) {
                 g_book.init();
-               self.showSubContent('list');
+               setTimeout(() => self.showSubContent('list'), 1000);
             }
             showContent('book');
         });
