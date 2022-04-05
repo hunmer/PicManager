@@ -838,13 +838,13 @@ var g_room = {
                     d.msg = `
                     <div class="mt-10 bg-dark-light">
                         <div class="position-relative">
-                            <span class="badge badge-primary p-5" style="position: absolute;top:0;left:0;">歌单</span>
+                            <span class="badge badge-primary p-5" style="position: absolute;top:0;left:0;">${_l('音乐列表')}</span>
                             <img src="${data.detail.cover}" class="w-full rounded-top">
                         </div>
                         <div class="p-10">
                             ${_l('分享了歌曲', data.detail.name)}
                             <div class="d-flex pt-10">
-                                <span class="text-muted" style="align-self: center;">${data.songs}首</span>
+                                <span class="text-muted" style="align-self: center;">${data.songs}</span>
                                 <button class="ml-auto btn btn-success" data-action="music_parse" data-json='${JSON.stringify({id: data.id, source: data.source})}'>${_l('播放')}</button>
                             </div>
                             <div class="hideScroll users-icon w-full pt-10">
