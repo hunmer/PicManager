@@ -151,8 +151,11 @@ var g_lang = {
         en: "%0`s room"
     },
 
-    歌单:
-       
+    歌单:{
+        zh: "",
+        jp: "playlist",
+        en: "playlist"
+    },  
         
         上一个:{
         zh: "",
